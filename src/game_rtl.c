@@ -53,6 +53,7 @@
 #include "snes/dma.h"
 #include "snes/interp_bridge.h"
 #include "snes/ppu.h"
+#include "snes/saveload.h"
 #include "snes/snes.h"
 
 extern CpuState g_cpu;
@@ -282,12 +283,41 @@ static size_t GameExecutionStateBound(void)
     return 0;
 }
 
+/* Where the main line resumes is host state the guest snapshot cannot hold.
+ * It rides in the save-state's title chunk, so a state saved while the main
+ * line is parked inside the nested NMI resumes in step with its own stack.
+ * States without the chunk read back zero-filled and keep the live value. */
+enum { kGameStateMagic = 0x52345643u /* "CV4R" */ };
+
+static void GameStateSaveExtra(SaveLoadInfo *sli)
+{
+    uint32_t chunk[3] = { kGameStateMagic, g_resume_pc, g_frame_number };
+    sli->func(sli, chunk, sizeof(chunk));
+}
+
+static void GameStateLoadExtra(SaveLoadInfo *sli, uint32_t version)
+{
+    uint32_t chunk[3] = { 0 };
+    (void)version;
+    sli->func(sli, chunk, sizeof(chunk));
+    if (chunk[0] == kGameStateMagic && chunk[1]) {
+        g_resume_pc = chunk[1];
+        g_frame_number = chunk[2];
+    }
+}
+
 const RtlGameInfo kGameInfo = {
     .title = "supercastlevaniaiv",
     .initialize = NULL,
     .run_frame = &GameRunOneFrame,
     .draw_ppu_frame = &GameDrawPpuFrame,
     .save_name_prefix = "save",
+    .state_save_extra = &GameStateSaveExtra,
+    .state_load_extra = &GameStateLoadExtra,
+    /* RtlReset resets the machine underneath us: boot again from the reset
+     * vector instead of resuming the old main line on cleared hardware. */
+    .session_reset = &GameSessionReset,
+    .hardware_reset = &GameSessionReset,
     .exec_state_bound = &GameExecutionStateBound,
 };
 

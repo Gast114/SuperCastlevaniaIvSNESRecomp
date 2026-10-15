@@ -26,6 +26,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "host_main.h"
 #include "game_rtl.h"
@@ -33,7 +34,9 @@
 #include "desktop/config.h"
 #include "desktop/display_aspect.h"
 #include "guarded_patch.h"
+#include "snes/cart.h"
 #include "snes/ppu.h"
+#include "snes/snes.h"
 #include "character_pack.h"
 
 #ifndef __ANDROID__
@@ -50,6 +53,7 @@
 #endif
 
 extern Ppu *g_ppu;
+extern Snes *g_snes;
 extern uint8 g_ram[0x20000];
 
 /* The stock object handler keeps a 256-pixel-oriented activation/despawn
@@ -63,6 +67,10 @@ extern uint8 g_ram[0x20000];
  * values are independently documented by bogaa's SCIV event-handler notes. */
 enum { kCv4WidePatchCount = 6 };
 static GuardedPatch g_cv4_wide_patches[kCv4WidePatchCount];
+/* The cartridge image the patches are bound to. The guest executes from
+ * cart->rom, a copy SnesInit makes after on_rom_loaded, so the patches are
+ * bound to it here rather than to the loaded file buffer. */
+static const uint8_t *g_cv4_wide_rom;
 
 static void Cv4SyncWidescreenObjectBounds(void)
 {
@@ -77,7 +85,7 @@ static void Cv4SyncWidescreenObjectBounds(void)
     }
 }
 
-static void Cv4InitWidescreenObjectBounds(const uint8_t *rom, size_t size)
+static void Cv4BindWidescreenObjectBounds(void)
 {
     static const struct {
         size_t pc;
@@ -103,22 +111,46 @@ static void Cv4InitWidescreenObjectBounds(const uint8_t *rom, size_t size)
           { 0xe9, 0x20, 0x00 }, { 0xe9, 0x50, 0x00 } },
     };
 
-    if (!rom)
+    if (!g_snes || !g_snes->cart || !g_snes->cart->rom ||
+        g_cv4_wide_rom == g_snes->cart->rom)
         return;
-    Cv4CharacterInit(rom, (unsigned)size);
+    for (unsigned i = 0; i < kCv4WidePatchCount; ++i) {
+        if (g_cv4_wide_patches[i].target) {
+            (void)guarded_patch_revert(&g_cv4_wide_patches[i]);
+            guarded_patch_unregister(&g_cv4_wide_patches[i]);
+        }
+        memset(&g_cv4_wide_patches[i], 0, sizeof(g_cv4_wide_patches[i]));
+    }
+    g_cv4_wide_rom = g_snes->cart->rom;
+    size_t size = (size_t)g_snes->cart->romSize;
     for (unsigned i = 0; i < kCv4WidePatchCount; ++i) {
         if (size < kPatches[i].pc + sizeof(kPatches[i].original))
             continue;
         GuardedPatchStatus status = guarded_patch_init(
             &g_cv4_wide_patches[i], kPatches[i].name,
-            (uint8_t *)rom + kPatches[i].pc, sizeof(kPatches[i].original),
+            g_snes->cart->rom + kPatches[i].pc, sizeof(kPatches[i].original),
             kPatches[i].original, kPatches[i].wide);
         if (status == kGuardedPatch_Ok)
             status = guarded_patch_register(&g_cv4_wide_patches[i]);
-        if (status != kGuardedPatch_Ok)
+        if (status != kGuardedPatch_Ok) {
             fprintf(stderr, "[widescreen] patch refused: %s: %s\n",
                     kPatches[i].name, guarded_patch_status_name(status));
+            memset(&g_cv4_wide_patches[i], 0, sizeof(g_cv4_wide_patches[i]));
+        }
     }
+}
+
+static void Cv4RomLoaded(const uint8_t *rom, size_t size)
+{
+    if (rom)
+        Cv4CharacterInit(rom, (unsigned)size);
+}
+
+/* Before every guest frame, so a view change from the pause menu takes effect
+ * on the next simulated frame. */
+static void Cv4BeforeRunFrame(void)
+{
+    Cv4BindWidescreenObjectBounds();
     Cv4SyncWidescreenObjectBounds();
 }
 
@@ -142,7 +174,6 @@ static void Cv4PrepareFrame(int drawable_w, int drawable_h,
 static void Cv4BeginSimFrame(unsigned number)
 {
     (void)number;
-    Cv4SyncWidescreenObjectBounds();
     /* Be explicit about the conservative first-pass policy. World BG1/BG2
      * use the wider tilemap raster, while BG3 stays in the authored field.
      * This is reapplied after PpuSetExtraSpace resets per-frame policies. */
@@ -184,7 +215,8 @@ static const SnesDesktopHostGame kGameHost = {
     .native_widescreen   = 1,
     .frame_width         = 256,
     .frame_height        = 224,
-    .on_rom_loaded       = &Cv4InitWidescreenObjectBounds,
+    .on_rom_loaded       = &Cv4RomLoaded,
+    .before_run_frame    = &Cv4BeforeRunFrame,
     .prepare_frame       = &Cv4PrepareFrame,
     .begin_sim_frame     = &Cv4BeginSimFrame,
     /* Battery-backed SRAM shows the launcher's SAVES panel. Leave NULL for a
