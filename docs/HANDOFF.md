@@ -11,7 +11,7 @@ RAM-Map / Spielmodi: `D:\Reverse Engineering\docs\sc4\analysis.md`.
 
 ## Git
 - Arbeitsbranch `dev` (lokal): e0c822a Framework-Update · b70585b Tests · fb05f9f Reset/Savestate/Widescreen-Bind · 0770320 Lua-Schnittstelle · (+ Commit für async Posen-Speichern, siehe unten).
-- Framework `snesrecomp` = lokaler Branch `sciv` (RetroPortingToolKit main a6be975 + 2 Rasmus-Commits + a4e0d83 Lua-Host). **Nur lokal** in `.git/modules/snesrecomp`. `recomp-ui` = 5ca3df2. Pins in `framework_pins.txt`.
+- Framework `snesrecomp` = lokaler Branch `sciv` (RetroPortingToolKit main a6be975 + 2 Rasmus-Commits + a4e0d83 Lua-Host). **Nur lokal** in `.git/modules/snesrecomp`; Spiegel-Backup: `D:Super Castlevania IV Recompbackupsnesrecomp-sciv.git` (nach Framework-Commits mit `git -C <backup> fetch` aktualisieren). `recomp-ui` = 5ca3df2. Pins in `framework_pins.txt`.
 - Identität repo-lokal: `Gast114 <Gast114@users.noreply.github.com>`.
 
 ## Builds (alle gitignored)
