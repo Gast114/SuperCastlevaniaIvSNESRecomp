@@ -274,9 +274,10 @@ void GameDrawPpuFrame(void)
     Cv4CharacterEnd(g_ppu);
 }
 
-/* g_resume_pc and the bridge execution context are not currently serialized
- * by this port. Explicitly reject speculative rollback: a missing callback
- * means "no extra state" to the framework, which incorrectly permits it. */
+/* Speculative rollback stays rejected: run-ahead would need the execution
+ * position in its in-memory snapshots too (exec_state_save), which this port
+ * does not provide. A missing callback means "no extra state" to the
+ * framework, which incorrectly permits it. */
 static size_t GameExecutionStateBound(void)
 {
     return 0;
@@ -285,13 +286,23 @@ static size_t GameExecutionStateBound(void)
 /* Where the main line resumes is host state the guest snapshot cannot hold.
  * It rides in the save-state's title chunk, so a state saved while the main
  * line is parked inside the nested NMI resumes in step with its own stack.
- * States without the chunk read back zero-filled and keep the live value. */
-enum { kGameStateMagic = 0x52345643u /* "CV4R" */ };
+ * "CV4S" chunks add the framework's execution state: the CPU registers and
+ * the interpreter bridge's suspended context belong to the same instant, and
+ * without them a state only worked when loaded into a session that happened
+ * to be parked at the same place (a title-screen state, or any state in a
+ * fresh process, froze). "CV4R" chunks from older builds still load the
+ * resume point alone. States without a chunk keep the live values. */
+enum {
+    kGameStateMagic = 0x52345643u,      /* "CV4R" */
+    kGameStateMagicExec = 0x53345643u,  /* "CV4S" */
+};
+static int g_exec_state_loaded;
 
 static void GameStateSaveExtra(SaveLoadInfo *sli)
 {
-    uint32_t chunk[3] = { kGameStateMagic, g_resume_pc, g_frame_number };
+    uint32_t chunk[3] = { kGameStateMagicExec, g_resume_pc, g_frame_number };
     sli->func(sli, chunk, sizeof(chunk));
+    RtlSaveExecutionState(sli);
 }
 
 static void GameStateLoadExtra(SaveLoadInfo *sli, uint32_t version)
@@ -299,10 +310,21 @@ static void GameStateLoadExtra(SaveLoadInfo *sli, uint32_t version)
     uint32_t chunk[3] = { 0 };
     (void)version;
     sli->func(sli, chunk, sizeof(chunk));
-    if (chunk[0] == kGameStateMagic && chunk[1]) {
+    if ((chunk[0] == kGameStateMagic || chunk[0] == kGameStateMagicExec) && chunk[1]) {
         g_resume_pc = chunk[1];
         g_frame_number = chunk[2];
     }
+    g_exec_state_loaded = chunk[0] == kGameStateMagicExec && RtlLoadExecutionState(sli);
+}
+
+/* After the framework's generic post-load cleanup, as RtlApplyExecutionState
+ * requires. */
+static void GameStateLoaded(uint32_t version)
+{
+    (void)version;
+    if (g_exec_state_loaded)
+        RtlApplyExecutionState();
+    g_exec_state_loaded = 0;
 }
 
 const RtlGameInfo kGameInfo = {
@@ -313,6 +335,7 @@ const RtlGameInfo kGameInfo = {
     .save_name_prefix = "save",
     .state_save_extra = &GameStateSaveExtra,
     .state_load_extra = &GameStateLoadExtra,
+    .on_state_loaded = &GameStateLoaded,
     /* RtlReset resets the machine underneath us: boot again from the reset
      * vector instead of resuming the old main line on cleared hardware. */
     .session_reset = &GameSessionReset,
