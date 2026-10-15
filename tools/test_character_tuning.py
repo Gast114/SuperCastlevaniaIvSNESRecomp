@@ -2,19 +2,18 @@
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import json
-import os
-from pathlib import Path
 import re
 import shutil
-import subprocess
-import tempfile
+
+import sciv_test_support as sciv
 
 p=argparse.ArgumentParser()
 p.add_argument('--rom',required=True)
+sciv.add_build_arg(p)
 a=p.parse_args()
-root=Path(__file__).resolve().parents[1]
-work=Path(tempfile.mkdtemp(prefix='tuning-check-',dir=root/'build'))
-print(work,flush=True)
+build=sciv.build_dir(a)
+work=sciv.work_dir(build,'tuning-check-')
+template=sciv.capture_template(build,a.rom,work)
 tuned={'walk_percent':200,'crouch_percent':200,'jump_percent':150,
        'gravity_percent':75,'leather_damage':90,'cross_damage':100,
        'cross_cost':3,'leather_links':7}
@@ -22,31 +21,16 @@ tuned={'walk_percent':200,'crouch_percent':200,'jump_percent':150,
 
 def run(name):
     folder=work/name
-    folder.mkdir()
-    exe=folder/'SuperCastlevaniaIvSNESRecomp.exe'
-    shutil.copy2(root/'build/Release'/exe.name,exe)
-    shutil.copytree(root/'build/Release/assets',folder/'assets')
-    source=root/'build/Release/characters/simon-template'
-    shutil.copytree(source,folder/'characters/simon-template')
-    shutil.copytree(source,folder/'characters/test-pack')
+    sciv.prepare(folder,build,{'Graphics':{'Widescreen':1}})
+    shutil.copytree(template,folder/'characters/simon-template')
+    shutil.copytree(template,folder/'characters/test-pack')
     manifest=folder/'characters/test-pack/character.json'
     data=json.loads(manifest.read_text())
     data['gameplay']=tuned if name in ('tuned','disabled') else {}
     manifest.write_text(json.dumps(data))
     (folder/'characters/selected.txt').write_text('' if name=='disabled' else 'test-pack')
-    (folder/'config.ini').write_text('[General]\nAutosave=0\nSkipLauncher=1\n'
-        '[Graphics]\nNewRenderer=1\nOutputMethod=OpenGL\nVSync=0\nWidescreen=1\n'
-        '[Sound]\nEnableAudio=0\n')
-    env={k:v for k,v in os.environ.items() if not k.startswith('SNESRECOMP_')}
-    env.update(SNESRECOMP_RUN_FRAMES='1260',SNESRECOMP_TUNING_TRACE='1')
-    startup=subprocess.STARTUPINFO()
-    startup.dwFlags|=subprocess.STARTF_USESHOWWINDOW
-    startup.wShowWindow=0
-    with (folder/'game.log').open('w') as log:
-        subprocess.run([str(exe),'--script',str(root/'scripts/character_tuning_smoke.input'),a.rom],
-                       cwd=folder,env=env,startupinfo=startup,stdout=log,stderr=log,
-                       check=True,timeout=150)
-    log=(folder/'game.log').read_text()
+    log=sciv.run(folder,'character_tuning_smoke.input',a.rom,
+                 sciv.clean_env(SNESRECOMP_RUN_FRAMES=1260,SNESRECOMP_TUNING_TRACE=1),timeout=150)
     assert '[character_tuning]' not in log, log
     rows=[dict((k,int(v)) for k,v in re.findall(r'(\w+)=(\d+)',line))
           for line in log.splitlines() if line.startswith('[tuning]')]

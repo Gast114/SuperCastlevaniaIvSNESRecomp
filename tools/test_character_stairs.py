@@ -2,47 +2,36 @@
 import argparse
 import csv
 from concurrent.futures import ThreadPoolExecutor
-import os
-from pathlib import Path
 import shutil
-import subprocess
-import tempfile
 from PIL import Image
+
+import sciv_test_support as sciv
 
 p=argparse.ArgumentParser()
 p.add_argument('--rom', required=True)
 p.add_argument('--script',default='character_stairs_smoke.input')
 p.add_argument('--frames',type=int,default=1850)
 p.add_argument('--screenshot',type=int,default=1400)
+sciv.add_build_arg(p)
 args=p.parse_args()
-root=Path(__file__).resolve().parents[1]
-work=Path(tempfile.mkdtemp(prefix='stairs-check-',dir=root/'build'))
-print(work,flush=True)
+build=sciv.build_dir(args)
+work=sciv.work_dir(build,'stairs-check-')
+# Collect the poses from the same scripted route, so the recoloured pack
+# covers every pose the replay shows.
+template=sciv.capture_template(build,args.rom,work,args.script,args.frames,
+                               {'Graphics':{'Widescreen':1}})
+starter=sciv.recolored_copy(template,work/'starter-character')
 
 def run(name):
     folder=work/name
-    folder.mkdir()
-    exe=folder/'SuperCastlevaniaIvSNESRecomp.exe'
-    shutil.copy2(root/'build/Release'/exe.name,exe)
-    shutil.copytree(root/'build/Release/assets',folder/'assets')
-    shutil.copytree(root/'build/Release/characters/simon-template',folder/'characters/simon-template')
-    source='starter-character' if name=='edited' else 'simon-template'
-    shutil.copytree(root/'build/Release/characters'/source,folder/'characters/test-pack')
+    sciv.prepare(folder,build,{'Graphics':{'Widescreen':1}})
+    shutil.copytree(template,folder/'characters/simon-template')
+    shutil.copytree(starter if name=='edited' else template,folder/'characters/test-pack')
     (folder/'characters/selected.txt').write_text('' if name=='baseline' else 'test-pack')
-    (folder/'config.ini').write_text('[General]\nAutosave=0\nSkipLauncher=1\n'
-                                   '[Graphics]\nNewRenderer=1\nOutputMethod=OpenGL\nVSync=0\nWidescreen=1\n'
-                                   '[Sound]\nEnableAudio=0\n')
-    env={k:v for k,v in os.environ.items() if not k.startswith('SNESRECOMP_')}
-    env.update(SNESRECOMP_RUN_FRAMES=str(args.frames),SNESRECOMP_CHARACTER_TRACE='1',
-               SNESRECOMP_CHARACTER_DIAG='1',SNESRECOMP_SCREENSHOT_FRAME=str(args.screenshot),
-               SNESRECOMP_SCREENSHOT=str(folder/'game.ppm'),
-               SNESRECOMP_PRESENT_LOG=str(folder/'frames.csv'))
-    startup=subprocess.STARTUPINFO()
-    startup.dwFlags|=subprocess.STARTF_USESHOWWINDOW
-    startup.wShowWindow=0
-    with (folder/'game.log').open('w') as log:
-        subprocess.run([str(exe),'--script',str(root/'scripts'/args.script),args.rom],
-                       cwd=folder,env=env,startupinfo=startup,stdout=log,stderr=log,check=True,timeout=160)
+    sciv.run(folder,args.script,args.rom,sciv.clean_env(
+        SNESRECOMP_RUN_FRAMES=args.frames,SNESRECOMP_CHARACTER_TRACE=1,
+        SNESRECOMP_CHARACTER_DIAG=1,SNESRECOMP_SCREENSHOT_FRAME=args.screenshot,
+        SNESRECOMP_SCREENSHOT=folder/'game.ppm',SNESRECOMP_PRESENT_LOG=folder/'frames.csv'),timeout=160)
     Image.open(folder/'game.ppm').save(folder/'game.png')
     rows=[line for line in (folder/'game.log').read_text().splitlines() if line.startswith('[character_frame]')]
     print(name, 'frames',len(rows),'unmatched',sum('matched=0' in x for x in rows),

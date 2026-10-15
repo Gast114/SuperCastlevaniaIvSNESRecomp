@@ -6,47 +6,37 @@ Requires Pillow. Does not modify the player's character packs or configuration.
 import argparse
 import csv
 import json
-import os
 from pathlib import Path
 import shutil
 import subprocess
-import tempfile
 import time
 
 from PIL import Image, ImageChops
+
+import sciv_test_support as sciv
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--rom', required=True, type=Path)
+    sciv.add_build_arg(parser)
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
-    exe = root / 'build/Release/SuperCastlevaniaIvSNESRecomp.exe'
-    work = Path(tempfile.mkdtemp(prefix='character-test-', dir=root / 'build'))
+    build = sciv.build_dir(args)
+    work = sciv.work_dir(build, 'character-test-')
     # The host anchors its working directory to the executable's directory.
     # Copy the binary as well, keeping all generated data isolated.
-    shutil.copy2(exe, work / exe.name)
-    if (exe.parent / 'assets').exists():
-        shutil.copytree(exe.parent / 'assets', work / 'assets')
-    exe = work / exe.name
-    (work / 'config.ini').write_text('[General]\nAutosave=0\nSkipLauncher=1\n'
-                                   '[Graphics]\nNewRenderer=1\nNoSpriteLimits=1\nVSync=0\n'
-                                   '[Sound]\nEnableAudio=0\n')
-    print(f'Test artifacts: {work}', flush=True)
+    exe = sciv.prepare(work, build, {'Graphics': {'NoSpriteLimits': 1}})
 
     def run(name, on_started=None):
-        env = dict(os.environ, SNESRECOMP_RUN_FRAMES='1600',
-                   SNESRECOMP_SCREENSHOT_FRAME='1300',
-                   SNESRECOMP_PRESENT_LOG=str(work / f'{name}.csv'),
-                   SNESRECOMP_SCREENSHOT_FROM='1100', SNESRECOMP_SCREENSHOT_TO='1500',
-                   SNESRECOMP_SCREENSHOT=str(work / f'{name}.ppm'))
-        startup = subprocess.STARTUPINFO()
-        startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        startup.wShowWindow = 0
+        env = sciv.clean_env(SNESRECOMP_RUN_FRAMES=1600,
+                             SNESRECOMP_SCREENSHOT_FRAME=1300,
+                             SNESRECOMP_PRESENT_LOG=work / f'{name}.csv',
+                             SNESRECOMP_SCREENSHOT_FROM=1100, SNESRECOMP_SCREENSHOT_TO=1500,
+                             SNESRECOMP_SCREENSHOT=work / f'{name}.ppm')
         with (work / f'{name}.log').open('w') as log:
-            proc = subprocess.Popen([str(exe), '--script', str(root / 'scripts/character_workshop_smoke.input'),
+            proc = subprocess.Popen([str(exe), '--script', str(sciv.ROOT / 'scripts/character_workshop_smoke.input'),
                                      str(args.rom.resolve())], cwd=work, env=env,
-                                    stdout=log, stderr=log, startupinfo=startup)
+                                    stdout=log, stderr=log, startupinfo=sciv.hidden_window())
             try:
                 if on_started:
                     deadline = time.monotonic() + 30

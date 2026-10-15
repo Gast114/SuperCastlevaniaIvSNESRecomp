@@ -1,46 +1,26 @@
 """Isolated smoke checks for START 2; never writes the installed character pack."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
-import os
-from pathlib import Path
 import re
-import shutil
-import subprocess
-import tempfile
 from PIL import Image
+
+import sciv_test_support as sciv
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--rom', required=True)
+sciv.add_build_arg(parser)
 args = parser.parse_args()
-root = Path(__file__).resolve().parents[1]
-work = Path(tempfile.mkdtemp(prefix='campaign-check-', dir=root / 'build'))
-print(work, flush=True)
+build = sciv.build_dir(args)
+work = sciv.work_dir(build, 'campaign-check-')
 
 
 def run(case):
     name, script, frames, shot_frame = case
     folder = work / name
-    folder.mkdir()
-    exe = folder / 'SuperCastlevaniaIvSNESRecomp.exe'
-    shutil.copy2(root / 'build/Release' / exe.name, exe)
-    shutil.copytree(root / 'build/Release/assets', folder / 'assets')
-    (folder / 'config.ini').write_text(
-        '[General]\nAutosave=0\nSkipLauncher=1\n'
-        '[Graphics]\nNewRenderer=1\nWidescreen=1\nOutputMethod=OpenGL\nVSync=0\n'
-        '[Sound]\nEnableAudio=0\n')
-    env = {k: v for k, v in os.environ.items() if not k.startswith('SNESRECOMP_')}
-    env.update(SNESRECOMP_RUN_FRAMES=str(frames),
-               SNESRECOMP_SCREENSHOT_FRAME=str(shot_frame),
-               SNESRECOMP_SCREENSHOT=str(folder / 'frame.ppm'),
-               SNESRECOMP_CAMPAIGN_PROBE='1')
-    startup = subprocess.STARTUPINFO()
-    startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    startup.wShowWindow = 0
-    with (folder / 'game.log').open('w') as log:
-        subprocess.run([str(exe), '--script', str(root / 'scripts' / script), args.rom],
-                       cwd=folder, env=env, startupinfo=startup, stdout=log,
-                       stderr=log, timeout=180, check=True)
-    log = (folder / 'game.log').read_text()
+    sciv.prepare(folder, build, {'Graphics': {'Widescreen': 1}})
+    log = sciv.run(folder, script, args.rom, sciv.clean_env(
+        SNESRECOMP_RUN_FRAMES=frames, SNESRECOMP_SCREENSHOT_FRAME=shot_frame,
+        SNESRECOMP_SCREENSHOT=folder / 'frame.ppm', SNESRECOMP_CAMPAIGN_PROBE=1))
     shot = Image.open(folder / 'frame.ppm').convert('RGB')
     shot.save(folder / 'frame.png')
     assert shot.getbbox(), f'{name}: black screen'
