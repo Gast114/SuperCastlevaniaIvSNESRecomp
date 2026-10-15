@@ -272,7 +272,6 @@ void GameDrawPpuFrame(void)
         ppu_runLine(g_ppu, line);
     }
     Cv4CharacterEnd(g_ppu);
-    Cv4CampaignAfterRaster();
 }
 
 /* g_resume_pc and the bridge execution context are not currently serialized

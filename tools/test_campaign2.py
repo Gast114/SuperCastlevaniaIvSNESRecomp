@@ -1,4 +1,4 @@
-"""Isolated smoke checks for START 2; never writes the installed character pack."""
+"""Isolated smoke checks for NEW GAME+; never writes the installed character pack."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import re
@@ -25,7 +25,8 @@ def run(case):
     shot.save(folder / 'frame.png')
     assert shot.getbbox(), f'{name}: black screen'
     if name == 'room':
-        assert 'choice=1 active=1' in log
+        # NEW GAME+ (entry 3) starts like START once confirmed, with the tag set.
+        assert 'choice=3' in log and 'choice=0 pending=0 active=1' in log
         positions = [tuple(map(int, p)) for p in re.findall(
             r'\[campaign_room\] frame=(\d+) x=(\d+) y=(\d+)', log)]
         assert any(y < 150 for _, _, y in positions), 'jump did not leave floor'

@@ -139,6 +139,7 @@ target_sources(SuperCastlevaniaIvSNESRecomp PRIVATE
       src/character_tuning.cpp
     src/campaign2.c
     src/lua_commands.c
+    src/title_menu.c
     src/widescreen_fill.c)
 target_include_directories(SuperCastlevaniaIvSNESRecomp PRIVATE
     ${SNESRECOMP_ROOT}/host

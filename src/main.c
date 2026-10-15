@@ -39,6 +39,7 @@
 #include "snes/snes.h"
 #include "character_pack.h"
 #include "lua_commands.h"
+#include "title_menu.h"
 #include "widescreen_fill.h"
 
 #ifndef __ANDROID__
@@ -153,6 +154,7 @@ static void Cv4RomLoaded(const uint8_t *rom, size_t size)
  * on the next simulated frame. */
 static void Cv4BeforeRunFrame(void)
 {
+    Cv4TitleMenuBind();
     Cv4BindWidescreenObjectBounds();
     Cv4SyncWidescreenObjectBounds();
 }

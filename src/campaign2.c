@@ -1,6 +1,7 @@
-/* START 2 is a host-authored sandbox, not the retail game's second quest.
- * The unused WRAM tag follows quick saves/rewind. All room overrides are gated
- * by it; selecting ordinary START leaves the original campaign untouched. */
+/* NEW GAME+ is a host-authored sandbox campaign, chosen from the native title
+ * menu entry that title_menu.c adds. The unused WRAM tag follows quick
+ * saves/rewind. All room overrides are gated by it; selecting ordinary START
+ * leaves the original campaign untouched. */
 #include "campaign2.h"
 #include "common_rtl.h"
 #include "snes/ppu.h"
@@ -10,7 +11,6 @@
 extern unsigned char g_ram[0x20000];
 extern Ppu *g_ppu;
 enum { CAMPAIGN_TAG=0x11e0, CAMPAIGN_MAGIC=0xc402, FLOOR_Y=192 };
-static unsigned menu, previousPad, previousPhase;
 static int pending;
 static unsigned word(unsigned a){return g_ram[a]|g_ram[a+1]<<8;}
 static void put(unsigned a,unsigned v){g_ram[a]=(unsigned char)v;g_ram[a+1]=(unsigned char)(v>>8);}
@@ -30,28 +30,23 @@ static void roomPhysics(void){
     put(0x13f0,0x400);
 }
 void Cv4CampaignBeforeFrame(void){
-    unsigned phase=word(0x32),pad=RtlGetPadState(0),pressed=pad&~previousPad;
-    previousPad=pad;
-    if(phase==0){pending=0;put(CAMPAIGN_TAG,0);menu=0;}
-    if(phase==1){
-        if(previousPhase!=1)menu=0;
-        if(pressed&0x20)menu=(menu+1)%4;
-        if(pressed&0x10)menu=(menu+3)%4;
-        put(0x1e02,menu<2?0:menu-1);
-        if(pressed&8){pending=menu==1;put(CAMPAIGN_TAG,0);}
-        RtlSetPadState(0,pad&~0x30u);
-    }
+    unsigned phase=word(0x32);
+    /* Logo, title menu: nothing is chosen (yet). */
+    if(phase==0 || phase==1){pending=0;put(CAMPAIGN_TAG,0);}
+    /* The confirmation ($00:8715) branches on the retail entries only. Once
+     * NEW GAME+ (entry 3) has blinked, let it start like START and remember
+     * the campaign for the first room. */
+    if(phase==3 && g_ram[0x34]>=2 && word(0x1e02)==3){pending=1;put(0x1e02,0);}
     if(pending && phase==4 && word(0x70)==5){
         put(CAMPAIGN_TAG,CAMPAIGN_MAGIC);pending=0;
         put(0x54a,128);put(0x54e,FLOOR_Y-27);
         put(0x558,0);put(0x55a,0);put(0x55c,0);put(0x55e,0);
     }
     if(room())roomPhysics();
-    previousPhase=phase;
     if(getenv("SNESRECOMP_CAMPAIGN_PROBE")){
         static unsigned frame,old=~0u;
         unsigned state=phase|(word(0x70)<<8)|(word(0x1e02)<<16);
-        if(state!=old){fprintf(stderr,"[campaign] frame=%u phase=%u/%u menu=%u choice=%u active=%d\n",frame,phase,word(0x70),word(0x1e02),menu,room());old=state;}
+        if(state!=old){fprintf(stderr,"[campaign] frame=%u phase=%u/%u choice=%u pending=%d active=%d\n",frame,phase,word(0x70),word(0x1e02),pending,room());old=state;}
         if(room() && frame%20==0)fprintf(stderr,"[campaign_room] frame=%u x=%u y=%u\n",frame,word(0x54a),word(0x54e));
         if(++frame==1300){FILE*f=fopen("campaign-ram.bin","wb");if(f){fwrite(g_ram,1,sizeof(g_ram),f);fclose(f);}}
     }
@@ -72,25 +67,4 @@ void Cv4CampaignRasterLine(int line){
     p->hScroll[0]=0;p->vScroll[0]=0xffff;
     p->screenEnabled[0]=0x11;p->screenEnabled[1]=0;
     p->screenWindowed[0]=p->screenWindowed[1]=0;p->cgadsub=0;p->cgwsel=0;
-}
-static const char letters[]="AC EINOPRSTU2>";
-static const unsigned char glyphs[][7]={
- {14,17,17,31,17,17,17},{14,17,16,16,16,17,14},{0},
- {31,16,16,30,16,16,31},{14,4,4,4,4,4,14},{17,25,21,19,17,17,17},
- {14,17,17,17,17,17,14},{30,17,17,30,16,16,16},{30,17,17,30,20,18,17},
- {15,16,16,14,1,1,30},{31,4,4,4,4,4,4},{17,17,17,17,17,17,14},
- {14,17,1,2,4,8,31},{16,8,4,2,4,8,16}};
-static void text(int x,int y,const char*s,unsigned color){
-    for(;*s;s++,x+=6){const char*g=strchr(letters,*s);if(!g)continue;
-        for(int dy=0;dy<7;dy++)for(int dx=0;dx<5;dx++)if(glyphs[g-letters][dy]&(16>>dx))
-            ((unsigned*)(g_ppu->renderBuffer+(y+dy)*g_ppu->renderPitch))[g_ppu->extraLeftRight+x+dx]=color;
-    }
-}
-void Cv4CampaignAfterRaster(void){
-    if(word(0x32)!=1 || !g_ppu->renderBuffer)return;
-    for(int y=148;y<199;y++)for(int x=69;x<194;x++)
-        ((unsigned*)(g_ppu->renderBuffer+y*g_ppu->renderPitch))[g_ppu->extraLeftRight+x]=0x101014;
-    const char*options[]={"START","START 2","CONTINUE","OPTION"};
-    for(unsigned i=0;i<4;i++)text(102,151+12*i,options[i],i==menu?0xa0f898:0x589850);
-    text(88,151+12*menu,">",0xa0f898);
 }
