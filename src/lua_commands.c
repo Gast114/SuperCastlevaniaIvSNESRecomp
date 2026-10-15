@@ -21,6 +21,24 @@
 
 extern Ppu *g_ppu;
 
+/* VRAM, CGRAM, OAM (+ high table) as one raw little-endian file, for offline
+ * tilemap analysis: 0x10000 + 0x200 + 0x200 + 0x20 bytes. */
+static int Cv4LuaDump(const char *path, char *result, size_t capacity)
+{
+    FILE *f = path[0] && g_ppu ? fopen(path, "wb") : NULL;
+    if (!f) {
+        snprintf(result, capacity, "cannot write '%s'", path);
+        return 0;
+    }
+    fwrite(g_ppu->vram, 1, sizeof(g_ppu->vram), f);
+    fwrite(g_ppu->cgram, 1, sizeof(g_ppu->cgram), f);
+    fwrite(g_ppu->oam, 1, sizeof(g_ppu->oam), f);
+    fwrite(g_ppu->highOam, 1, sizeof(g_ppu->highOam), f);
+    fclose(f);
+    snprintf(result, capacity, "vram+cgram+oam");
+    return 1;
+}
+
 /* The last rasterized field as RGB PNG (renderBuffer is 0x00RRGGBB). */
 static int Cv4LuaScreenshot(const char *path, char *result, size_t capacity)
 {
@@ -89,8 +107,8 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
                                     (unsigned)g_ppu->bgmode);
         for (int i = 0; i < 4 && n < capacity; i++)
             n += (size_t)snprintf(result + n, capacity - n,
-                "%s{\"map\":%u,\"wide\":%d,\"tall\":%d,\"big\":%d,\"h\":%u,\"v\":%u}",
-                i ? "," : "", (unsigned)PPU_bgTilemapAdr(g_ppu, i),
+                "%s{\"map\":%u,\"tiles\":%u,\"wide\":%d,\"tall\":%d,\"big\":%d,\"h\":%u,\"v\":%u}",
+                i ? "," : "", (unsigned)PPU_bgTilemapAdr(g_ppu, i), (unsigned)PPU_bgTileAdr(g_ppu, i),
                 PPU_bgTilemapWider(g_ppu, i) != 0, PPU_bgTilemapHigher(g_ppu, i) != 0,
                 PPU_bigTiles(g_ppu, i) != 0, (unsigned)g_ppu->hScroll[i],
                 (unsigned)g_ppu->vScroll[i]);
@@ -100,12 +118,21 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
                      (unsigned)g_ppu->extraRightCur);
         return 1;
     }
+    if (!strcmp(name, "dump"))
+        return Cv4LuaDump(args, result, capacity);
+    if (!strcmp(name, "layers")) {
+        /* Host-only render filter (bit0=BG1 .. bit3=BG4, bit4=OBJ); applies
+         * from the next rasterized field. */
+        g_snes_ppu_dbg_layer_mask = args[0] ? (uint8_t)strtoul(args, NULL, 0) : 0xff;
+        snprintf(result, capacity, "0x%02x", (unsigned)g_snes_ppu_dbg_layer_mask);
+        return 1;
+    }
     if (!strcmp(name, "reset")) {
         RtlReset(1);   /* keep battery SRAM, like the console's reset button */
         snprintf(result, capacity, "reset");
         return 1;
     }
-    snprintf(result, capacity, "unknown command '%s' (screenshot, save, load, ppu, reset)", name);
+    snprintf(result, capacity, "unknown command '%s' (screenshot, save, load, ppu, dump, layers, reset)", name);
     return 0;
 }
 

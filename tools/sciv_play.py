@@ -12,6 +12,8 @@ every step reproducible. Output is JSON, one object per command.
   python tools/sciv_play.py shot out.png          # last rasterized field
   python tools/sciv_play.py save 1 | load 1 | reset
   python tools/sciv_play.py ppu                   # BG modes, tilemaps, scroll, widescreen margins
+  python tools/sciv_play.py dump vram.bin         # VRAM+CGRAM+OAM raw (0x10000+0x200+0x200+0x20)
+  python tools/sciv_play.py layers 0x11           # render filter for later shots (bit0=BG1..bit4=OBJ)
   python tools/sciv_play.py peek 0x54a 2          # read WRAM (bytes, little endian)
   python tools/sciv_play.py poke 0x1f0 3          # write one WRAM byte
   python tools/sciv_play.py eval "return emu.framecount()"
@@ -180,6 +182,8 @@ def main():
         sub.add_parser(name).add_argument('slot', type=int)
     sub.add_parser('reset')
     sub.add_parser('ppu')
+    sub.add_parser('dump').add_argument('path')
+    sub.add_parser('layers').add_argument('mask', nargs='?', default='0xff')
     p = sub.add_parser('peek')
     p.add_argument('addr', type=lambda v: int(v, 0))
     p.add_argument('count', type=int, nargs='?', default=1)
@@ -210,13 +214,21 @@ def main():
             out({'result': result, **read_state(lua)})
         elif args.cmd == 'ppu':
             out(json.loads(lua.eval('return game.command("ppu")')['values'][0]))
+        elif args.cmd == 'dump':
+            path = str(Path(args.path).resolve())
+            out({'dump': path, 'result': lua.eval(f'return game.command("dump", {json.dumps(path)})')['values'][0]})
+        elif args.cmd == 'layers':
+            out({'layers': lua.eval(f'return game.command("layers", "{args.mask}")')['values'][0]})
         elif args.cmd == 'reset':
             lua.eval('return game.command("reset")')
             out(read_state(lua))
         elif args.cmd == 'peek':
-            values = lua.eval(f'local t={{}} for i=0,{args.count - 1} do t[#t+1]=mainmemory.read_u8({args.addr}+i) end '
-                              'return table.concat(t,",")')['values'][0]
-            data = [int(v) for v in values.split(',')]
+            data = []
+            for offset in range(0, args.count, 128):   # the bridge reply size is bounded
+                n = min(128, args.count - offset)
+                values = lua.eval(f'local t={{}} for i=0,{n - 1} do t[#t+1]=mainmemory.read_u8({args.addr + offset}+i) end '
+                                  'return table.concat(t,",")')['values'][0]
+                data += [int(v) for v in values.split(',')]
             out({'addr': hex(args.addr), 'bytes': data, 'le': sum(b << (8 * i) for i, b in enumerate(data))})
         elif args.cmd == 'poke':
             lua.eval(f'mainmemory.write_u8({args.addr},{args.value})')

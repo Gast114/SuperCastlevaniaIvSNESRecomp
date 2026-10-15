@@ -39,6 +39,7 @@
 #include "snes/snes.h"
 #include "character_pack.h"
 #include "lua_commands.h"
+#include "widescreen_fill.h"
 
 #ifndef __ANDROID__
 #define SDL_MAIN_HANDLED 1
@@ -173,29 +174,74 @@ static void Cv4PrepareFrame(int drawable_w, int drawable_h,
     *frame_h = 224;
 }
 
+/* Which picture the guest is showing, from its own state machine (game mode
+ * $32, mode step $34, level phase $70, pre-level step $72; see
+ * D:\Reverse Engineering\docs\sc4\analysis.md and $00:945B/$00:94A0). */
+enum Cv4Scene {
+    kCv4Scene_Other,
+    kCv4Scene_Title,     /* title intro, title menu and its confirmation */
+    kCv4Scene_Prologue,  /* attract: tombstone and the scrolling story text */
+    kCv4Scene_Gate,      /* new game: Simon before the castle gate ($02:FEA8) */
+    kCv4Scene_Level,     /* a block is loaded or running, also the demo */
+};
+
+/* Scene names as assets/widescreen_margins.txt uses them. */
+static const char *Cv4SceneName(enum Cv4Scene scene)
+{
+    switch (scene) {
+    case kCv4Scene_Title: return "title";
+    case kCv4Scene_Prologue: return "prologue";
+    case kCv4Scene_Gate: return "gate";
+    case kCv4Scene_Level: return "level";
+    default: return NULL;
+    }
+}
+
+static enum Cv4Scene Cv4CurrentScene(void)
+{
+    unsigned mode = g_ram[0x32], step = g_ram[0x34];
+    unsigned phase = g_ram[0x70], pre_level = g_ram[0x72];
+    if (mode == 1 || mode == 3 || (mode == 2 && step == 0))
+        return kCv4Scene_Title;
+    if (mode == 2 && step == 1)
+        return kCv4Scene_Prologue;
+    if (mode == 4 && phase == 0)
+        return pre_level == 3 ? kCv4Scene_Gate : kCv4Scene_Other;
+    if (mode == 4 || (mode == 2 && step == 2))
+        return kCv4Scene_Level;
+    return kCv4Scene_Other;
+}
+
 static void Cv4BeginSimFrame(unsigned number)
 {
     (void)number;
-    /* Be explicit about the conservative first-pass policy. World BG1/BG2
-     * use the wider tilemap raster, while BG3 stays in the authored field.
+    enum Cv4Scene scene = Cv4CurrentScene();
+    /* World BG1/BG2 use the wider tilemap raster, while BG3 (status display
+     * and text) stays in the authored field. The title logo is BG1 on a
+     * 32-column map that wraps into both margins as a second copy; keep it in
+     * the authored field there and let the seamless BG2 wall fill the sides.
      * This is reapplied after PpuSetExtraSpace resets per-frame policies. */
-    PpuSetWidescreenLayerClamp(g_ppu, 1u << 2);
+    PpuSetWidescreenLayerClamp(g_ppu, (1u << 2) | (scene == kCv4Scene_Title ? 1u : 0u));
     /* SCIV uses hardware windows for masks and color math throughout normal
      * scenes. Treat authored edges at the native screen boundary as edges of
      * the widened field too, otherwise valid BG margin pixels are masked back
      * to the fixed-color backdrop. This changes host presentation only. */
     PpuSetWidescreenWindowExpansion(g_ppu, 0x3fu, 0x03u);
-    /* Stage 1 has uninitialised tilemap data immediately left of its opening
-     * camera lock. Open that margin progressively as the camera moves into
-     * valid room space; after one widescreen margin it is centred normally.
-     * The right margin remains fully visible throughout. */
-    if (g_config.widescreen && g_ram[0x0032] == 0x04 && g_ram[0x0086] == 0x00) {
-        int camera = g_ram[0x001c] | ((int)g_ram[0x001d] << 8);
-        int lock_left = g_ram[0x00a0] | ((int)g_ram[0x00a1] << 8);
-        PpuSetExtraSideSpace(g_ppu, camera - lock_left,
-                            g_ppu->extraLeftRight, 0);
+    /* Columns left of world x 0 are never built: the room builder ($06:965F)
+     * clamps negative columns to column 0 and the streamer stays inside the
+     * camera lock. Its +-48 px lead already covers both margins everywhere
+     * else. At a block's left edge the margin therefore samples stale VRAM --
+     * visibly so through the slower parallax BG2 of block 1-1. Reflect both
+     * world layers about world x 0 instead. Only near the start: hScroll is a
+     * 10-bit register, and further in it wraps back to small values. */
+    if (scene == kCv4Scene_Level && (g_ram[0x1d] < 0x02)) {
+        PpuSetWidescreenLayerWorldMirrorBand(g_ppu, 0, 0, 224, 0, 0xffff);
+        PpuSetWidescreenLayerWorldMirrorBand(g_ppu, 1, 0, 224, 0, 0xffff);
     }
     Cv4CharacterBegin(g_ppu, g_ram);
+    /* Cutscenes drawn as one 256-pixel picture get designed margin columns
+     * (assets/widescreen_margins.txt) instead of whatever else their map holds. */
+    Cv4MarginFillApply(g_ppu, Cv4SceneName(scene));
 }
 
 static const SnesDesktopHostGame kGameHost = {

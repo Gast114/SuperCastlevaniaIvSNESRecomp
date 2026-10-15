@@ -1,0 +1,21 @@
+# Designed widescreen margins: columns composed from each scene's own tiles.
+# Format and semantics: src/widescreen_fill.c. Scenes: src/main.c (Cv4SceneName).
+# The 4:3 field of a scene at hScroll 0 is map columns 0-31; the right margin
+# is 32-37 and the left margin 58-63 (6 columns = 48 px >= the 43 px margin).
+# Design the maps with tools/re/render_map.py on a `sciv_play.py dump`.
+
+# New game: Simon before the castle gate ($02:FEA8). BG2 holds the wall, the
+# gate and the castle as one picture in columns 0-31; the rest of its map is
+# empty. The artists built the picture mirror-symmetric about the gate (the
+# right half is the left half with flipped tiles), so continue it the same way
+# past both edges: wall, trees, skull heaps and the path run on seamlessly.
+gate copy BG2 32-37 26 0-27 hflip
+gate copy BG2 58-63 0 0-27 hflip
+
+# Prologue: the tombstone. BG2 repeats the picture every 32 columns, but its
+# second copy carries unrelated tiles in the sky; use the clean first copy.
+prologue copy BG2 32-37 0 0-31
+prologue copy BG2 58-63 26 0-31
+# The BG1 fog waits just outside the 4:3 field before it drifts in; show it
+# in the margins only on rows it has already reached.
+prologue follow BG1
