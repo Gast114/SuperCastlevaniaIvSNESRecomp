@@ -11,6 +11,7 @@ every step reproducible. Output is JSON, one object per command.
   python tools/sciv_play.py wait 60               # advance N frames, no input
   python tools/sciv_play.py shot out.png          # last rasterized field
   python tools/sciv_play.py save 1 | load 1 | reset
+  python tools/sciv_play.py loadfile build/debug_markers/<id>/state.sav
   python tools/sciv_play.py ppu                   # BG modes, tilemaps, scroll, widescreen margins
   python tools/sciv_play.py dump vram.bin         # VRAM+CGRAM+OAM raw (0x10000+0x200+0x200+0x20)
   python tools/sciv_play.py layers 0x11           # render filter for later shots (bit0=BG1..bit4=OBJ)
@@ -181,6 +182,7 @@ def main():
     for name in ('save', 'load'):
         sub.add_parser(name).add_argument('slot', type=int)
     sub.add_parser('reset')
+    sub.add_parser('loadfile').add_argument('path')
     sub.add_parser('ppu')
     sub.add_parser('dump').add_argument('path')
     sub.add_parser('layers').add_argument('mask', nargs='?', default='0xff')
@@ -219,6 +221,10 @@ def main():
             out({'dump': path, 'result': lua.eval(f'return game.command("dump", {json.dumps(path)})')['values'][0]})
         elif args.cmd == 'layers':
             out({'layers': lua.eval(f'return game.command("layers", "{args.mask}")')['values'][0]})
+        elif args.cmd == 'loadfile':
+            path = str(Path(args.path).resolve())
+            result = lua.eval(f'return game.command("loadfile", {json.dumps(path)})')['values'][0]
+            out({'result': result, **read_state(lua)})
         elif args.cmd == 'reset':
             lua.eval('return game.command("reset")')
             out(read_state(lua))

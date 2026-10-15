@@ -38,7 +38,9 @@
 #include "snes/ppu.h"
 #include "snes/snes.h"
 #include "character_pack.h"
+#include "debug_marker.h"
 #include "lua_commands.h"
+#include "scene.h"
 #include "title_menu.h"
 #include "widescreen_fill.h"
 
@@ -214,6 +216,11 @@ static enum Cv4Scene Cv4CurrentScene(void)
     return kCv4Scene_Other;
 }
 
+const char *Cv4CurrentSceneName(void)
+{
+    return Cv4SceneName(Cv4CurrentScene());
+}
+
 static void Cv4BeginSimFrame(unsigned number)
 {
     (void)number;
@@ -272,6 +279,11 @@ static const SnesDesktopHostGame kGameHost = {
     /* Battery-backed SRAM shows the launcher's SAVES panel. Leave NULL for a
      * title without one. The path is exe-relative. */
     .sram_path           = "saves/save.srm",
+    /* Ctrl+D / Select+L3: freeze, record and describe a problem spot. */
+    .debug_marker_open    = &Cv4DebugMarkerOpen,
+    .debug_marker_is_open = &Cv4DebugMarkerIsOpen,
+    .debug_marker_event   = &Cv4DebugMarkerEvent,
+    .debug_marker_pump    = &Cv4DebugMarkerPump,
 };
 
 #ifndef __ANDROID__

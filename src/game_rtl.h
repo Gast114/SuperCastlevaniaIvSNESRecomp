@@ -7,6 +7,8 @@
 void GameRunOneFrame(void);
 void GameDrawPpuFrame(void);
 void GameSessionReset(void);
+/* Guest frames run since boot (restored by save states). */
+unsigned GameFrameNumber(void);
 
 extern const RtlGameInfo kGameInfo;
 

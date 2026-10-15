@@ -3,7 +3,8 @@
  * A -DSNESRECOMP_ENABLE_LUA=ON build started with SNESRECOMP_LUA_PORT lets a
  * local client drive the game through Lua; game.command(name, args) reaches
  * the handler below for what the BizHawk-style API cannot do: capture the
- * presented field, save/load a state slot, and reset the console.
+ * presented field and the PPU, save/load a state slot or file, and reset the
+ * console.
  * tools/sciv_play.py is the client. Ordinary builds compile this to nothing.
  */
 #include "lua_commands.h"
@@ -14,62 +15,12 @@
 #include <string.h>
 
 #include "common_rtl.h"
+#include "debug_capture.h"
 #include "host_main.h"
 #include "lua_bridge.h"
 #include "snes/ppu.h"
-#include "third_party/stb_image_write.h"
 
 extern Ppu *g_ppu;
-
-/* VRAM, CGRAM, OAM (+ high table) as one raw little-endian file, for offline
- * tilemap analysis: 0x10000 + 0x200 + 0x200 + 0x20 bytes. */
-static int Cv4LuaDump(const char *path, char *result, size_t capacity)
-{
-    FILE *f = path[0] && g_ppu ? fopen(path, "wb") : NULL;
-    if (!f) {
-        snprintf(result, capacity, "cannot write '%s'", path);
-        return 0;
-    }
-    fwrite(g_ppu->vram, 1, sizeof(g_ppu->vram), f);
-    fwrite(g_ppu->cgram, 1, sizeof(g_ppu->cgram), f);
-    fwrite(g_ppu->oam, 1, sizeof(g_ppu->oam), f);
-    fwrite(g_ppu->highOam, 1, sizeof(g_ppu->highOam), f);
-    fclose(f);
-    snprintf(result, capacity, "vram+cgram+oam");
-    return 1;
-}
-
-/* The last rasterized field as RGB PNG (renderBuffer is 0x00RRGGBB). */
-static int Cv4LuaScreenshot(const char *path, char *result, size_t capacity)
-{
-    int w = snesrecomp_desktop_frame_width(), h = snesrecomp_desktop_frame_height();
-    if (!g_ppu || !g_ppu->renderBuffer || w <= 0 || h <= 0 || !path[0]) {
-        snprintf(result, capacity, "no frame to capture (or empty path)");
-        return 0;
-    }
-    uint8_t *rgb = malloc((size_t)w * h * 3);
-    if (!rgb) {
-        snprintf(result, capacity, "out of memory");
-        return 0;
-    }
-    for (int y = 0; y < h; y++) {
-        const uint32_t *row = (const uint32_t *)(g_ppu->renderBuffer + (size_t)y * g_ppu->renderPitch);
-        for (int x = 0; x < w; x++) {
-            uint8_t *out = &rgb[((size_t)y * w + x) * 3];
-            out[0] = (uint8_t)(row[x] >> 16);
-            out[1] = (uint8_t)(row[x] >> 8);
-            out[2] = (uint8_t)row[x];
-        }
-    }
-    int ok = stbi_write_png(path, w, h, 3, rgb, w * 3);
-    free(rgb);
-    if (!ok) {
-        snprintf(result, capacity, "cannot write %s", path);
-        return 0;
-    }
-    snprintf(result, capacity, "%dx%d", w, h);
-    return 1;
-}
 
 static int Cv4LuaSlot(const char *args, int *slot)
 {
@@ -87,7 +38,7 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
     if (!strcmp(name, "__reset"))
         return 1;
     if (!strcmp(name, "screenshot"))
-        return Cv4LuaScreenshot(args, result, capacity);
+        return Cv4CaptureFieldPng(args, result, capacity);
     if (!strcmp(name, "save") || !strcmp(name, "load")) {
         if (!Cv4LuaSlot(args, &slot)) {
             snprintf(result, capacity, "slot must be 0..9");
@@ -99,27 +50,23 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
     }
     if (!strcmp(name, "ppu")) {
         /* Layer configuration the widescreen policy depends on, as JSON. */
-        if (!g_ppu) {
+        if (!Cv4CapturePpuJson(result, capacity)) {
             snprintf(result, capacity, "no ppu");
             return 0;
         }
-        size_t n = (size_t)snprintf(result, capacity, "{\"bgmode\":%u,\"layers\":[",
-                                    (unsigned)g_ppu->bgmode);
-        for (int i = 0; i < 4 && n < capacity; i++)
-            n += (size_t)snprintf(result + n, capacity - n,
-                "%s{\"map\":%u,\"tiles\":%u,\"wide\":%d,\"tall\":%d,\"big\":%d,\"h\":%u,\"v\":%u}",
-                i ? "," : "", (unsigned)PPU_bgTilemapAdr(g_ppu, i), (unsigned)PPU_bgTileAdr(g_ppu, i),
-                PPU_bgTilemapWider(g_ppu, i) != 0, PPU_bgTilemapHigher(g_ppu, i) != 0,
-                PPU_bigTiles(g_ppu, i) != 0, (unsigned)g_ppu->hScroll[i],
-                (unsigned)g_ppu->vScroll[i]);
-        if (n < capacity)
-            snprintf(result + n, capacity - n, "],\"extra\":%u,\"left\":%u,\"right\":%u}",
-                     (unsigned)g_ppu->extraLeftRight, (unsigned)g_ppu->extraLeftCur,
-                     (unsigned)g_ppu->extraRightCur);
         return 1;
     }
-    if (!strcmp(name, "dump"))
-        return Cv4LuaDump(args, result, capacity);
+    if (!strcmp(name, "dump")) {
+        int ok = Cv4CaptureVideoDump(args);
+        snprintf(result, capacity, ok ? "vram+cgram+oam" : "cannot write '%s'", args);
+        return ok;
+    }
+    if (!strcmp(name, "loadfile")) {
+        /* A save state outside the slots, e.g. a debug marker's state.sav. */
+        int ok = RtlLoadSnapshot(args);
+        snprintf(result, capacity, ok ? "loaded %s" : "cannot load '%s'", args);
+        return ok;
+    }
     if (!strcmp(name, "layers")) {
         /* Host-only render filter (bit0=BG1 .. bit3=BG4, bit4=OBJ); applies
          * from the next rasterized field. */
@@ -132,7 +79,7 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
         snprintf(result, capacity, "reset");
         return 1;
     }
-    snprintf(result, capacity, "unknown command '%s' (screenshot, save, load, ppu, dump, layers, reset)", name);
+    snprintf(result, capacity, "unknown command '%s' (screenshot, save, load, loadfile, ppu, dump, layers, reset)", name);
     return 0;
 }
 

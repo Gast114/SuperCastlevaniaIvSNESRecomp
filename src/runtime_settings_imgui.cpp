@@ -1,5 +1,6 @@
 #include "runtime_settings_imgui.h"
 #include "character_pack.h"
+#include "debug_marker.h"
 
 #include "recomp_runtime_ui.h"
 #include "imgui.h"
@@ -77,7 +78,17 @@ extern "C" void Cv4RuntimeSettingsImGuiProcessEvent(const void *event_ptr) {
 
 extern "C" void Cv4RuntimeSettingsImGuiRender(void *ui_ptr, int width,
                                                 int height) {
-  if (!s_initialized || !ui_ptr) return;
+  if (!s_initialized) return;
+  if (Cv4DebugMarkerIsOpen()) {
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
+    Cv4DebugMarkerDraw();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    return;
+  }
+  if (!ui_ptr) return;
   if (!recomp_runtime_ui_is_open(static_cast<RecompRuntimeUi *>(ui_ptr))) return;
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL3_NewFrame();

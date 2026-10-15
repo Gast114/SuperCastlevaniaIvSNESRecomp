@@ -343,6 +343,11 @@ const RtlGameInfo kGameInfo = {
     .exec_state_bound = &GameExecutionStateBound,
 };
 
+unsigned GameFrameNumber(void)
+{
+    return g_frame_number;
+}
+
 void GameSessionReset(void)
 {
     /* Rematch / soft-return: clear anything that must not survive a new
