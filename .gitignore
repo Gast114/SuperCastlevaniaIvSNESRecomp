@@ -36,3 +36,6 @@
 /build/*/simon_full_frames.reference.png
 
 .DS_Store
+
+# Python bytecode from the tools/ test helpers
+__pycache__/

@@ -38,6 +38,7 @@
 #include "snes/ppu.h"
 #include "snes/snes.h"
 #include "character_pack.h"
+#include "lua_commands.h"
 
 #ifndef __ANDROID__
 #define SDL_MAIN_HANDLED 1
@@ -144,6 +145,7 @@ static void Cv4RomLoaded(const uint8_t *rom, size_t size)
 {
     if (rom)
         Cv4CharacterInit(rom, (unsigned)size);
+    Cv4LuaCommandsInstall();
 }
 
 /* Before every guest frame, so a view change from the pause menu takes effect

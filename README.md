@@ -175,6 +175,43 @@ Either way the ROM is checked against the digests above before anything boots
 — a dump that could not have produced this build is refused at the door rather
 than mis-executing ten frames in.
 
+## Regression tests
+
+The tests in `tools/` need your ROM and Pillow. They run the game hidden in
+throwaway folders under the build directory and never touch your config,
+saves or character packs:
+
+```sh
+python tools/test_campaign2.py --rom PATH --build-dir build
+```
+
+`--build-dir` accepts a single-config (Ninja) build directory or a
+multi-config one containing `Release/`; it defaults to `build/Release`, then
+`build`. The other suites (`test_startup`, `test_character_pack`,
+`test_character_stairs`, `test_character_tuning`) take the same arguments.
+
+## Automation (Lua over TCP)
+
+A build configured with `-DSNESRECOMP_ENABLE_LUA=ON` serves the framework's
+BizHawk-style Lua bridge (`snesrecomp/docs/LUA_TCP.md`) when
+`SNESRECOMP_LUA_PORT` is set. `tools/sciv_play.py` drives such a build: it
+starts an isolated, paused session and advances the game only on command,
+so every step is reproducible.
+
+```sh
+cmake -S . -B build-lua -G Ninja -DCMAKE_BUILD_TYPE=Release -DSNESRECOMP_ENABLE_LUA=ON
+cmake --build build-lua
+python tools/sciv_play.py start --build-dir build-lua --widescreen
+python tools/sciv_play.py press Start 2      # hold buttons for N frames
+python tools/sciv_play.py wait 240           # advance N frames
+python tools/sciv_play.py state              # JSON: frame and named RAM fields
+python tools/sciv_play.py shot frame.png     # last rasterized field
+python tools/sciv_play.py save 1 / load 1 / reset / stop
+```
+
+The game commands behind `shot`, `save`, `load` and `reset` live in
+`src/lua_commands.c`. Ordinary builds compile none of this.
+
 ## Layout
 
 | Path | What lives there |
