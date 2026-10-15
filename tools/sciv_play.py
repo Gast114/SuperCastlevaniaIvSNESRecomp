@@ -11,6 +11,7 @@ every step reproducible. Output is JSON, one object per command.
   python tools/sciv_play.py wait 60               # advance N frames, no input
   python tools/sciv_play.py shot out.png          # last rasterized field
   python tools/sciv_play.py save 1 | load 1 | reset
+  python tools/sciv_play.py ppu                   # BG modes, tilemaps, scroll, widescreen margins
   python tools/sciv_play.py peek 0x54a 2          # read WRAM (bytes, little endian)
   python tools/sciv_play.py poke 0x1f0 3          # write one WRAM byte
   python tools/sciv_play.py eval "return emu.framecount()"
@@ -178,6 +179,7 @@ def main():
     for name in ('save', 'load'):
         sub.add_parser(name).add_argument('slot', type=int)
     sub.add_parser('reset')
+    sub.add_parser('ppu')
     p = sub.add_parser('peek')
     p.add_argument('addr', type=lambda v: int(v, 0))
     p.add_argument('count', type=int, nargs='?', default=1)
@@ -206,6 +208,8 @@ def main():
         elif args.cmd in ('save', 'load'):
             result = lua.eval(f'return game.command("{args.cmd}", "{args.slot}")')['values'][0]
             out({'result': result, **read_state(lua)})
+        elif args.cmd == 'ppu':
+            out(json.loads(lua.eval('return game.command("ppu")')['values'][0]))
         elif args.cmd == 'reset':
             lua.eval('return game.command("reset")')
             out(read_state(lua))

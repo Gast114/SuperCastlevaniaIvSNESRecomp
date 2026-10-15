@@ -79,12 +79,33 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
         snprintf(result, capacity, "%s %d", name, slot);
         return 1;
     }
+    if (!strcmp(name, "ppu")) {
+        /* Layer configuration the widescreen policy depends on, as JSON. */
+        if (!g_ppu) {
+            snprintf(result, capacity, "no ppu");
+            return 0;
+        }
+        size_t n = (size_t)snprintf(result, capacity, "{\"bgmode\":%u,\"layers\":[",
+                                    (unsigned)g_ppu->bgmode);
+        for (int i = 0; i < 4 && n < capacity; i++)
+            n += (size_t)snprintf(result + n, capacity - n,
+                "%s{\"map\":%u,\"wide\":%d,\"tall\":%d,\"big\":%d,\"h\":%u,\"v\":%u}",
+                i ? "," : "", (unsigned)PPU_bgTilemapAdr(g_ppu, i),
+                PPU_bgTilemapWider(g_ppu, i) != 0, PPU_bgTilemapHigher(g_ppu, i) != 0,
+                PPU_bigTiles(g_ppu, i) != 0, (unsigned)g_ppu->hScroll[i],
+                (unsigned)g_ppu->vScroll[i]);
+        if (n < capacity)
+            snprintf(result + n, capacity - n, "],\"extra\":%u,\"left\":%u,\"right\":%u}",
+                     (unsigned)g_ppu->extraLeftRight, (unsigned)g_ppu->extraLeftCur,
+                     (unsigned)g_ppu->extraRightCur);
+        return 1;
+    }
     if (!strcmp(name, "reset")) {
         RtlReset(1);   /* keep battery SRAM, like the console's reset button */
         snprintf(result, capacity, "reset");
         return 1;
     }
-    snprintf(result, capacity, "unknown command '%s' (screenshot, save, load, reset)", name);
+    snprintf(result, capacity, "unknown command '%s' (screenshot, save, load, ppu, reset)", name);
     return 0;
 }
 
