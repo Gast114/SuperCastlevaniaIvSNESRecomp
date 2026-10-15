@@ -13,6 +13,10 @@
 #include <sstream>
 #include <iomanip>
 #include <set>
+#include <condition_variable>
+#include <mutex>
+#include <optional>
+#include <thread>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -79,6 +83,36 @@ void save(Pack&p,bool image){
   p.manifestTime=fs::last_write_time(path(p,"character.json"));
   if(image)p.imageTime=fs::last_write_time(path(p,"body.png"));
 }
+// Writing the 768x3072 template PNG takes hundreds of milliseconds; doing it
+// on the game thread froze play on every newly collected pose. Captures mark
+// the template dirty, at most one snapshot per second goes to this writer
+// thread, and the newest snapshot replaces an unwritten older one.
+class TemplateWriter {
+  std::mutex mutex; std::condition_variable wake; std::optional<Pack> next; bool stopping=false;
+  std::thread thread{[this]{run();}};
+  void run(){
+    for(;;){
+      Pack p;
+      {std::unique_lock<std::mutex> lock(mutex);wake.wait(lock,[&]{return next.has_value()||stopping;});
+       if(!next)return;p=std::move(*next);next.reset();}
+      try{save(p,true);}catch(const std::exception&e){fprintf(stderr,"[characters] template not saved: %s\n",e.what());}
+    }
+  }
+public:
+  void submit(const Pack&p){{std::lock_guard<std::mutex> lock(mutex);next=p;}wake.notify_one();}
+  void finish(){{std::lock_guard<std::mutex> lock(mutex);stopping=true;}wake.notify_one();if(thread.joinable())thread.join();}
+  ~TemplateWriter(){finish();}
+};
+TemplateWriter templateWriter;
+bool templateDirty=false;
+unsigned templateSubmitted=0;
+void flushTemplate(bool force){
+  if(!templateDirty||(!force&&ticks-templateSubmitted<60))return;
+  templateWriter.submit(reference);templateDirty=false;templateSubmitted=ticks;
+}
+// Destroyed before `reference` and the writer's own state: queue the last
+// unsaved poses and wait for them, so a session's captures survive exit.
+struct TemplateFlushAtExit{~TemplateFlushAtExit(){flushTemplate(true);templateWriter.finish();}} templateFlushAtExit;
 Pack load(const std::string&directory){
   Pack p;p.directory=directory;
   auto file=path(p,"character.json");if(fs::file_size(file)>1024*1024)throw std::runtime_error("Manifest too large");
@@ -166,7 +200,7 @@ void captureFrame(const uint8_t*r){
   f.label="Pose "+currentId.substr(0,4)+" state "+std::to_string(word(r,0x552));
   int bx=f.cell%Columns*Cell,by=f.cell/Columns*Cell;
   for(int y=0;y<Cell;++y)std::copy_n(body.data()+y*Cell,Cell,reference.pixels.data()+(by+y)*Width+bx);
-  reference.frames.push_back(f);save(reference,true);
+  reference.frames.push_back(f);templateDirty=true;
   fprintf(stderr,"[characters] captured %s (%zu body frames)\n",f.id.c_str(),reference.frames.size());
 }
 void publish(Ppu*p,const uint8_t*r){
@@ -224,6 +258,7 @@ extern "C" void Cv4CharacterBegin(Ppu*p,const uint8_t*r){
     std::copy_n(r,previousPoseRam.size(),previousPoseRam.begin());
     havePreviousPose=visible;
     if(matched){captureFrame(r);publish(p,r);}
+    flushTemplate(false);
     if(visible&&std::getenv("SNESRECOMP_CHARACTER_TRACE"))fprintf(stderr,"[character_frame] %u matched=%d replaced=%d id=%s clipped=%d\n",ticks,matched,p->hostObjPixels!=nullptr,matched?currentId.c_str():"unknown",matched&&edgeClipped);
   }catch(const std::exception&e){status=e.what();p->hostObjPixels=nullptr;}
 }
