@@ -1,4 +1,4 @@
-# Arbeitsstand & Übergabe (Stand 2026-10-15)
+# Arbeitsstand & Übergabe (Stand 2026-10-15, Abend)
 
 Kurzreferenz für die nächste Sitzung. Antworten an den Nutzer auf Deutsch.
 RAM-Map / Spielmodi: `D:\Reverse Engineering\docs\sc4\analysis.md`.
@@ -7,51 +7,55 @@ RAM-Map / Spielmodi: `D:\Reverse Engineering\docs\sc4\analysis.md`.
 - Privat & lokal: kein Push (origin/upstream haben Push-URL `DISABLE`). ROM und generierter Code nie ins Repo.
 - Installieren/Git ohne Nachfrage erlaubt. Laufendes Spiel darf geschlossen werden.
 - Ergänzungen im Spiel müssen **nativ** aussehen (Spielschrift, Tilemap, echter Cursor), keine Overlays.
+- Fehlt im Widescreen-Rand Bildinhalt, wird er **selbst gestaltet** (aus den Tiles der Szene), nicht abgeschnitten oder mit Fremdinhalt gelassen.
 - Kennzeichnen, was verifiziert (gebaut/ausgeführt/gelesen) vs. Vermutung ist. Token sparen, Qualität halten.
 
 ## Git
-- Arbeitsbranch `dev` (lokal): e0c822a Framework-Update · b70585b Tests · fb05f9f Reset/Savestate/Widescreen-Bind · 0770320 Lua-Schnittstelle · (+ Commit für async Posen-Speichern, siehe unten).
-- Framework `snesrecomp` = lokaler Branch `sciv` (RetroPortingToolKit main a6be975 + 2 Rasmus-Commits + a4e0d83 Lua-Host). **Nur lokal** in `.git/modules/snesrecomp`; Spiegel-Backup: `D:Super Castlevania IV Recompbackupsnesrecomp-sciv.git` (nach Framework-Commits mit `git -C <backup> fetch` aktualisieren). `recomp-ui` = 5ca3df2. Pins in `framework_pins.txt`.
+- Arbeitsbranch `dev` (lokal): … fb05f9f Reset/Savestate/Widescreen-Bind · 0770320 Lua · 777832f async Posen · 6ea1aaa RE-Tools/Handoff · **633733b Widescreen-Ränder** · **aac6d65 natives NEW GAME+** · (+ Handoff-Commit).
+- Framework `snesrecomp` = lokaler Branch `sciv` (RetroPortingToolKit main a6be975 + 2 Rasmus-Commits + a4e0d83 Lua-Host). **Nur lokal** in `.git/modules/snesrecomp`; Spiegel-Backup: `D:\Super Castlevania IV Recomp\backup\snesrecomp-sciv.git` (nach Framework-Commits mit `git -C <backup> fetch` aktualisieren). `recomp-ui` = 5ca3df2. Pins in `framework_pins.txt`. In dieser Sitzung **keine** Framework-Änderung.
 - Identität repo-lokal: `Gast114 <Gast114@users.noreply.github.com>`.
 
 ## Builds (alle gitignored)
 | Ordner | Zweck |
 |---|---|
-| `build/` | Nutzer-Build, jetzt **Release** (enthält seine `config.ini`, `characters/`, `saves/`) |
+| `build/` | Nutzer-Build, **Release** (seine `config.ini`, `characters/`, `saves/`); auf aac6d65 neu gebaut |
 | `build-dev/` | Release für Tests |
 | `build-lua/` | `-DSNESRECOMP_ENABLE_LUA=ON` für `tools/sciv_play.py` |
-| `build-diag/` | `-DSNESRECOMP_ENABLE_PPU_DMA_HISTORY=ON` (DMA-Ring im `last_run_report.json`) |
+| `build-diag/` | `-DSNESRECOMP_ENABLE_PPU_DMA_HISTORY=ON` |
 | `build-audit/` | Wegwerf-Ausgaben |
 
 Neu konfigurieren: `cmake -S . -B <dir> -G Ninja -DCMAKE_BUILD_TYPE=Release -DSNESRECOMP_SDL3_SOURCE_DIR="<repo>/build/_deps/sdl3-src"` (kein Download).
 Toolchain: retcomm clang 22/CMake/Ninja im PATH; Python 3.15 + Pillow; Rust (`/c/Users/Gaming/.cargo/bin` in Bash-PATH aufnehmen); nativer Analyzer gebaut (`snesrecomp/recompiler-rs/target/release/snesrecomp-analyze.exe`).
 
 ## Werkzeuge
-- Tests: `python tools/test_<name>.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-dev` (startup, campaign2, character_pack, character_stairs, character_tuning – alle grün).
-- Spielsteuerung: `tools/sciv_play.py start --build-dir build-lua --widescreen --fast`, dann `press Right 30`, `wait N`, `state`, `ppu`, `shot x.png`, `save/load N`, `reset`, `peek/poke`, `eval`, `stop`. Startet pausiert, deterministisch.
-- RE: `tools/re/dis65.py <rom> BB:AAAA [n] [m] [x]` (lineare Disassembly, verfolgt REP/SEP); `tools/re/run_mesen.ps1 -Script <lua>` (Mesen headless, Lua mit `emu.addMemoryCallback`); `tools/re/mesen_column_trace.lua` (Beispiel: wer schreibt `$7E:2C00`); `tools/re/contact_sheet.py`.
-- Headless-Lauf ohne Lua: Umgebungsvariablen `SNESRECOMP_RUN_FRAMES`, `SNESRECOMP_SCREENSHOT(_FRAME)`, `SNESRECOMP_SCREENSHOT_DIR/FROM/TO`, `SNESRECOMP_HOST_PROFILE=1` (+`_START_FRAME`), `SNESRECOMP_LAYER_MASK` (Bit0=BG1…), `--script <file>.input`.
+- Tests: `python tools/test_<name>.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-dev` (startup, campaign2, character_pack, character_stairs, character_tuning – alle grün auf aac6d65).
+- Spielsteuerung: `tools/sciv_play.py start --build-dir build-lua --widescreen --fast`, dann `press Right 30`, `wait N`, `state`, `ppu` (jetzt mit Tile-Basis `tiles`), `shot x.png`, `save/load N`, `reset`, `peek/poke` (peek beliebig lang), `eval`, `stop`. Neu: `dump f.bin` (VRAM+CGRAM+OAM roh), `layers 0x02` (Ebenenfilter für folgende Shots, ohne Argument = alle).
+  - Ablauf ohne Savestate: Boot → `wait 300` → `press Start 3` (Titel) → `press Start 3` (Bestätigung) → `wait 200` → `press Start 3` (Name überspringen) → `wait 300` = Tor-Sequenz → `wait 430` = Block 1-1.
+- RE: `tools/re/dis65.py <rom> BB:AAAA [n] [m] [x]`; `tools/re/render_map.py dump.bin out.png --map 0x1000 --tiles 0x2000 --wide --tall --grid --scale 2` (ganze BG-Map mit Spaltennummern – zum Gestalten von Rändern); `tools/re/run_mesen.ps1`, `mesen_column_trace.lua`, `contact_sheet.py`.
+- 4:3-Bitgleichheit (P16) prüfen: gleiche `.input` headless mit altem und neuem Build, `SNESRECOMP_PRESENT_LOG=<csv>` schreibt CRC32 pro Bild → Frames vergleichen.
+- Headless: `SNESRECOMP_RUN_FRAMES`, `SNESRECOMP_SCREENSHOT(_FRAME)`, `SNESRECOMP_SCREENSHOT_DIR/FROM/TO`, `SNESRECOMP_LAYER_MASK`, `--script <file>.input`.
 
-## Erledigt & verifiziert
-- Framework-Update: Bilder pixelgleich, alle Tests grün.
-- Reset (Hook `hardware_reset`) → bootet sauber; Savestates speichern Resume-PC (Titel-Chunk).
-- Widescreen-Objekt-/Eventgrenzen jetzt auf `cart->rom` gebunden (wirkt beim Umschalten zur Laufzeit).
-- **Ruckeln = Posen-Speichern**: `body.png` (768×3072) wurde bei jeder neuen Pose synchron geschrieben (0,3–1,4 s Hänger, trat beim Peitschen/Springen auf). Jetzt Hintergrund-Thread, max. 1×/s, Flush beim Beenden. Gemessen: max. 3,3 ms statt 1383 ms.
-- Monitor läuft mit 60 Hz (3840×2160, Radeon 890M); Entkoppeln der Ausgabe verworfen (verschlechterte Takt).
+## Erledigt & verifiziert (diese Sitzung)
+- **Widescreen-Ränder** (633733b, `src/main.c` `Cv4CurrentScene` + `src/widescreen_fill.c`):
+  - Ursache war **nicht** der Ladeabstand: Horizontal-Streamer `$06:A0E6` lädt schon ±48 px (`LDA #$0130` / `#$FFD0` bei `$06:A146/A14D`), Raumaufbau `$06:965F` baut 47 Spalten X−56…X+312. Gemessen: 0 abweichende Pixel in den Rändern beim Laufen durch 1-1 (vor/zurück, BG1). (`$06:A15A/A1F0/A20A` = vertikal, `$06:A22C` = Metatile-Schreiber.)
+  - Titel: BG1-Logo-Map 32 Spalten → lief als Kopie in die Ränder; BG1 im Titel (Modus 1, 3, 2/0) auf 256 px geklemmt, BG2-Mauer füllt nahtlos.
+  - 1-1 links: links von Welt-X 0 baut das Spiel nie (negativ → Spalte 0); die Parallaxe-BG2 schaute dort hinein. Jetzt BG1+BG2 an Welt-X 0 gespiegelt (`PpuSetWidescreenLayerWorldMirrorBand`, nur Kamera < 512). Der alte „schwarze, wachsende Rand“-Hack ist entfernt.
+  - Tor-Sequenz (Modus 4, `$70`=0, `$72`=3, `$02:FEA8`) und Prolog/Grabstein (Modus 2/1): gestaltete Randspalten aus `assets/widescreen_margins.txt` (Tor: gespiegelte Fortsetzung wie das selbst spiegelsymmetrisch gebaute Original; Grabstein: saubere erste Bildkopie statt Fremd-Tiles; Nebel BG1 `follow` = Rand nur in Zeilen, die der Nebel im 4:3-Bild schon erreicht hat). Angewendet auf eine reine Darstellungs-VRAM-Kopie (`ppu->renderVram`), Datei wird im laufenden Spiel bei Änderung neu geladen.
+  - P16: 4:3 bitgleich außer Titelmenü (beabsichtigt). Widescreen ändert sich nur in Titel, Tor, Levelanfang.
+- **Natives NEW GAME+** (aac6d65, `src/title_menu.c`, 7 Guarded Patches, all-or-nothing): START (Zeile 17), NEW GAME+ (19), CONTINUE (21), OPTION (23); „PLAY SELECT“ auf Wunsch entfernt. Index `$1E02`: 0 START, 1 CONTINUE, 2 OPTION, **3 NEW GAME+**; Navigation per Tabellen in Anzeigereihenfolge. Herz-Cursor (`$27`), Blinken beim Bestätigen nativ. „+“ = neues Tile `$33`, vom Spiel-Loader entpackt. `campaign2.c` macht aus bestätigter 3 → START + Kampagnen-Tag `$11E0=$C402` (Sandbox-Raum wie vorher). Overlay-Menü entfernt. Verifiziert: Navigation, Blinken, Tag/Raum, CONTINUE → Modus 6, OPTION → Modus 5 (Test).
+
+## RE-Notizen (neu, gelesen bzw. ausgeführt)
+- Modus 4, `$70`=0: `$72` 1 = Namenseingabe (`$03:8000`), 3 = Tor (`$02:FEA8`), 4 = Spielinit (`$00:94C5`; `$1E02`≠0 behält `$86`).
+- Asset-Loader `$02:80E8` Typ 0: `00 00` + Einträge `[VRAM-Wort lo,hi][Quelle lo,hi,bank]`, Ende `FF FF`. Titel-Liste `$01:B5A7` (Font `$07:8DC9`→`$5000`, Satzzeichen `$07:8FF4`→`$5180`).
+- LZ-Entpacker `$02:863D`: Kopf u16 Gesamtlänge; `<$80` Rückverweis, `$80–9F` Literal (n=c&31), `$A0–BF` 0/Byte-Wechsel, `$C0–DF` RLE Byte (n+2), `$E0–FF` RLE 0 (n+2); 1-KB-Ringpuffer.
+- BG3-Font: `$01–$0A` 0–9, `$0B–$24` A–Z, `$25` =, `$26` -, `$27` Herz-Cursor, `$2E` ©, `$30` „,“, `$31` „.“, ab `$33` frei (`$33` jetzt „+“ im Titel).
+- Freier ROM-Platz `$01:FF24–FFFF`: belegt bis `$01:FFDE`, **33 Byte frei** (`$01:FFDF–FFFF`).
+- Menü-Routinen (`008607–00BB39`) sind `lle_only` → ROM-Patches wirken; AOT nur laut `src/gen/program_manifest.json`.
 
 ## Offene Aufgaben (Priorität)
-1. **Widescreen-Ränder** (Nutzer-Screenshots: Block 1-1 Müll links; Weg zum Schlosstor: rechts nur Nebel verschmiert; Titelbild: Logo wiederholt sich).
-   - BG1 Tilemap `$4000`, **64 Spalten breit**; BG2 `$4800` 64 breit; BG3 `$5800` (HUD). BG mode 9. BG1/BG2 hScroll = `$1C`−1, vScroll = `$1E`−1 (Block 1-1).
-   - Spalten-Upload: VRAM-Queue-Puffer `$7E:2C00`, DMA nach `$4000+Spalte` (28 Wörter, VMAIN+32) und `$4B00+Spalte` (4 Wörter).
-   - Spaltenbauer: `$06:A20A…` (Direct Page = Ebenen-Struktur, nicht 0! `STX $FC/STY $FE`, `JMP $A19C`), Schreibschleife `$06:A266/A26D/A274/A27B` (4 Einträge × 7). **Nächster Schritt:** `$06:A19C` und Aufrufer von `$06:A20A` disassemblieren, Stelle finden, an der die Spalte relativ zur Kamera gewählt wird (Vorlauf nur 1 Spalte außerhalb 256 px) → per Guarded Patch auf ±48 px erweitern (wie Objektgrenzen in `src/main.c`). Auch Initial-Aufbau beim Raumstart prüfen.
-   - Fallback: Framework-Modul `snesrecomp/runner/src/snes/ws_shadow.h` (`WsShadowSetWorld`, `SetRetainHistory`, `WsShadowFrame` in `begin_sim_frame`).
-   - Sprites im Rand: zweites Gate im OAM-Aufbau suchen (Doku `snesrecomp/docs/WIDESCREEN_PATTERNS.md` P8).
-2. **Natives Titelmenü „NEW GAME+“** (ersetzt START-2-Overlay in `src/campaign2.c`; Position: unter START).
-   - Textdeskriptoren Bank `$01`: `[VRAM-Adr lo,hi][Zeichen…]`, `FE`=nächste Adresse, `FF`=Ende. A=`$0B`…Z=`$24`, Leer=`$00`, Ziffer 1=`$02`, `>`=`$27`, ©=`$2E`. `+` prüfen (Font-Tiles), ggf. eigenes Tile.
-   - Init `$00:9385`: `JSL $009051` mit X=`$8531` (PLAY SELECT, Zeile 17 + Copyright Zeile 25), `$8577` START (Zeile 19, VRAM `$5A6C`), `$857F` CONTINUE (`$5AAC`), `$858A` OPTION (`$5AEC`). Abstand 2 Zeilen (`+$40`).
-   - Eingabe `$00:93EC`: Auswahl `$1E02`, Umlauf `LDA #$0002` bei `$00:940C`, `CMP #$0003` bei `$00:941A`; Cursor-Tabelle `$01:8B2B` → Deskriptoren `$01:8593/859F/85AB` (`>` in einer Zeile, Rest leer).
-   - Bestätigung Modus 3: Blinken `$00:86F4` über Tabelle `$01:82C6`; Verzweigung `$00:8715`: 0=Spiel, 2=Optionen, sonst Continue.
-   - Plan: PLAY SELECT 2 Zeilen hoch, 4 Einträge im Originalabstand, neue Tabellen in freiem Platz `$01:FF24–$01:FFFF` (220 Byte `FF`), Index 3 → Spielstart + Kampagnen-Tag (`$11E0=$C402`). Alle Routinen laufen im Interpreter → Guarded Patches auf `cart->rom` wirken.
-3. **Code neu generieren** mit nativem Analyzer: `symbols.toml` setzt bei `emit=false` jetzt `force_lle` für Reset/NMI → vorher `emit=true` setzen, um den getesteten AOT-Stand zu halten; Ausgabe mit altem `src/gen` vergleichen, Tests laufen lassen.
-4. Idee des Nutzers (später): Er spielt Testszenen ein → je Szene Savestate am Anfang + aufgezeichnete Eingaben (Framework-Hooks `frame_begin/frame_end` in `RtlGameInfo`, Upstream `--resume-state`), die ich deterministisch abspiele und per Bild-/Checksummen-Vergleich prüfe (Szenen-Regressionstests).
-5. Später: Level-Editor, Gegner-Mods, Zufallsmodus, HD-Pipeline (automatischer Export/Import der Grafiken für KI-Upscaling), Android, Mods als Pakete im Launcher.
+1. **Savestate-Laden außerhalb des Gameplays defekt**: ein im Titel oder Attract gespeicherter State friert nach dem Laden ein (`$3A` steht, Start ohne Wirkung), auch im selben Prozess. Gameplay-States (Modus 4) laden korrekt. Vermutlich fehlender Bridge-/CPU-Kontext (NMI-Schachtelung bei `$00:8551`) – `GameStateSaveExtra` in `src/game_rtl.c` prüfen.
+2. **Widescreen weiter**: andere Stages prüfen (vertikale Schächte, Levelenden rechts, Bossräume, Modus 7), Namenseingabe-/CONTINUE-/OPTION-Bildschirme und Abspann (Modus 7) – ggf. weitere Szenen in `widescreen_margins.txt` gestalten (Ablauf: `dump` → `render_map.py --grid` → Regeln → live prüfen). Prolog-Textphase: kleine Nebellücke links oben. Sprites im Rand: zweites Gate im OAM-Aufbau (`snesrecomp/docs/WIDESCREEN_PATTERNS.md` P8). Option: 1-1-Weltkante statt Spiegelung gestalten, falls der Nutzer das möchte.
+3. **NEW GAME+-Inhalt**: startet derzeit den Host-Sandbox-Raum aus `campaign2.c`. Echte NG+-Regeln (z. B. Fortschritt übernehmen) mit dem Nutzer klären.
+4. **Code neu generieren** mit nativem Analyzer: `symbols.toml` setzt bei `emit=false` jetzt `force_lle` für Reset/NMI → vorher `emit=true` setzen, um den getesteten AOT-Stand zu halten; Ausgabe mit altem `src/gen` vergleichen, Tests laufen lassen.
+5. Idee des Nutzers: Testszenen einspielen → Savestate + Eingaben je Szene, deterministisch abspielen, Bild-/CRC-Vergleich (Framework-Hooks `frame_begin/frame_end`, Upstream `--resume-state`). Hängt an Aufgabe 1.
+6. Später: Level-Editor, Gegner-Mods, Zufallsmodus, HD-Pipeline, Android, Mods als Pakete im Launcher.
