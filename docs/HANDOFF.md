@@ -1,4 +1,4 @@
-# Arbeitsstand & Übergabe (Stand 2026-10-15, spät)
+# Arbeitsstand & Übergabe (Stand 2026-10-18)
 
 Kurzreferenz für die nächste Sitzung. Antworten an den Nutzer auf Deutsch.
 RAM-Map / Spielmodi: `D:\Reverse Engineering\docs\sc4\analysis.md`.
@@ -9,6 +9,7 @@ RAM-Map / Spielmodi: `D:\Reverse Engineering\docs\sc4\analysis.md`.
 - Ergänzungen im Spiel müssen **nativ** aussehen (Spielschrift, Tilemap, echter Cursor), keine Overlays.
 - Fehlt im Widescreen-Rand Bildinhalt, wird er **selbst gestaltet** (aus den Tiles der Szene), nicht abgeschnitten oder mit Fremdinhalt gelassen.
 - Kennzeichnen, was verifiziert (gebaut/ausgeführt/gelesen) vs. Vermutung ist. Token sparen, Qualität halten.
+- Klarstellung des Nutzers: **NEW GAME+ bedeutet den originalen schwereren zweiten Durchgang nach dem Durchspielen** (wie START 2), nicht den Sandbox-Raum. Umsetzung noch offen, Bedeutung bereits geklärt.
 
 ## Git
 - Arbeitsbranch `dev` (lokal): … 633733b Widescreen-Ränder · aac6d65 natives NEW GAME+ · c81539d Handoff · **57b62dc Savestate-Ausführungszustand** · **6570042 Debug-Marker** · (+ Handoff-Commit).
@@ -18,7 +19,7 @@ RAM-Map / Spielmodi: `D:\Reverse Engineering\docs\sc4\analysis.md`.
 ## Builds (alle gitignored)
 | Ordner | Zweck |
 |---|---|
-| `build/` | Nutzer-Build, **Release** (seine `config.ini`, `characters/`, `saves/`, `debug_markers/`); auf 6570042 neu gebaut |
+| `build/` | Nutzer-Build, **Release** (seine `config.ini`, `characters/`, `saves/`, `debug_markers/`); HD-Vorbereitung vom 18.10. neu gebaut |
 | `build-dev/` | Release für Tests |
 | `build-lua/` | `-DSNESRECOMP_ENABLE_LUA=ON` für `tools/sciv_play.py` |
 | `build-diag/` | `-DSNESRECOMP_ENABLE_PPU_DMA_HISTORY=ON` |
@@ -29,12 +30,14 @@ Toolchain: retcomm clang 22/CMake/Ninja im PATH; Python 3.15 + Pillow; Rust (`/c
 
 ## Debug-Marker (vom Nutzer gesetzte Problemstellen – zuerst ansehen!)
 - Im Spiel **Strg+D** bzw. Pad **Select+L3** (`config.ini [KeyMap] DebugMarker`, `[Controller] DebugGesture`): Spiel friert ein, Notizfenster; Strg+Enter/A speichert, Esc/B verwirft.
-- Ablage: `build/debug_markers/<Datum>_<Uhrzeit>_<Szene>/` mit `note.md` (Beschreibung), `marker.json` (Szene, Frame, Modus/Block/Kamera/Spieler, PPU-Ebenen), `screen.png` (Bild inkl. Ränder), `state.sav`, `video.bin` (VRAM+CGRAM+OAM, für `render_map.py`), `wram.bin`.
+- Ablage: `build/debug_markers/<Datum>_<Uhrzeit>_<Szene>/` mit `note.md` (Beschreibung), `marker.json` (Szene, Frame, Modus/Block/Kamera/Spieler, PPU-Ebenen), `screen.png` (Bild inkl. Ränder), `state.sav`, `video.bin` (VRAM+CGRAM+OAM, für `render_map.py`), `wram.bin`. Neue Marker zusätzlich `lines.bin` (225×32 Byte Zeilenregister für die HD-Vorschau).
 - Auswerten: `python tools/debug_markers.py` (Liste, neueste zuerst), `... show <id-Präfix>`; nachstellen: `sciv_play.py start --build-dir build-lua --widescreen --fast` → `sciv_play.py loadfile build/debug_markers/<id>/state.sav` → `layers`/`shot`/`dump`/`press`.
 - Code: `src/debug_marker.cpp` (Aufnahme + ImGui-Panel), `src/debug_capture.c` (gemeinsam mit Lua-Befehlen), Framework-Hooks in `host_main.c` (`RunDebugMarkerLoop`). Selbsttest: `SNESRECOMP_DEBUG_MARKER_AT=<frame>` + `_NOTE=<text>` oder `_TYPE=<text>` (tippt über SDL-Ereignisse).
 
 ## Werkzeuge
-- Tests: `python tools/test_<name>.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-dev` (startup, campaign2, character_pack, character_stairs, character_tuning, debug_marker – alle grün auf 6570042).
+- **HD-Vorbereitung:** [HD_PIPELINE.md](HD_PIPELINE.md). Escape → HD graphics → Collect graphics while playing. Nach regulärem Beenden `python tools/hd/hd_pipeline.py --build build` (Real-ESRGAN) bzw. `--method nearest` (Identitätsprüfung). Ergebnis `build/hd_pack/`, Vorschau im neuesten Marker mit `lines.bin`. **Live-HD-Renderer noch nicht implementiert.**
+- **Grafikquellen des Nutzers:** 33 PNG-Bögen in `C:\Users\Gaming\Downloads\assets`; `python tools/hd/hd_sources.py` schreibt den Katalog nach `build/hd_work/source_sheets.json`. Originale unverändert, noch kein automatischer Sheet-Import. Stage-9-Hintergrundbogen fehlt in diesem Ordner.
+- Tests: `python tools/test_<name>.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-dev` (startup, campaign2, character_pack, character_stairs, character_tuning, debug_marker, hd_pipeline – alle sieben am 18.10. erneut grün).
 - Spielsteuerung: `tools/sciv_play.py start --build-dir build-lua --widescreen --fast`, dann `press Right 30`, `wait N`, `state`, `ppu` (jetzt mit Tile-Basis `tiles`), `shot x.png`, `save/load N`, `loadfile <state.sav>`, `reset`, `peek/poke` (peek beliebig lang), `eval`, `stop`. Neu: `dump f.bin` (VRAM+CGRAM+OAM roh), `layers 0x02` (Ebenenfilter für folgende Shots, ohne Argument = alle).
   - Ablauf ohne Savestate: Boot → `wait 300` → `press Start 3` (Titel) → `press Start 3` (Bestätigung) → `wait 200` → `press Start 3` (Name überspringen) → `wait 300` = Tor-Sequenz → `wait 430` = Block 1-1.
 - RE: `tools/re/dis65.py <rom> BB:AAAA [n] [m] [x]`; `tools/re/render_map.py dump.bin out.png --map 0x1000 --tiles 0x2000 --wide --tall --grid --scale 2` (ganze BG-Map mit Spaltennummern – zum Gestalten von Rändern); `tools/re/run_mesen.ps1`, `mesen_column_trace.lua`, `contact_sheet.py`.
@@ -42,6 +45,11 @@ Toolchain: retcomm clang 22/CMake/Ninja im PATH; Python 3.15 + Pillow; Rust (`/c
 - Headless: `SNESRECOMP_RUN_FRAMES`, `SNESRECOMP_SCREENSHOT(_FRAME)`, `SNESRECOMP_SCREENSHOT_DIR/FROM/TO`, `SNESRECOMP_LAYER_MASK`, `--script <file>.input`.
 
 ## Erledigt & verifiziert (diese Sitzung)
+- **HD-Vorbereitung (18.10.):** Claudes uncommittierten Stand übernommen und fertiggestellt: `hd_collect.cpp` erfasst BG1–3/Sprites, PNGs und Tile-Zuordnung im Hintergrund; eindeutige Sitzungsnamen erhalten frühere Aufnahmen, Warteschlange begrenzt, Schreibfehler werden gemeldet. Debug-Marker erhalten Zeilenregister; Werkzeuge unter `tools/hd/` skalieren, bauen Atlanten und rekonstruieren Marker. Quellprüfsummen verhindern veraltete Upscale-Caches. Exporte sind gitignored. Grenzen: Dokumentation lesen, insbesondere Modus 7, Effekte und Widescreen fehlen in der Vorschau.
+  - Verifiziert mit `test_hd_pipeline.py --rom ...`: **31.508 Tile-Vorkommen korrekt, 1320 Bild-CRCs mit/ohne Sammlung gleich**, 1-1-Marker pixelgenau rekonstruiert; Nearest-Paket identisch, zweiter Spielstart erhält alte Aufnahmen. Tests für Flips, Alpha, Cache und ungültige Maße ebenfalls grün.
+  - Real-ESRGAN lokal auf Radeon 890M ausgeführt: zwei Ebenenbilder → 446 HD-Tiles, teilweise HD-Vorschau in `build-audit/hd-realesrgan-review/`. Kein fertiges Vollspiel-Grafikpaket.
+  - `build-lua` gebaut, Titel mit `sciv_play.py` angefahren und Screenshot geprüft/gespeichert (`build-audit/hd-current-title.png`).
+  - Nutzer-Build `build/` war im Cache auf Debug gestellt; wieder als **Release** konfiguriert und gebaut, wie hier dokumentiert. Nutzerdateien bleiben erhalten.
 - **Widescreen-Ränder** (633733b, `src/main.c` `Cv4CurrentScene` + `src/widescreen_fill.c`):
   - Ursache war **nicht** der Ladeabstand: Horizontal-Streamer `$06:A0E6` lädt schon ±48 px (`LDA #$0130` / `#$FFD0` bei `$06:A146/A14D`), Raumaufbau `$06:965F` baut 47 Spalten X−56…X+312. Gemessen: 0 abweichende Pixel in den Rändern beim Laufen durch 1-1 (vor/zurück, BG1). (`$06:A15A/A1F0/A20A` = vertikal, `$06:A22C` = Metatile-Schreiber.)
   - Titel: BG1-Logo-Map 32 Spalten → lief als Kopie in die Ränder; BG1 im Titel (Modus 1, 3, 2/0) auf 256 px geklemmt, BG2-Mauer füllt nahtlos.
@@ -63,7 +71,8 @@ Toolchain: retcomm clang 22/CMake/Ninja im PATH; Python 3.15 + Pillow; Rust (`/c
 
 ## Offene Aufgaben (Priorität)
 1. **Widescreen weiter** – am besten anhand der Debug-Marker des Nutzers: andere Stages (vertikale Schächte, Levelenden rechts, Bossräume, Modus 7), Namenseingabe/CONTINUE/OPTION, Abspann; Sprites am Rand (zweites Gate im OAM-Aufbau, `snesrecomp/docs/WIDESCREEN_PATTERNS.md` P8); Prolog-Nebellücke links oben; optional 1-1-Weltkante gestalten statt spiegeln. Ablauf für neue Szenen: `dump` → `render_map.py --grid` → Regeln in `widescreen_margins.txt` → live prüfen.
-2. **NEW GAME+-Inhalt**: startet derzeit den Host-Sandbox-Raum aus `campaign2.c`; echte NG+-Regeln mit dem Nutzer klären.
+2. **NEW GAME+ korrekt anschließen:** Nutzer hat Bedeutung geklärt: originaler schwererer zweiter Durchgang. Retail-Abschluss-/Schwierigkeitsflag reverse-engineeren und den Menüeintrag daran anschließen; aktuell startet er weiterhin den Host-Sandbox-Raum aus `campaign2.c`.
 3. **Szenen-Regressionstests** (Idee des Nutzers): Marker-State + aufgezeichnete Eingaben deterministisch abspielen, CRC/Bild vergleichen (`SNESRECOMP_PRESENT_LOG`). Seit 57b62dc möglich; Eingabeaufzeichnung fehlt noch (Framework-Hooks `frame_begin/frame_end`, Upstream `--resume-state`).
 4. **Code neu generieren** mit nativem Analyzer: `symbols.toml` setzt bei `emit=false` jetzt `force_lle` für Reset/NMI → vorher `emit=true` setzen, um den getesteten AOT-Stand zu halten; Ausgabe mit altem `src/gen` vergleichen, Tests laufen lassen.
-5. Später: Level-Editor, Gegner-Mods, Zufallsmodus, HD-Pipeline, Android, Mods als Pakete im Launcher.
+5. **HD als nächster Ausbauschritt:** Live-Paketladen und hochauflösende BG-/Sprite-Komposition in PPU/Presenter; Widescreen, Fenster, Farbmathematik und Mode 7 prüfen. Grafikbögen aus Downloads als zusätzliche Quelle zuschneiden und zuordnen. Export-/Paket-/Vorschau-Stufe ist vorbereitet (HD_PIPELINE.md).
+6. Später: Level-Editor, Gegner-Mods, Zufallsmodus, Android, Mods als Pakete im Launcher.

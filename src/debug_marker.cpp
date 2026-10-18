@@ -6,6 +6,7 @@
  *   screen.png   the presented field, widescreen margins included
  *   video.bin    VRAM + CGRAM + OAM (tools/re/render_map.py)
  *   wram.bin     128 KB WRAM
+ *   lines.bin    per-scanline PPU registers (hd_collect.h)
  *   marker.json  scene, game state, PPU layers, the note
  *   note.md      the same for reading
  *
@@ -28,6 +29,7 @@
 #include <string>
 
 #include "debug_capture.h"
+#include "hd_collect.h"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "scene.h"
@@ -106,7 +108,7 @@ void Save() {
      << "- Szene: " << (g_scene.empty() ? "?" : g_scene) << ", Frame " << g_frame
      << ", Widescreen " << (Cv4CaptureWidescreenOn() ? "an" : "aus") << "\n"
      << "- Zustand: " << GameStateJson() << "\n"
-     << "- Dateien: state.sav, screen.png, video.bin, wram.bin, marker.json\n";
+     << "- Dateien: state.sav, screen.png, video.bin, wram.bin, lines.bin, marker.json\n";
   md.close();
   std::fprintf(stderr, "[debug marker] saved %s\n", g_dir.string().c_str());
   Close();
@@ -150,6 +152,13 @@ extern "C" int Cv4DebugMarkerOpen(void) {
   ok &= Cv4CaptureFieldPng((g_dir / "screen.png").string().c_str(), message, sizeof(message)) != 0;
   ok &= Cv4CaptureVideoDump((g_dir / "video.bin").string().c_str()) != 0;
   ok &= Cv4CaptureWram((g_dir / "wram.bin").string().c_str()) != 0;
+  {
+    /* Per-scanline registers of the frozen frame (hd_collect.h layout), so
+     * tools/hd/hd_preview.py can reconstruct supported layers and parallax. */
+    std::ofstream lines(g_dir / "lines.bin", std::ios::binary);
+    lines.write(reinterpret_cast<const char *>(Cv4HdLines()), sizeof(Cv4HdLine) * kCv4HdLines);
+    ok &= lines.good();
+  }
   char ppu[1024];
   g_ppu_json = Cv4CapturePpuJson(ppu, sizeof(ppu)) ? ppu : "";
   if (!ok)

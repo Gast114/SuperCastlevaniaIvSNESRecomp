@@ -39,6 +39,7 @@
 #include "snes/snes.h"
 #include "character_pack.h"
 #include "debug_marker.h"
+#include "hd_collect.h"
 #include "lua_commands.h"
 #include "scene.h"
 #include "title_menu.h"
@@ -253,6 +254,12 @@ static void Cv4BeginSimFrame(unsigned number)
     Cv4MarginFillApply(g_ppu, Cv4SceneName(scene));
 }
 
+/* Graphics still queued for hd_dump/ are written before the process ends. */
+static void Cv4Shutdown(void)
+{
+    Cv4HdFlush();
+}
+
 static const SnesDesktopHostGame kGameHost = {
     .display_name        = "Super Castlevania IV",
     .window_title        = "Super Castlevania IV",
@@ -279,6 +286,7 @@ static const SnesDesktopHostGame kGameHost = {
     /* Battery-backed SRAM shows the launcher's SAVES panel. Leave NULL for a
      * title without one. The path is exe-relative. */
     .sram_path           = "saves/save.srm",
+    .on_shutdown         = &Cv4Shutdown,
     /* Ctrl+D / Select+L3: freeze, record and describe a problem spot. */
     .debug_marker_open    = &Cv4DebugMarkerOpen,
     .debug_marker_is_open = &Cv4DebugMarkerIsOpen,

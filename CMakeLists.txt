@@ -140,6 +140,7 @@ target_sources(SuperCastlevaniaIvSNESRecomp PRIVATE
     src/campaign2.c
     src/debug_capture.c
     src/debug_marker.cpp
+    src/hd_collect.cpp
     src/lua_commands.c
     src/title_menu.c
     src/widescreen_fill.c)

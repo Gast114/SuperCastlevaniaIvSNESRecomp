@@ -42,6 +42,8 @@
 #include "game_rtl.h"
 #include "campaign2.h"
 #include "character_pack.h"
+#include "hd_collect.h"
+#include "scene.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -269,9 +271,11 @@ void GameDrawPpuFrame(void)
             trigger = g_snes->vIrqEnabled ? (int)g_snes->vTimer : -1;
         }
         Cv4CampaignRasterLine(line);
+        Cv4HdRecordLine(g_ppu, line);
         ppu_runLine(g_ppu, line);
     }
     Cv4CharacterEnd(g_ppu);
+    Cv4HdFrame(g_ppu, Cv4CurrentSceneName(), g_ram[0x86]);
 }
 
 /* Speculative rollback stays rejected: run-ahead would need the execution

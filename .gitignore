@@ -33,6 +33,10 @@
 /build/*/simon_full_frames.png
 /simon_full_frames.reference.png
 /characters/
+/hd_dump/
+/hd_work/
+/hd_pack/
+/debug_markers/
 /build/*/simon_full_frames.reference.png
 
 .DS_Store

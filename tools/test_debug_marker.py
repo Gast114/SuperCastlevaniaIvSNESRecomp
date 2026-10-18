@@ -24,6 +24,7 @@ marker = found[0]
 sizes = {p.name: p.stat().st_size for p in marker.iterdir()}
 assert sizes.get('wram.bin') == 0x20000, sizes
 assert sizes.get('video.bin') == 0x10000 + 0x200 + 0x200 + 0x20, sizes
+assert sizes.get('lines.bin') == 225 * 32, sizes
 assert sizes.get('state.sav', 0) > 100000, sizes
 assert Image.open(marker / 'screen.png').size == (342, 224)
 data = json.loads((marker / 'marker.json').read_text(encoding='utf-8'))

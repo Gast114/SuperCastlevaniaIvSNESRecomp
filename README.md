@@ -50,23 +50,30 @@ is not yet included in rollback snapshots. A saved nonzero preference now
 safely falls back to normal execution instead of speculating with incomplete
 state and hanging at startup.
 
-### START 2: empty starter campaign
+### NEW GAME+ title entry
 
-The title's PLAY SELECT menu now offers **START**, **START 2**, **CONTINUE**
-and **OPTION**. Use Up/Down and the normal Start button to select one.
-START still launches the original game; START 2 loads a separate, single-room
-sandbox after the normal opening sequence. It has a black background, a solid
-block floor, bounded movement, and Simon's existing jumping/attacking and
-character replacement support. There are no enemies, scenery, exits or timer
-deaths. The retail HUD is hidden in this empty room.
+The native title menu offers **START**, **NEW GAME+**, **CONTINUE** and
+**OPTION**, using the game's font, heart cursor and confirmation blink.
+Use Up/Down and Start to select an entry.
 
-This is a starting point for a new campaign, not a finished second adventure
-or a level editor. Room geometry/rendering and the title extension live in
-`src/campaign2.c`; the ROM file is not changed. Reset from Escape to return to
-the title. The campaign tag is included in RAM-based quick saves.
+NEW GAME+ is intended to select the original game's harder second playthrough
+after completion. Wiring that second-quest state is still pending: the current
+entry continues to load the earlier single-room sandbox from `src/campaign2.c`.
+START launches the original campaign. Reset from Escape to return to the title.
 
 Regression test (requires Pillow): `python tools/test_campaign2.py --rom PATH`.
 It checks both START choices, OPTION, empty-room rendering and jumping/landing.
+
+### HD graphics preparation
+
+**Escape > HD graphics > Collect graphics while playing** exports native
+background and sprite layers to `hd_dump/`. After playing, close the game and
+run `python tools/hd/hd_pipeline.py --build build` to upscale the collected
+layers, build a tile pack and preview a new debug marker with it. This is the
+export and offline preview stage; live HD replacement rendering is still pending.
+
+Setup, formats, limitations and local sprite-sheet sources are documented in
+[docs/HD_PIPELINE.md](docs/HD_PIPELINE.md).
 
 ### Character workshop: editable complete body frames
 

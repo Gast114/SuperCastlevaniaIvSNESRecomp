@@ -1,6 +1,7 @@
 #include "runtime_settings_imgui.h"
 #include "character_pack.h"
 #include "debug_marker.h"
+#include "hd_collect.h"
 
 #include "recomp_runtime_ui.h"
 #include "imgui.h"
@@ -30,6 +31,33 @@ static void ApplyStyle() {
   style.Colors[ImGuiCol_Header] = ImVec4(0.26f, 0.13f, 0.52f, 1.0f);
   style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.48f, 0.24f, 0.88f, 1.0f);
   style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.25f, 0.75f, 0.72f, 1.0f);
+}
+
+/* The export half of the HD pipeline (docs/HD_PIPELINE.md): collect the
+ * graphics while playing, then upscale and pack them with tools/hd/. */
+static void HdPanel() {
+  const ImVec2 display = ImGui::GetIO().DisplaySize;
+  ImGui::SetNextWindowPos({24, 45}, ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize({display.x - 48 < 560 ? display.x - 48 : 560, 0}, ImGuiCond_FirstUseEver);
+  if (!ImGui::Begin("HD graphics")) {
+    ImGui::End();
+    return;
+  }
+  bool collecting = Cv4HdCollecting() != 0;
+  if (ImGui::Checkbox("Collect graphics while playing", &collecting))
+    Cv4HdSetCollecting(collecting);
+  unsigned tiles = 0, captures = 0, pending = 0, errors = 0;
+  Cv4HdStats(&tiles, &captures, &pending, &errors);
+  ImGui::Text("%u different tiles this session, %u pictures written%s", tiles, captures,
+              pending ? " (writing...)" : "");
+  if (errors)
+    ImGui::TextWrapped("Writing failed; collection stopped. Check game.log and available disk space.");
+  ImGui::TextWrapped("Preparation: export, upscale and preview. Live HD rendering is the next step.");
+  ImGui::TextWrapped(
+      "Every layer is saved to hd_dump/ whenever it shows tiles that are not "
+      "collected yet. Play through the parts you want in HD, then run "
+      "tools/hd/hd_pipeline.py to upscale them and build the HD pack.");
+  ImGui::End();
 }
 
 extern "C" bool Cv4RuntimeSettingsImGuiInit(void *window, void *gl_context) {
@@ -93,17 +121,21 @@ extern "C" void Cv4RuntimeSettingsImGuiRender(void *ui_ptr, int width,
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL3_NewFrame();
   ImGui::NewFrame();
-  static bool character_tab = std::getenv("SNESRECOMP_CHARACTER_WORKSHOP_SELFTEST") != nullptr;
+  enum { kSettings, kCharacters, kHd };
+  static int tab = std::getenv("SNESRECOMP_CHARACTER_WORKSHOP_SELFTEST") ? kCharacters : kSettings;
   ImGui::SetNextWindowPos({8, 0});
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6, 3));
   ImGui::Begin("Settings tools", nullptr, ImGuiWindowFlags_NoDecoration |
       ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings);
-  if (ImGui::Button("Game settings")) character_tab = false;
+  if (ImGui::Button("Game settings")) tab = kSettings;
   ImGui::SameLine();
-  if (ImGui::Button("Character workshop")) character_tab = true;
+  if (ImGui::Button("Character workshop")) tab = kCharacters;
+  ImGui::SameLine();
+  if (ImGui::Button("HD graphics")) tab = kHd;
   ImGui::End();
   ImGui::PopStyleVar();
-  if (character_tab) Cv4CharacterEditor();
+  if (tab == kCharacters) Cv4CharacterEditor();
+  else if (tab == kHd) HdPanel();
   else recomp_runtime_ui_render_imgui(static_cast<RecompRuntimeUi *>(ui_ptr));
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
