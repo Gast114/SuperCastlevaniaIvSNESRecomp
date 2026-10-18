@@ -40,6 +40,7 @@
 #include "character_pack.h"
 #include "debug_marker.h"
 #include "hd_collect.h"
+#include "hd_render.h"
 #include "lua_commands.h"
 #include "scene.h"
 #include "title_menu.h"
@@ -258,6 +259,7 @@ static void Cv4BeginSimFrame(unsigned number)
 static void Cv4Shutdown(void)
 {
     Cv4HdFlush();
+    Cv4HdRenderShutdown();
 }
 
 static const SnesDesktopHostGame kGameHost = {
@@ -287,6 +289,8 @@ static const SnesDesktopHostGame kGameHost = {
      * title without one. The path is exe-relative. */
     .sram_path           = "saves/save.srm",
     .on_shutdown         = &Cv4Shutdown,
+    .presentation_scale  = &Cv4HdPresentationScale,
+    .draw_hd_frame       = &Cv4HdPresent,
     /* Ctrl+D / Select+L3: freeze, record and describe a problem spot. */
     .debug_marker_open    = &Cv4DebugMarkerOpen,
     .debug_marker_is_open = &Cv4DebugMarkerIsOpen,

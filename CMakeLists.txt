@@ -105,6 +105,8 @@ snesrecomp_target_sdl(SuperCastlevaniaIvSNESRecomp)
 # hooks; the host is the framework's and improves on a submodule pull.
 # Add TIER2 once this port reads the interpreter-gap manifest after each run.
 snesrecomp_target_desktop_host(SuperCastlevaniaIvSNESRecomp)
+include(${SNESRECOMP_ROOT}/runner/render_workers.cmake)
+snesrecomp_target_render_workers(SuperCastlevaniaIvSNESRecomp)
 # rom.cfg (the ROM the wizard set this project up from; git-ignored) is
 # staged beside the executable when none is there yet, so the first launch
 # opens on that dump rather than asking for one.
@@ -141,6 +143,7 @@ target_sources(SuperCastlevaniaIvSNESRecomp PRIVATE
     src/debug_capture.c
     src/debug_marker.cpp
     src/hd_collect.cpp
+    src/hd_render.cpp
     src/lua_commands.c
     src/title_menu.c
     src/widescreen_fill.c)

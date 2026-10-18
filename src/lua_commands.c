@@ -16,6 +16,7 @@
 
 #include "common_rtl.h"
 #include "debug_capture.h"
+#include "hd_render.h"
 #include "host_main.h"
 #include "lua_bridge.h"
 #include "snes/ppu.h"
@@ -39,6 +40,23 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
         return 1;
     if (!strcmp(name, "screenshot"))
         return Cv4CaptureFieldPng(args, result, capacity);
+    if (!strcmp(name, "hdshot")) {
+        int ok = Cv4HdScreenshot(args);
+        snprintf(result, capacity, ok ? "HD frame saved" : "No HD frame or cannot write file");
+        return ok;
+    }
+    if (!strcmp(name, "hd")) {
+        if (!strcmp(args, "on")) Cv4HdEnable(1);
+        else if (!strcmp(args, "off")) Cv4HdEnable(0);
+        else if (!strncmp(args, "scale ", 6)) Cv4HdSetScale(atoi(args + 6));
+        else if (!strncmp(args, "layers ", 7)) Cv4HdSetLayerMask(strtoul(args + 7, NULL, 0));
+        else if (!strncmp(args, "pack ", 5)) {
+            if (!Cv4HdLoadPack(args + 5)) { snprintf(result, capacity, "%s", Cv4HdStatus()); return 0; }
+        } else if (args[0]) { snprintf(result, capacity, "hd: on|off|scale N|layers MASK|pack PATH"); return 0; }
+        snprintf(result, capacity, "{\"enabled\":%d,\"scale\":%d,\"layers\":%u,\"tiles\":%u,\"art_scale\":%d,\"matched\":%u}",
+                 Cv4HdEnabled(), Cv4HdScale(), Cv4HdLayerMask(), Cv4HdPackTiles(), Cv4HdPackScale(), Cv4HdReplacedPixels());
+        return 1;
+    }
     if (!strcmp(name, "save") || !strcmp(name, "load")) {
         if (!Cv4LuaSlot(args, &slot)) {
             snprintf(result, capacity, "slot must be 0..9");

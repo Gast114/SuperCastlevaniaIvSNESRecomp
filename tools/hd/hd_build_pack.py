@@ -43,7 +43,7 @@ def main():
         s = up.shape[1] // hd.FIELD_W
         if scale is None:
             scale = s
-        if s not in range(1, 5) or s != scale or up.shape[:2] != (hd.FIELD_H * s, hd.FIELD_W * s):
+        if s not in range(1, 11) or s != scale or up.shape[:2] != (hd.FIELD_H * s, hd.FIELD_W * s):
             raise SystemExit(f'{up_path}: scale {s} does not match {scale}')
         for x, y, key, flip in hd.occurrences(tsv):
             if key not in tiles or flip not in range(4) or not (0 <= x <= hd.FIELD_W - 8 and 0 <= y <= hd.FIELD_H - 8):

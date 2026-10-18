@@ -64,15 +64,20 @@ START launches the original campaign. Reset from Escape to return to the title.
 Regression test (requires Pillow): `python tools/test_campaign2.py --rom PATH`.
 It checks both START choices, OPTION, empty-room rendering and jumping/landing.
 
-### HD graphics preparation
+### Switchable HD graphics
 
-**Escape > HD graphics > Collect graphics while playing** exports native
-background and sprite layers to `hd_dump/`. After playing, close the game and
-run `python tools/hd/hd_pipeline.py --build build` to upscale the collected
-layers, build a tile pack and preview a new debug marker with it. This is the
-export and offline preview stage; live HD replacement rendering is still pending.
+**Escape > HD graphics > HD graphics enabled** switches between original
+and replacement artwork. Backgrounds, text/HUD and sprites have separate
+switches. Choose a pack and 2x/4x/6x/10x output; missing artwork falls back to
+native pixels. 10x accepts 80x80 replacements per original 8x8 tile for a 4K
+output target. Pack artwork resolution and output resolution are independent.
+The current renderer preserves native silhouettes; this is an initial HD
+replacement path, not a complete remaster.
 
-Setup, formats, limitations and local sprite-sheet sources are documented in
+**Collect graphics while playing** exports to `hd_dump/`. After playing,
+`python tools/hd/hd_pipeline.py --build build` builds a replacement pack.
+`tools/hd/hd_tiles.py` exports editable tiles and builds separate art variants.
+Setup, controls, limitations and local sprite-sheet sources:
 [docs/HD_PIPELINE.md](docs/HD_PIPELINE.md).
 
 ### Character workshop: editable complete body frames

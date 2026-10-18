@@ -30,6 +30,7 @@
 
 #include "debug_capture.h"
 #include "hd_collect.h"
+#include "hd_render.h"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "scene.h"
@@ -45,7 +46,8 @@ bool g_open;
 bool g_focus_note;
 unsigned g_pumps;
 fs::path g_dir;
-std::string g_created, g_scene, g_ppu_json;
+std::string g_created, g_scene, g_ppu_json, g_hd_json;
+bool g_hd_image;
 unsigned g_frame;
 char g_note[4096];
 
@@ -100,6 +102,7 @@ void Save() {
        << "  \"scene\": \"" << g_scene << "\",\n"
        << "  \"widescreen\": " << (Cv4CaptureWidescreenOn()) << ",\n"
        << "  \"state\": " << GameStateJson() << ",\n"
+       << "  \"hd\": " << g_hd_json << ",\n"
        << "  \"ppu\": " << (g_ppu_json.empty() ? "null" : g_ppu_json) << "\n}\n";
   json.close();
   std::ofstream md(g_dir / "note.md", std::ios::binary);
@@ -109,6 +112,7 @@ void Save() {
      << ", Widescreen " << (Cv4CaptureWidescreenOn() ? "an" : "aus") << "\n"
      << "- Zustand: " << GameStateJson() << "\n"
      << "- Dateien: state.sav, screen.png, video.bin, wram.bin, lines.bin, marker.json\n";
+  if (g_hd_image) md << "- HD-Bild: hd_screen.png (Originalbild separat in screen.png)\n";
   md.close();
   std::fprintf(stderr, "[debug marker] saved %s\n", g_dir.string().c_str());
   Close();
@@ -150,6 +154,12 @@ extern "C" int Cv4DebugMarkerOpen(void) {
   char message[128];
   bool ok = Cv4CaptureSaveState((g_dir / "state.sav").string().c_str()) != 0;
   ok &= Cv4CaptureFieldPng((g_dir / "screen.png").string().c_str(), message, sizeof(message)) != 0;
+  g_hd_image = Cv4HdEnabled() && Cv4HdScreenshot((g_dir / "hd_screen.png").string().c_str());
+  g_hd_json = "{\"enabled\":" + std::to_string(Cv4HdEnabled()) +
+      ",\"scale\":" + std::to_string(Cv4HdScale()) +
+      ",\"layers\":" + std::to_string(Cv4HdLayerMask()) +
+      ",\"art_scale\":" + std::to_string(Cv4HdPackScale()) +
+      ",\"pack\":\"" + JsonEscape(Cv4HdPackPath()) + "\"}";
   ok &= Cv4CaptureVideoDump((g_dir / "video.bin").string().c_str()) != 0;
   ok &= Cv4CaptureWram((g_dir / "wram.bin").string().c_str()) != 0;
   {

@@ -239,12 +239,14 @@ void GameRunOneFrame(void)
 }
 
 #include "character_pack.h"
+#include "hd_render.h"
 void GameDrawPpuFrame(void)
 {
     SimpleHdma hdma_chans[8];
     Dma *dma = g_snes->dma;
     int trigger;
     int line, ch;
+    Cv4HdRenderBegin(g_ppu);
 
     /* Re-arm HDMA from the last $420C (HDMAEN) the guest wrote — typically
      * during the NMI just run. The framework records it for exactly this. */
@@ -273,8 +275,10 @@ void GameDrawPpuFrame(void)
         Cv4CampaignRasterLine(line);
         Cv4HdRecordLine(g_ppu, line);
         ppu_runLine(g_ppu, line);
+        Cv4HdRenderLine(g_ppu, line);
     }
     Cv4CharacterEnd(g_ppu);
+    Cv4HdRenderEnd();
     Cv4HdFrame(g_ppu, Cv4CurrentSceneName(), g_ram[0x86]);
 }
 

@@ -1,8 +1,52 @@
-# HD-Grafik vorbereiten
+# HD-Grafik umschalten und bearbeiten
 
-Stand: 2026-10-18. Die erste Stufe sammelt Spielgrafiken, skaliert sie offline
-und baut ein Grafikpaket samt Vorschau. **Das Paket wird noch nicht live im
-Spiel dargestellt.** Der Schalter im Menü aktiviert die Sammlung.
+Stand: 2026-10-18. **Escape → HD graphics → HD graphics enabled** schaltet
+zwischen Original und dem geladenen HD-Paket um. Die Simulation läuft beim
+Fortsetzen an derselben Stelle weiter. Originalgrafiken bleiben jederzeit
+verfügbar; fehlende Ersatztiles erscheinen automatisch im Original.
+
+## Umschalten und 4K-Ziel
+
+- Ein Klick auf **HD graphics enabled** aktiviert/deaktiviert HD.
+- **Backgrounds**, **Text / HUD**, **Sprites** lassen sich unabhängig umschalten.
+  Die Gruppierung folgt BG1/2, BG3/4 und OBJ; sie ist keine Objekterkennung.
+- **Graphics pack** wählt `hd_pack` oder einen Unterordner von `hd_packs/`
+  mit `pack.json`. **Reload graphics pack** übernimmt gespeicherte Änderungen.
+  Ungültige Pakete werden abgelehnt; das letzte gültige bleibt geladen.
+- Änderungen an Paket, Kategorien und Auflösung greifen beim Fortsetzen.
+  Auswahl und Schalter stehen in `hd_settings.json` neben der EXE.
+- **2× / 4× / 6× / 10× (4K target)** bestimmt die interne Auflösung.
+  10× ergibt bei aktuellem Widescreen 3420×2240, im Originalformat 2560×2240.
+  Der Presenter passt das Seitenverhältnis an den Bildschirm an. Auf einem
+  3840×2160-Display wird daraus die entsprechende 4K-Darstellung. Es erfolgt
+  kein automatischer Wechsel der Windows-Bildschirmauflösung.
+- Für diese Qualität sollte ein ursprüngliches **8×8-Tile 80×80 echte
+  Bildpixel** erhalten. Ein 16×32-Motiv entspricht dann 160×320 Pixeln.
+  DPI-Metadaten spielen für Bildschirmgrafik keine Rolle. Ein 4×-Paket bleibt
+  auch bei 10× Ausgabe inhaltlich 4×; größere Ausgabe erfindet keine Details.
+- Das lokale Probepaket `build/hd_pack` enthält 446 bereits mit Real-ESRGAN
+  bearbeitete 4×-Tiles (Mauerwerk/Treppen in 1-1 und Teile der Tor-Szene).
+  Es dient dem Umschaltvergleich und ist **kein fertiger 4K-Grafiksatz**.
+  Die unveränderten Sprite-Bögen unter Downloads sind weiterhin zusätzliche
+  Quellen; deren Zuschneiden und Zuordnung ist offen.
+
+## Eigene Grafikvarianten
+
+Ein Paket lässt sich in einzelne `SCHLUESSEL.png` exportieren. Originale
+behalten, Motive in einer neuen Variante bearbeiten, anschließend als eigenes
+Paket bauen. Die Bilddateien behalten den Schlüssel im Dateinamen und werden
+unverkippt gespeichert; die Laufzeit übernimmt Spiegelungen und Scrollen.
+
+```powershell
+python tools/hd/hd_tiles.py export --pack build/hd_pack --out build/hd_work/editable
+# Für 10× die Motive als 80×80 RGBA-PNG ausarbeiten.
+python tools/hd/hd_tiles.py build --tiles build/hd_work/my-80px-tiles --pack build/hd_packs/my-4k --scale 10
+```
+
+Der Export verlangt ein leeres Ziel, damit bereits bearbeitete Bilder erhalten
+bleiben. Der Paketbauer prüft alle Dateinamen und Maße vor dem Schreiben und
+ändert keine Bildgröße. Für unabhängige Varianten unterschiedliche Paketordner
+benutzen. Man kann auch nur wenige Tiles ersetzen; der Rest bleibt original.
 
 ## Benutzung
 
@@ -57,7 +101,7 @@ python tools/hd/hd_preview.py MARKER-ORDNER --pack build/hd_pack
 Ein anderer lokaler Hochskalierer kann mit `--method command --command
 'tool --input "{input}" --output "{output}" --scale {scale}'` angebunden werden.
 Er erhält einen Ordner mit RGB- und Maskenbildern und muss PNG-Dateien mit
-denselben Namen und exakt der gewählten Vergrößerung (1–4) ausgeben. Es wird
+denselben Namen und exakt der gewählten Vergrößerung (1–10) ausgeben. Es wird
 keine Shell gestartet; Platzhalter werden pro Argument ersetzt.
 
 ## Vorhandene Grafikbögen
@@ -98,8 +142,8 @@ werden. Die aktuelle Paketkette verarbeitet die bereits zugeordneten
   `upscale.json` und `sources.json` halten Einstellungen und Quellprüfsummen.
 - `hd_pack/pack.json`: Version 1, Faktor, Tilegröße, Atlasgröße,
   Verarbeitungseinstellungen und Zuordnung `Schlüssel → [Atlas, Zelle]`.
-  Atlanten sind 2048×2048 RGBA, zeilenweise belegt. Ein Tile ist bei 4× 32×32.
-  `hd_common.py` liest das Format auch für den späteren Renderer.
+  Atlanten sind 2048×2048 RGBA, zeilenweise belegt. Ein Tile ist bei 4× 32×32, bei 10× 80×80.
+  `hd_common.py` und `src/hd_render.cpp` lesen dasselbe Format.
 - `lines.bin`: 225 Datensätze à 32 Byte, little-endian; Datensatz `i`
   gehört zu PPU-Zeile `i`, Bildschirmzeile `i−1`. Layout in `hd_collect.h`.
 
@@ -130,25 +174,62 @@ PNG-Schreiben läuft in einem Hintergrundthread mit begrenzter Warteschlange.
 Bei Schreibfehlern stoppt die Sammlung und meldet dies im Menü und `game.log`.
 Bei einem erzwungenen Prozessende können noch ausstehende Bilder fehlen.
 
-## Nächste Stufe: Darstellung im Spiel
+## Live-Renderer: Umfang und Grenzen
 
-Der Desktop-Presenter rendert derzeit mit Faktor 1; das vorhandene
-`PpuBindMode7HdSurface` behandelt Mode 7, aber keine HD-Ersatzgrafik für
-normale BG-/Sprite-Tiles. Für echte HD-Grafik im Spiel fehlen noch:
+`src/hd_render.cpp` ordnet nach jeder nativen PPU-Zeile Ersatztiles anhand
+von Pixeln und Palette zu. Dadurch berücksichtigt er die tatsächliche
+Zeilenpalette, HDMA-Scroll und VRAM-Änderungen. Die Bildberechnung erhält
+unveränderliche Zeilendaten und läuft anschließend auf bis zu acht CPU-Threads;
+`SNESRECOMP_RENDER_WORKERS=1` erzwingt den seriellen Vergleichspfad.
 
-1. Paket laden und dessen Schlüssel im PPU-Zeilenrenderer zuordnen.
-2. HD-Ausgabefläche an Presenter, Screenshot, eingefrorenes Bild und
-   Debug-Marker anbinden.
-3. Prioritäten, transparente Kanten, Fenster, Farbmathematik und Widescreen
-   pro HD-Pixel komponieren; mit unveränderten Originaltiles zurückfallen.
-4. Mit Marker-Szenen, Sprite-Überdeckungen, Kamerabewegung und Mode 7 prüfen.
+- BG1–3- und Sprite-Details in Modus 0/1, 8×8/16×16-BG-Tiles,
+  horizontale/vertikale Spiegelung, normale Sprite-Prioritäten/-Limits,
+  Fenster, Weltkanten-Spiegelung und Darstellungs-VRAM der Randkorrekturen.
+- **Die Sichtbarkeit und Silhouetten bleiben auf dem Originalpixelraster.**
+  HD verändert die Details innerhalb sichtbarer Originalpixel. Teiltransparentes
+  Ersatzmaterial wird dort mit der ursprünglichen Farbe gemischt. Es kann
+  keine neue hochauflösende Kontur außerhalb der alten Silhouette erzeugen.
+  Dafür muss künftig jede Ebene vor ihrer Transparenzentscheidung in HD
+  zusammengesetzt werden. Das ist besonders für sauber neu gezeichnete Figuren
+  wichtig und noch offen.
+- Helligkeit und aktivierte Farbmathematik werden auf die Ersatzfarben in
+  RGB8 angewendet. Unveränderte Samples bleiben bitgenau wie die native PPU;
+  neue Farben sind absichtlich nicht auf die SNES-5-Bit-Palette beschränkt.
+- Mode 7, Modi 2–6, Mosaic-Ebenen, Interlace, Hires/Direct Color sowie nicht
+  unterstützte Host-Transformationen fallen auf Originalgrafik zurück.
+  Benutzerdefinierte Character-Workshop-Körper bleiben ihr bisheriges Bild.
+- Pack-Limits: Faktor 1–10, Atlas maximal 4096×4096, höchstens 256 MiB
+  entpackte Tile-Pixel. Ein Ladefehler ersetzt kein laufendes gültiges Paket.
+- **Strg+D** speichert zusätzlich `hd_screen.png`, wenn ein HD-Feld vorliegt,
+  und HD-Einstellungen in `marker.json`. `screen.png`, Spielzustand und
+  Thumbnail bleiben für reproduzierbare Vergleiche nativ.
+- Die Standbild-Rekonstruktion `hd_preview.py` hat die oben genannten engeren
+  Grenzen; für tatsächliche Live-Bilder `sciv_play.py hdshot` verwenden.
 
-Die Spielsimulation und gespeicherte ROM bleiben dabei unabhängig von den
-gewählten Ersatzgrafiken.
+```powershell
+python tools/sciv_play.py hd pack build/hd_pack
+python tools/sciv_play.py hd on
+python tools/sciv_play.py hd scale 10
+python tools/sciv_play.py wait 1
+python tools/sciv_play.py hdshot build-audit/live-hd.png
+python tools/sciv_play.py hd off
+```
+
+Test-Overrides: `SNESRECOMP_HD_ENABLED`, `SNESRECOMP_HD_PACK`,
+`SNESRECOMP_HD_SCALE`, `SNESRECOMP_HD_LAYERS`. Keine Änderungen an ROM,
+Simulation, Kollisionen oder Savestate-Format. Der Originalpfad behält seine
+native Ausgabegröße und Pixel.
+
+Noch auszuarbeiten: hochwertige 80×80-Motive mit konsistentem Stil und
+sauberen Nähten, vollständige Figurenanimationen, echte HD-Silhouetten,
+Mode-7-Ersatzgrafiken und eine Szenenprüfung über das gesamte Spiel.
 
 ## Tests
 
 ```powershell
+python tools/test_hd_ppu.py
+python tools/test_hd_render.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-lua
+python tools/test_hd_ui.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-dev --pack build/hd_pack
 python tools/test_hd_pipeline.py --build-dir build-dev
 python tools/test_hd_pipeline.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-dev
 ```

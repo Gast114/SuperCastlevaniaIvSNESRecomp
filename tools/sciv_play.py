@@ -10,6 +10,8 @@ every step reproducible. Output is JSON, one object per command.
   python tools/sciv_play.py press Right+B 30      # hold buttons for N frames
   python tools/sciv_play.py wait 60               # advance N frames, no input
   python tools/sciv_play.py shot out.png          # last rasterized field
+  python tools/sciv_play.py hd on|off|scale 10|layers 0x13|pack path
+  python tools/sciv_play.py hdshot out.png        # high-resolution game surface
   python tools/sciv_play.py save 1 | load 1 | reset
   python tools/sciv_play.py loadfile build/debug_markers/<id>/state.sav
   python tools/sciv_play.py ppu                   # BG modes, tilemaps, scroll, widescreen margins
@@ -179,6 +181,8 @@ def main():
     p.add_argument('frames', type=int)
     p = sub.add_parser('shot')
     p.add_argument('path')
+    sub.add_parser('hdshot').add_argument('path')
+    sub.add_parser('hd').add_argument('setting', nargs='*')
     for name in ('save', 'load'):
         sub.add_parser(name).add_argument('slot', type=int)
     sub.add_parser('reset')
@@ -207,10 +211,16 @@ def main():
             buttons = parse_buttons(args.buttons) if args.cmd == 'press' else ()
             advance(lua, args.frames, buttons)
             out(read_state(lua))
-        elif args.cmd == 'shot':
+        elif args.cmd in ('shot', 'hdshot'):
             path = str(Path(args.path).resolve())
-            size = lua.eval(f'return game.command("screenshot", {json.dumps(path)})')['values'][0]
+            cmd = 'screenshot' if args.cmd == 'shot' else 'hdshot'
+            size = lua.eval(f'return game.command("{cmd}", {json.dumps(path)})')['values'][0]
             out({'screenshot': path, 'size': size})
+        elif args.cmd == 'hd':
+            setting = ' '.join(args.setting)
+            if args.setting and args.setting[0] == 'pack':
+                setting = 'pack ' + str(Path(' '.join(args.setting[1:])).resolve())
+            out(json.loads(lua.eval(f'return game.command("hd", {json.dumps(setting)})')['values'][0]))
         elif args.cmd in ('save', 'load'):
             result = lua.eval(f'return game.command("{args.cmd}", "{args.slot}")')['values'][0]
             out({'result': result, **read_state(lua)})

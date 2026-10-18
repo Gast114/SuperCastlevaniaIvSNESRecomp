@@ -39,6 +39,10 @@ class Reader {
     if(p==s.size())throw std::runtime_error("Missing value");
     char c=s[p];
     if(c=='"'){v.kind='s';v.text=str();return v;}
+    for (const char *literal : {"null", "true", "false"}) {
+      size_t n = std::char_traits<char>::length(literal);
+      if (s.compare(p, n, literal) == 0) { p += n; v.kind='l'; v.text=literal; return v; }
+    }
     if(c=='{'||c=='['){v.kind=take();ws();char end=c=='{'?'}':']';if(p<s.size()&&s[p]==end){++p;return v;}
       while(true){if(c=='{'){ws();auto key=str();ws();if(take()!=':')throw std::runtime_error("Missing colon");if(!v.object.emplace(key,value(depth+1)).second)throw std::runtime_error("Duplicate key");}
         else v.array.push_back(value(depth+1));ws();char sep=take();if(sep==end)return v;if(sep!=',')throw std::runtime_error("Missing comma");}

@@ -78,7 +78,7 @@ def load_pack(pack):
     pack = Path(pack)
     meta = json.loads((pack / 'pack.json').read_text())
     size = meta['tile_size']
-    if meta['version'] != 1 or meta['scale'] not in range(1, 5) or size != 8 * meta['scale']:
+    if meta['version'] != 1 or meta['scale'] not in range(1, 11) or size != 8 * meta['scale']:
         raise ValueError('unsupported HD pack format or scale')
     atlas_size = meta['atlas_size']
     per_row = atlas_size // size

@@ -89,7 +89,7 @@ def main():
     p.add_argument('--work', type=Path, default=hd.ROOT / 'build' / 'hd_work')
     p.add_argument('--method', choices=('realesrgan', 'nearest', 'command'), default='realesrgan')
     p.add_argument('--model', default='realesrgan-x4plus-anime')
-    p.add_argument('--scale', type=int, choices=range(1, 5), default=4)
+    p.add_argument('--scale', type=int, choices=range(1, 11), default=4)
     p.add_argument('--command', help='for --method command; {input} {output} {scale} are folders')
     p.add_argument('--force', action='store_true')
     args = p.parse_args()
