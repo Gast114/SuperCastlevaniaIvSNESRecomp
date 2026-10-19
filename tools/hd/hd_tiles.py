@@ -60,10 +60,25 @@ def main():
             parser.error('--out must be empty; preserve your edited PNGs')
         for key, tile in tiles.items():
             hd.save_rgba(tile, args.out / f'{key}.png')
+        meta = json.loads((args.pack / 'pack.json').read_text())
+        if 'contexts' in meta:
+            (args.out / 'contexts.json').write_text(json.dumps({
+                'contexts': meta['contexts'], 'requires': meta.get('requires', ['tile-context-v1'])}))
         print(f'Exported {len(tiles)} tiles at {scale}x to {args.out}')
     else:
         tiles = {p.stem: hd.load_rgba(p) for p in args.tiles.glob('*.png')}
+        contexts = args.tiles / 'contexts.json'
+        extra = json.loads(contexts.read_text()) if contexts.exists() else {}
+        for choices in extra.get('contexts', {}).values():
+            for choice in choices:
+                if choice['image'] not in tiles:
+                    raise ValueError(f"Context image missing: {choice['image']}")
         write_pack(tiles, args.pack, args.scale)
+        if extra:
+            manifest = args.pack / 'pack.json'
+            meta = json.loads(manifest.read_text())
+            meta.update({k: extra[k] for k in ('contexts', 'requires') if k in extra})
+            manifest.write_text(json.dumps(meta))
         print(f'Built {len(tiles)} tiles at {args.scale}x in {args.pack}')
 
 

@@ -77,6 +77,9 @@ replacement path, not a complete remaster.
 **Collect graphics while playing** exports to `hd_dump/`. After playing,
 `python tools/hd/hd_pipeline.py --build build` builds a replacement pack.
 `tools/hd/hd_tiles.py` exports editable tiles and builds separate art variants.
+`tools/hd/hd_motifs.py` imports painted crops with tile-neighborhood guards;
+the local Block 1-1 material pilot is `pilot-1-1-painted-v2` in the pack menu.
+It contains partial masonry, stairs and rock/foliage studies, not the entire stage.
 Setup, controls, limitations and local sprite-sheet sources:
 [docs/HD_PIPELINE.md](docs/HD_PIPELINE.md).
 

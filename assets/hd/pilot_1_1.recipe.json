@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "name": "Block 1-1 • painted materials v1",
+  "scale": 10,
+  "generator": "Built-in image_gen; generated outputs inspected locally, no API fallback",
+  "motifs": [
+    {
+      "name": "masonry",
+      "reference": "source/bg1.png",
+      "rect": [
+        0,
+        128,
+        96,
+        64
+      ],
+      "artwork": "generated/masonry.png",
+      "prompt": "Use case: style-transfer. Asset type: registered HD replacement texture for the first level of Super Castlevania IV. Edit the supplied original game-layer crop, keeping EXACT normalized composition, silhouettes and internal feature positions. The image will be sliced into game tiles; ANY object movement or change in scale is a defect. Repaint the materials as detailed dark hand-painted gothic game art, fine chipped stone and damp moss, same restrained colours and light direction as original. Genuine fine detail and smooth shading, not pixel art or simple sharpening. Retain transparency, no new objects, no labels, no frame or padding, no extra scenery. Extend all edge-cut objects to the exact image edge. Do NOT draw black outlines around tiles. Motif: mossy ruined green-grey stone walls and rubble. Original crop is96x64pixels; output at least1536x1024pixels. Keep EVERY brick course, crack and gap at its original location: do not replace many tiny stones with fewer large blocks. Do not brighten or add glowing highlights. The stone grey and muted olive moss must remain subdued. Empty sky above irregular ruined wall remains transparent; cut right/left/bottom edges remain cut. No ground outside reference."
+    },
+    {
+      "name": "stairs",
+      "reference": "source/bg1.png",
+      "rect": [
+        128,
+        88,
+        96,
+        96
+      ],
+      "artwork": "generated/stairs.png",
+      "prompt": "Use case: style-transfer. Asset type: registered HD replacement texture for the first level of Super Castlevania IV. Edit the supplied original game-layer crop, keeping EXACT normalized composition, silhouettes and internal feature positions. The image will be sliced into game tiles; ANY object movement or change in scale is a defect. Repaint the materials as detailed dark hand-painted gothic game art, fine chipped stone and damp moss, same restrained colours and light direction as original. Genuine fine detail and smooth shading, not pixel art or simple sharpening. Retain transparency, no new objects, no labels, no frame or padding, no extra scenery. Extend all edge-cut objects to the exact image edge. Do NOT draw black outlines around tiles. Motif: diagonal staircase in worn red-orange stone above low dark mossy ruins. Original crop96x96pixels. Output at least1024x1024. Keep the stair diagonal exactly from its clipped lower-left start to clipped upper-right end; each rise and run stays at the exact normalized reference positions. Retain the bright ochre tread edge, dark crimson shaded front and rich red material. Keep all original bottom mossy wall fragments at their existing heights. Do not fill under the stairs. Empty areas transparent. Match subdued dark realistic painted masonry with restrained tiny cracks and moss. No fantasy ornaments, rails, architecture, candles or extra steps."
+    },
+    {
+      "name": "rocks",
+      "reference": "source/bg2.png",
+      "rect": [
+        96,
+        32,
+        96,
+        144
+      ],
+      "artwork": "generated/rocks.png",
+      "prompt": "Use case: style-transfer. Asset type: registered HD replacement texture for the first level of Super Castlevania IV. Edit the supplied original game-layer crop, keeping EXACT normalized composition, silhouettes and internal feature positions. The image will be sliced into game tiles; ANY object movement or change in scale is a defect. Repaint the materials as detailed dark hand-painted gothic game art, fine chipped stone and damp moss, same restrained colours and light direction as original. Genuine fine detail and smooth shading, not pixel art or simple sharpening. Retain transparency, no new objects, no labels, no frame or padding, no extra scenery. Extend all edge-cut objects to the exact image edge. Do NOT draw black outlines around tiles. Motif: gloomy cool grey-violet angular rock pillar with sparse dark emerald ferns, grass and hanging vines; background of the ruined castle entrance. Original crop96x144pixels, deliver at least1024x1536pixels. Preserve angular planes, all crevices, exact pillar silhouette and dangling vine lengths/positions. Camera fixed orthographic side view. Original uppermost grass starts at the top image border; left/right cut rock continues off canvas. Rock remains dark bluish grey with subtle violet highlights; moss dark olive and deep green. Delicate detailed plant leaves and granite pores, no saturated lime green, no teal glow, no glossy surfaces. Keep small orange ground fragments at bottom at identical locations. Retain the original LARGE planar rock forms; don't turn it into many small bricks. Empty space genuinely transparent."
+    }
+  ]
+}

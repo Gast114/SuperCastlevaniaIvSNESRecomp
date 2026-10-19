@@ -12,6 +12,7 @@ priorities on the main screen, at the frame's brightness. Colour math
 Tiles the pack does not have are drawn enlarged from the original.
 """
 import argparse
+import json
 import struct
 import sys
 from pathlib import Path
@@ -239,7 +240,10 @@ def main():
         if not found:
             raise SystemExit('no debug marker with lines.bin found')
         marker = found[0]
-    scale, _size, pack_tiles = hd.load_pack(args.pack) if (args.pack / 'pack.json').exists() else (4, 32, {})
+    manifest = args.pack / 'pack.json'
+    if manifest.exists() and json.loads(manifest.read_text()).get('contexts'):
+        raise SystemExit('Context packs require the live renderer: use sciv_play.py hdshot')
+    scale, _size, pack_tiles = hd.load_pack(args.pack) if manifest.exists() else (4, 32, {})
     m = Machine(marker)
     tiles = Tiles(m, pack_tiles, scale)
     layers = {'bg1': build_bg(m, tiles, 0), 'bg2': build_bg(m, tiles, 1),

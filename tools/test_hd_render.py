@@ -7,6 +7,7 @@ import argparse
 import json
 from pathlib import Path
 import socket
+import shutil
 import subprocess
 import sys
 import time
@@ -19,6 +20,7 @@ import sciv_play as play
 sys.path.insert(0, str(Path(__file__).parent / 'hd'))
 import hd_common as hd
 from hd_tiles import write_pack
+from hd_motifs import build_recipe
 
 
 def image(path):
@@ -134,9 +136,65 @@ def main():
         settings = json.loads((folder / 'hd_settings.json').read_text())
         assert settings['scale'] == 10 and settings['layers'] == 0
         assert Path(settings['pack']) == detailed
+        # Same tile pixels can appear in different motifs. Context guards are
+        # resolved through actual tilemap neighbors, including occluded cells.
+        source = next((capture / 'hd_dump/captures/level_b00').glob('bg1_*.png'))
+        context_work = work / 'context-source'; context_work.mkdir()
+        shutil.copy2(source, context_work / 'layer.png')
+        shutil.copy2(source.with_suffix('.tsv'), context_work / 'layer.tsv')
+        art = hd.load_rgba(source).repeat(10, 0).repeat(10, 1)
+        hd.save_rgba(art, context_work / 'nearest.png')
+        recipe = {'version': 1, 'scale': 10, 'motifs': [{'name': 'identity',
+                  'reference': 'layer.png', 'rect': [0, 0, 256, 224], 'artwork': 'nearest.png'}]}
+        recipe_path = context_work / 'recipe.json'; recipe_path.write_text(json.dumps(recipe))
+        context_pack = work / 'context-nearest'
+        build_recipe(recipe_path, context_pack)
+        command('loadfile', marker); hd_setting('layers 31'); hd_setting(f'pack {context_pack}')
+        for buttons in ((), ('Right',), ('Left',)):
+            play.advance(lua, 8, buttons); identity('context-nearest', 10)
+        # Diagnostic colors reveal any substitution; wrong neighborhoods must
+        # give exactly zero replacements, not a global per-key fallback.
+        context_meta = json.loads((context_pack / 'pack.json').read_text())
+        _, _, context_tiles = hd.load_pack(context_pack)
+        context_tiles = {key: tile.copy() for key, tile in context_tiles.items()}
+        for tile in context_tiles.values():
+            tile[..., :3] = (17, 219, 241)
+        colored = work / 'context-colored'; write_pack(context_tiles, colored, 10)
+        colored_meta = json.loads((colored / 'pack.json').read_text())
+        colored_meta.update(contexts=context_meta['contexts'], requires=['tile-context-v1'])
+        (colored / 'pack.json').write_text(json.dumps(colored_meta))
+        command('save', 2); hd_setting(f'pack {colored}'); play.advance(lua, 1)
+        assert hd_setting()['matched'] > 100
+        h, n = shot('context-color'), shot('context-color-native', False)
+        assert np.any(h.reshape(224, 10, 342, 10, 3) != n[:, None, :, None, :])
+        for choices in colored_meta['contexts'].values():
+            for choice in choices:
+                choice['neighbors'][0][2] = 'ffffffffffffffff'
+        wrong = work / 'context-wrong'; shutil.copytree(colored, wrong)
+        (wrong / 'pack.json').write_text(json.dumps(colored_meta))
+        command('load', 2); hd_setting(f'pack {wrong}'); play.advance(lua, 1)
+        assert hd_setting()['matched'] == 0
+        h, n = shot('context-rejected'), shot('context-rejected-native', False)
+        assert np.all(h.reshape(224, 10, 342, 10, 3) == n[:, None, :, None, :])
+        colored_meta['requires'] = ['unsupported-future-feature']
+        (wrong / 'pack.json').write_text(json.dumps(colored_meta))
+        try:
+            hd_setting(f'pack {wrong}')
+            raise AssertionError('accepted unknown feature')
+        except RuntimeError:
+            pass
+        colored_meta['requires'] = ['tile-context-v1']
+        next(iter(colored_meta['contexts'].values()))[0]['neighbors'][0][0] = -2147483648
+        (wrong / 'pack.json').write_text(json.dumps(colored_meta))
+        try:
+            hd_setting(f'pack {wrong}')
+            raise AssertionError('accepted out-of-range context offset')
+        except RuntimeError:
+            pass
         hd_setting('off'); play.advance(lua, 1)
         print('PASS: live 2x/4x/10x identity, native state unchanged, true 80x80 subpixel detail, '
-              'three independent layer switches, original fallback, invalid reload and saved preferences')
+              'three independent layer switches, context identity/scroll/guards, original fallback, '
+              'invalid reload and saved preferences')
     finally:
         if lua:
             lua.close()

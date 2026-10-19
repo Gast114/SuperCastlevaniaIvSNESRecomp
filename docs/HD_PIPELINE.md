@@ -1,6 +1,6 @@
 # HD-Grafik umschalten und bearbeiten
 
-Stand: 2026-10-18. **Escape → HD graphics → HD graphics enabled** schaltet
+Stand: 2026-10-19. **Escape → HD graphics → HD graphics enabled** schaltet
 zwischen Original und dem geladenen HD-Paket um. Die Simulation läuft beim
 Fortsetzen an derselben Stelle weiter. Originalgrafiken bleiben jederzeit
 verfügbar; fehlende Ersatztiles erscheinen automatisch im Original.
@@ -31,6 +31,65 @@ verfügbar; fehlende Ersatztiles erscheinen automatisch im Original.
   Quellen; deren Zuschneiden und Zuordnung ist offen.
 
 ## Eigene Grafikvarianten
+
+### Materialpilot Block 1-1
+
+Lokales Paket **`build/hd_packs/pilot-1-1-painted-v2`** im Menü auswählen,
+HD aktivieren, 10× wählen. Drei mit dem eingebauten Imagegen neu ausgearbeitete
+Motive: Mauerwerk, rote Treppe und Fels/Vegetation. **Eine partielle Stil- und
+Technikprobe**, kein vollständig ersetzter Abschnitt. Simon, HUD, der größte
+Teil des Bodens und weitere Mauern bleiben original. Übergänge zwischen neuem
+und unbearbeitetem Material sowie native Außenkonturen sind noch sichtbar.
+
+Die Vorlagen sind exakt zugeordnete Ebenenaufnahmen aus der eigenen ROM.
+Downloads-Bögen wurden nicht verändert. Quellaufnahmen, beschnittene Referenzen,
+unveränderte KI-Ausgaben und lokale Arbeitsrezeptur liegen unter
+`build/hd_work/pilot-1-1-v1/`. Die finale Prompt-Sammlung und Schnittkoordinaten
+stehen versioniert in `assets/hd/pilot_1_1.recipe.json`.
+
+| Motiv | Originalausschnitt | KI-Ausgabe | Detailfaktor vor Import |
+|---|---:|---:|---:|
+| Mauerwerk | 96×64 | 1536×1024 | 16× |
+| Treppe | 96×96 | 1254×1254 | 13,06× |
+| Fels/Vegetation | 96×144 | 1024×1536 | 10,67× |
+
+Der Import verkleinert diese Vorlagen auf **80×80 pro Tile**; er skaliert
+unzureichende Bilder nicht künstlich hoch. Die Auflösung allein bestätigt
+keine geometrische Passung: Diese wird im laufenden Spiel beurteilt.
+
+Ein erster globaler Tile-Ersatz setzte Felsfragmente an unpassenden Stellen ein,
+weil mehrere Motive dieselben kleinen Spiel-Tiles verwenden. Dieser verworfene
+Versuch liegt nur noch im Arbeitsordner (`rejected-global-tiles-v1`). Das
+auswählbare Paket enthält deshalb **312 kontextgebundene Bildstücke für 178
+Originalschlüssel**. Ein Bildstück greift nur, wenn die im Rezept erfassten
+Nachbar-Tiles und Spiegelungen passen. Es gibt 134 wiederholte Vorkommen;
+deren Farbabweichungen stehen im Prüfbericht `motifs.json`.
+
+```powershell
+# Rezept + source/bg1.png/.tsv + source/bg2.png/.tsv + generated/*.png
+# liegen zusammen in einem Arbeitsordner. Immer ein neues Ausgabeziel wählen.
+python tools/hd/hd_motifs.py --recipe build/hd_work/pilot-1-1-v1/recipe.json --out build/hd_packs/my-pilot-v3
+```
+
+Nur vollständige, im TSV verzeichnete Tiles innerhalb des Ausschnitts werden
+importiert. Die generierte Transparenz bleibt erhalten, begrenzt durch die
+Originalmaske. Alle Referenzen und Bilder erhalten SHA-256 im Prüfbericht.
+Der Import prüft Maße, Seitenverhältnis, Spiegelung und Referenzkonsistenz vor
+dem Schreiben. Ein belegtes Ausgabeziel wird abgelehnt.
+
+`editable/` enthält die 80×80-Bildstücke und **`contexts.json`**. Diese Datei
+beim Bearbeiten behalten! `hd_tiles.py export/build` erhält sie automatisch.
+Die PNG-Dateinamen identifizieren hier ein bestimmtes Bildstück, nicht direkt
+den Originalschlüssel. Die Zuordnung steht in `motifs.json` und `pack.json`.
+Die alte Standbildvorschau unterstützt Kontextpakete nicht und verweist auf
+`sciv_play.py hdshot`; der Live-Renderer und Debug-Marker unterstützen sie.
+
+Nächster Qualitätsschritt: zusammenhängende Motive vollständig abdecken,
+KI-Abweichungen an Trittflächen und Materialübergängen korrigieren, danach
+Komposition mit echter HD-Transparenz und Simon-Animationsprobe. Die vorliegenden
+Bildstudien sind **noch keine Freigabe für die gesamte Spielgrafik**.
+
+### Einzelne Tiles bearbeiten
 
 Ein Paket lässt sich in einzelne `SCHLUESSEL.png` exportieren. Originale
 behalten, Motive in einer neuen Variante bearbeiten, anschließend als eigenes
@@ -144,6 +203,18 @@ werden. Die aktuelle Paketkette verarbeitet die bereits zugeordneten
   Verarbeitungseinstellungen und Zuordnung `Schlüssel → [Atlas, Zelle]`.
   Atlanten sind 2048×2048 RGBA, zeilenweise belegt. Ein Tile ist bei 4× 32×32, bei 10× 80×80.
   `hd_common.py` und `src/hd_render.cpp` lesen dasselbe Format.
+- Optional `requires: ["tile-context-v1"]` und `contexts`: Originalschlüssel
+  → Liste `{image, flip, neighbors}`. `image` referenziert ein Bildstück in
+  `tiles`; jeder Nachbar ist `[dx, dy, Originalschlüssel, flip]`, Abstand in
+  8×8-Tiles. Unterstützt BG1–3; Prüfung unter den tatsächlichen Zeilenregistern,
+  auch hinter Vordergrundobjekten und an transparenten Stellen. Globale
+  Spiegelung wird mitgeführt. Keine passende Nachbarschaft bedeutet Original.
+  Höchstens 16.384 Kontexte, 32 Nachbarn je Kontext, Abstand ±16 Tiles.
+  Unbekannte benötigte Funktionen und ungültige Kontexte lehnt der Loader ab,
+  wobei das zuletzt gültige Paket aktiv bleibt. Der Cache verwendet Tile-Zelle,
+  Originalschlüssel und Spiegelung. Register-/HDMA-, VRAM- und Palettenänderungen
+  sowie relevante Zeilenbandgrenzen verwerfen ihn. Bei unveränderter Zuordnung
+  wird das Ergebnis über die Zeilen eines Tiles wiederverwendet.
 - `lines.bin`: 225 Datensätze à 32 Byte, little-endian; Datensatz `i`
   gehört zu PPU-Zeile `i`, Bildschirmzeile `i−1`. Layout in `hd_collect.h`.
 
@@ -228,6 +299,7 @@ Mode-7-Ersatzgrafiken und eine Szenenprüfung über das gesamte Spiel.
 
 ```powershell
 python tools/test_hd_ppu.py
+python tools/test_hd_motifs.py
 python tools/test_hd_render.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-lua
 python tools/test_hd_ui.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-dev --pack build/hd_pack
 python tools/test_hd_pipeline.py --build-dir build-dev

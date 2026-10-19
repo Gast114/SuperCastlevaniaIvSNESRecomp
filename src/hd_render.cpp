@@ -14,6 +14,7 @@ extern "C" {
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -24,9 +25,12 @@ extern "C" {
 extern "C" Ppu *g_ppu;
 namespace fs = std::filesystem;
 namespace {
+struct Neighbor { int dx, dy, flip; uint64_t key; };
+struct Context { uint64_t image; int flip; std::vector<Neighbor> neighbors; };
 struct Pack {
     int scale = 0, size = 0;
     std::unordered_map<uint64_t, std::vector<uint32_t>> tiles;
+    std::unordered_map<uint64_t, std::vector<Context>> contexts;
 };
 Pack pack;
 bool initialized = false, enabled = false;
@@ -37,8 +41,56 @@ std::vector<uint32_t> surface;
 int frameWidth = 0, frameScale = 0;
 uint32_t vramRevision = 0;
 std::array<uint16_t, 256> palette;
-struct Cached { const std::vector<uint32_t> *tile; };
+struct Cached { const std::vector<uint32_t> *tile; uint64_t key; };
 std::unordered_map<uint32_t, Cached> cache;
+struct ContextCell {
+    int position;
+    uint64_t key;
+    bool operator==(const ContextCell &b) const { return position == b.position && key == b.key; }
+};
+struct ContextCellHash {
+    size_t operator()(const ContextCell &c) const { return size_t(c.key ^ (uint64_t(c.position) * 0x9e3779b97f4a7c15ull)); }
+};
+std::unordered_map<ContextCell, const std::vector<uint32_t> *, ContextCellHash> contextCache;
+constexpr size_t contextRegisterBytes = offsetof(Ppu, cgwsel) + sizeof(Ppu::cgwsel) - offsetof(Ppu, inidisp);
+constexpr size_t contextPolicyBytes = offsetof(Ppu, wsViewportInsetL) - offsetof(Ppu, wsLayerClamp);
+std::array<uint8_t, contextRegisterBytes> contextRegisters;
+std::array<uint8_t, contextPolicyBytes> contextPolicies;
+unsigned contextBoundaries = 255, contextHudSplit = 0;
+
+void ContextScanline(Ppu *p, int line) {
+    if (pack.contexts.empty()) return;
+    bool changed = std::memcmp(contextRegisters.data(), &p->inidisp, contextRegisterBytes) ||
+                   std::memcmp(contextPolicies.data(), &p->wsLayerClamp, contextPolicyBytes) ||
+                   contextHudSplit != p->wsHudSplitHeight;
+    if (changed) {
+        std::memcpy(contextRegisters.data(), &p->inidisp, contextRegisterBytes);
+        std::memcpy(contextPolicies.data(), &p->wsLayerClamp, contextPolicyBytes);
+        contextHudSplit = p->wsHudSplitHeight;
+        // Neighbors are offset by whole tiles. A scanline band can change a
+        // neighbor's interpretation only at its boundary modulo eight. Clear
+        // there, even when that boundary is outside the visible current row.
+        contextBoundaries = 1u | (1u << ((contextHudSplit & 127) & 7));
+        auto bands = [](const auto &a, const auto &b) {
+            const auto *first = reinterpret_cast<const uint8_t *>(&a);
+            const auto *last = reinterpret_cast<const uint8_t *>(&b);
+            for (size_t i = 0; i < sizeof(a); ++i)
+                if (last[i] > first[i]) contextBoundaries |= (1u << (first[i] & 7)) | (1u << (last[i] & 7));
+        };
+        bands(p->wsRepeatY0, p->wsRepeatY1);
+        bands(p->wsStretchY0, p->wsStretchY1);
+        bands(p->wsAnchorY0, p->wsAnchorY1);
+        bands(p->wsWorldY0, p->wsWorldY1);
+        bands(p->wsElasticY0, p->wsElasticY1);
+    }
+    if (changed || (contextBoundaries & (1u << (line & 7)))) contextCache.clear();
+}
+
+uint64_t ParseKey(const std::string &key) {
+    if (key.size() != 16 || key.find_first_not_of("0123456789abcdef") != std::string::npos)
+        throw std::runtime_error("Invalid tile key");
+    return std::stoull(key, nullptr, 16);
+}
 
 uint32_t Rgb(uint16_t c) {
     auto expand = [](unsigned v) { return (v << 3) | (v >> 2); };
@@ -76,6 +128,10 @@ int Load(const char *path) {
         std::ifstream f(manifest);
         std::string text((std::istreambuf_iterator<char>(f)), {});
         auto j = character_json::Reader(text).read();
+        if (auto required = j.object.find("requires"); required != j.object.end())
+            for (const auto &feature : required->second.items())
+                if (feature.string() != "tile-context-v1")
+                    throw std::runtime_error("Unsupported pack feature");
         Pack next;
         next.scale = j.at("scale").number(); next.size = j.at("tile_size").number();
         int atlasSize = j.at("atlas_size").number();
@@ -91,14 +147,13 @@ int Load(const char *path) {
          * manifest ordering. Publish only after every entry has validated. */
         std::map<int, std::vector<std::pair<uint64_t, int>>> groups;
         for (const auto &[key, value] : entries.object) {
-            if (key.size() != 16 || key.find_first_not_of("0123456789abcdef") != std::string::npos)
-                throw std::runtime_error("Invalid tile key");
+            uint64_t parsedKey = ParseKey(key);
             const auto &position = value.items();
             if (position.size() != 2) throw std::runtime_error("Invalid atlas position");
             int a = position[0].number(), slot = position[1].number();
             if (a < 0 || a > 4095 || slot < 0 || slot >= perRow * perRow)
                 throw std::runtime_error("Atlas position out of bounds");
-            groups[a].push_back({std::stoull(key, nullptr, 16), slot});
+            groups[a].push_back({parsedKey, slot});
         }
         for (const auto &[index, slots] : groups) {
             char name[40]; std::snprintf(name, sizeof(name), "atlas_%03d.png", index);
@@ -119,7 +174,31 @@ int Load(const char *path) {
                     }
             }
         }
-        pack = std::move(next); cache.clear(); surface.clear(); frameScale = 0; replaced = 0;
+        if (auto contexts = j.object.find("contexts"); contexts != j.object.end()) {
+            if (contexts->second.kind != '{') throw std::runtime_error("Expected contexts object");
+            size_t count = 0;
+            for (const auto &[key, choices] : contexts->second.object) {
+                auto &dest = next.contexts[ParseKey(key)];
+                for (const auto &choice : choices.items()) {
+                    Context c{ParseKey(choice.at("image").string()), choice.at("flip").number(), {}};
+                    if (++count > 16384 || !next.tiles.count(c.image) || c.flip < 0 || c.flip > 3)
+                        throw std::runtime_error("Invalid context image, flip or count");
+                    for (const auto &item : choice.at("neighbors").items()) {
+                        const auto &n = item.items();
+                        if (n.size() != 4) throw std::runtime_error("Invalid context neighbor");
+                        Neighbor v{n[0].number(), n[1].number(), n[3].number(), ParseKey(n[2].string())};
+                        if (v.dx < -16 || v.dx > 16 || v.dy < -16 || v.dy > 16 || (!v.dx && !v.dy) ||
+                            v.flip < 0 || v.flip > 3 || c.neighbors.size() >= 32)
+                            throw std::runtime_error("Context neighbor out of bounds");
+                        c.neighbors.push_back(v);
+                    }
+                    if (c.neighbors.empty()) throw std::runtime_error("Context needs neighbors");
+                    dest.push_back(std::move(c));
+                }
+                if (dest.empty()) throw std::runtime_error("Context needs images");
+            }
+        }
+        pack = std::move(next); cache.clear(); contextCache.clear(); surface.clear(); frameScale = 0; replaced = 0;
         directory = path;
         status = "Loaded " + std::to_string(pack.tiles.size()) + " tiles at " + std::to_string(pack.scale) + "x";
         std::fprintf(stderr, "[HD] %s: %s\n", directory.c_str(), status.c_str());
@@ -167,19 +246,48 @@ struct Pixel {
 std::vector<Pixel> pixels;
 SnesRenderWorkers *workers = nullptr;
 bool workersInitialized = false;
+Cached Lookup(Ppu *p, const PpuTileSource &r) {
+    uint32_t ident = r.address | uint32_t(r.palette) << 15 | uint32_t(r.bpp) << 23;
+    auto it = cache.find(ident);
+    if (it == cache.end()) {
+        auto key = Key(p, r);
+        auto tile = pack.tiles.find(key);
+        it = cache.emplace(ident, Cached{tile == pack.tiles.end() ? nullptr : &tile->second, key}).first;
+    }
+    return it->second;
+}
 Sample Find(Ppu *p, int x, int line, uint16_t pixel) {
     Sample s;
     unsigned layer = (pixel >> 8) & 15;
     if (layer == 6) layer = 4;
     if (!(layers & (1u << layer)) || !PpuGetTileSource(p, x, line, pixel, &s.source)) return s;
-    const auto &r = s.source;
-    uint32_t ident = r.address | uint32_t(r.palette) << 15 | uint32_t(r.bpp) << 23;
-    auto it = cache.find(ident);
-    if (it == cache.end()) {
-        auto tile = pack.tiles.find(Key(p, r));
-        it = cache.emplace(ident, Cached{tile == pack.tiles.end() ? nullptr : &tile->second}).first;
+    auto lookup = Lookup(p, s.source);
+    s.tile = lookup.tile;
+    auto choices = pack.contexts.find(lookup.key);
+    if (layer >= 3 || choices == pack.contexts.end()) return s;
+    // Reuse across a tile's rows, but never across register/memory/band changes.
+    int left = x - (s.source.flip & 1 ? 7 - s.source.px : s.source.px);
+    int top = line - (s.source.flip & 2 ? 7 - s.source.py : s.source.py);
+    ContextCell id{int(((top + 16) * 2048 + left + 1024) * 16 + layer * 4 + s.source.flip), lookup.key};
+    auto cached = contextCache.find(id);
+    if (cached != contextCache.end()) { s.tile = cached->second; return s; }
+    // Context entries are opt-in: no match must not leak a fragment elsewhere.
+    s.tile = nullptr;
+    for (const auto &c : choices->second) {
+        int reflect = c.flip ^ s.source.flip;
+        bool match = true;
+        for (const auto &n : c.neighbors) {
+            PpuTileSource other = {};
+            int dx = n.dx * 8 * (reflect & 1 ? -1 : 1);
+            int dy = n.dy * 8 * (reflect & 2 ? -1 : 1);
+            if (line + dy < 0 || !PpuGetBackgroundTileSource(p, x + dx, line + dy, layer, &other) ||
+                other.flip != (n.flip ^ reflect) || Lookup(p, other).key != n.key) {
+                match = false; break;
+            }
+        }
+        if (match) { s.tile = &pack.tiles.at(c.image); break; }
     }
-    s.tile = it->second.tile;
+    contextCache.emplace(id, s.tile);
     return s;
 }
 uint32_t SampleRgb(const Sample &s, int tx, int ty, uint32_t original) {
@@ -266,13 +374,14 @@ extern "C" void Cv4HdRenderBegin(Ppu *p) {
         pixels.resize(size_t(frameWidth) * 224);
     }
     catch (const std::bad_alloc &) { enabled = false; p->hdTracking = false; status = "Not enough memory for HD surface"; return; }
-    frameScale = scale; cache.clear(); vramRevision = p->vramWriteCount;
+    frameScale = scale; cache.clear(); contextCache.clear(); vramRevision = p->vramWriteCount;
     std::copy(std::begin(p->cgram), std::end(p->cgram), palette.begin());
 }
 extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
     if (!p->hdTracking || frameScale != scale || line < 1 || line > 224) return;
+    ContextScanline(p, line);
     if (p->vramWriteCount != vramRevision || std::memcmp(palette.data(), p->cgram, sizeof(p->cgram))) {
-        cache.clear(); vramRevision = p->vramWriteCount;
+        cache.clear(); contextCache.clear(); vramRevision = p->vramWriteCount;
         std::copy(std::begin(p->cgram), std::end(p->cgram), palette.begin());
     }
     auto native = reinterpret_cast<const uint32_t *>(p->renderBuffer + (line - 1) * p->renderPitch);
