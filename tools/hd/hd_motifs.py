@@ -24,6 +24,13 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def context_neighbors(positions, x, y):
+    offsets = [(dx, dy) for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dx or dy]
+    offsets += [(d, 0) for d in (-4, -2, 2, 4)] + [(0, d) for d in (-4, -2, 2, 4)]
+    return [[dx, dy, *positions[x+dx*8, y+dy*8]] for dx, dy in offsets
+            if (x+dx*8, y+dy*8) in positions]
+
+
 def build_recipe(recipe_path, output):
     recipe_path, output = Path(recipe_path).resolve(), Path(output).resolve()
     recipe = json.loads(recipe_path.read_text(encoding='utf-8'))
@@ -111,10 +118,7 @@ def build_recipe(recipe_path, output):
                                     'rgb_mae': round(mae, 3)})
             else:
                 first[key] = tile
-            offsets = [(dx, dy) for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dx or dy]
-            offsets += [(d, 0) for d in (-4, -2, 2, 4)] + [(0, d) for d in (-4, -2, 2, 4)]
-            neighbors = [[dx, dy, *positions[x+dx*8, y+dy*8]] for dx, dy in offsets
-                         if (x+dx*8, y+dy*8) in positions]
+            neighbors = context_neighbors(positions, x, y)
             if not neighbors:
                 raise ValueError(f'{key}: no neighbors to guard motif placement')
             # Identical pixels share one editable image and one atlas slot,

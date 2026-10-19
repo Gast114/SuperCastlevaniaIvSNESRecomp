@@ -311,9 +311,11 @@ python tools/hd/hd_catalog.py --dump artwork-local/captures/pilot --out artwork-
 liegt unter `shared/<Originalschlüssel>.png`: 80×80 echte RGBA-Pixel, in der
 ungespiegelten Orientierung. Nach dem Kataloglauf enthält `shared_tiles.json`
 die verfügbaren Quellen. Vorhandene Quellbilder werden niemals überschrieben.
-Aktuell: 2.944 Originalschlüssel, 46.736 aufgezeichnete Vorkommen, 1.971
-Palettenfamilien. **Noch keine freigegebenen HD-Bausteine in `shared/`**; die
-drei bereits gemalten Motive bleiben kontextgebundene Varianten.
+Aktuell: 2.958 Originalschlüssel, 48.354 aufgezeichnete Vorkommen, 1.985
+Palettenfamilien und **47 gemeinsame HD-Quellen** für Mauerwerk/Treppe.
+Sie sind ein testbarer Stilpilot; sichtbare Nähte, wechselnder Steinmaßstab und
+die rote Treppen-/Reliefstruktur benötigen noch Überarbeitung. Die weiteren
+gemalten Felsmotive bleiben kontextgebundene Varianten.
 
 Ein Motiv-Rezept kann auf dieselbe Bibliothek verweisen:
 
@@ -348,7 +350,65 @@ Motivfragmente würde die bereits beobachteten Flickstellen zurückbringen.
 Originalquellen, Prompts, Aufnahmen und Startzustände liegen dauerhaft unter
 `artwork-local/` (gitignored), zusätzlich mit SHA-256-geprüfter Kopie unter
 `D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-19-hd-library`.
-Der Nutzer-Build behält sein bisheriges auswählbares Pilotpaket.
+Der Nutzer-Build enthält das bisherige Pilotpaket zum Vergleich und zusätzlich
+`hd_packs/pilot-1-1-shared-v5` (HD aktivieren, 10×).
+
+### Gemeinsame Bögen importieren und registrieren
+
+`assets/hd/shared_blocks_1_1.recipe.json` enthält die vollständigen Prompts,
+Originalreferenzen und die Schlüsselbelegung der fünf mit dem eingebauten
+Imagegen erzeugten Bögen. Quellen liegen in
+`artwork-local/shared-blocks-v1/generated/`; der finale Extrakt liegt in
+`artwork-local/shared-blocks-v1/library-expanded/`. Pro Originalschlüssel gibt
+es eine ungespiegelte 80×80-Datei. Die Bögen liefern mindestens 256 echte Pixel
+pro Zelle und werden heruntergerechnet. `null` im Raster bezeichnet eine
+unbenutzte Zelle. Exaktes Rasterseitenverhältnis ist erforderlich; gebrochene
+Zellgrenzen werden vor dem Ausschneiden auf das Zielraster registriert.
+
+```powershell
+# Immer einen neuen Ausgabeordner verwenden; vorhandene Dateien bleiben erhalten.
+python tools/hd/hd_shared.py extract --recipe assets/hd/shared_blocks_1_1.recipe.json --dump artwork-local/captures/pilot --out artwork-local/shared-blocks-v1/library-rebuild
+python tools/hd/hd_shared.py pack --library artwork-local/library/shared_tiles.json --dump artwork-local/captures/pilot --dump artwork-local/captures/upper-stairs --scene level_b00 --layers bg1 --base artwork-local/packs/pilot-reuse-v1 --out artwork-local/packs/shared-rebuild
+python tools/hd/hd_catalog.py --dump artwork-local/captures/pilot --dump artwork-local/captures/upper-stairs --out artwork-local/library --scale 10
+```
+
+Der erste Befehl importiert separat; neue geprüfte Quellen anschließend gezielt
+nach `library/shared/` übernehmen und den Katalog erneuern. Bestehende Quellen
+vor einer beabsichtigten Überarbeitung sichern. Der Paketbau liest den zentralen
+Index und setzt alle darin enthaltenen Schlüssel voraus: Jeder muss mindestens
+eine passende Aufnahme in der gewählten Szene/Ebene haben. Für spätere größere
+Bibliotheken einen Index mit der gewünschten Teilmenge verwenden.
+
+Die Referenzprüfung erkennt versehentlich gespiegelte/falsche Zellen; zu kleine
+Bilder werden abgelehnt. `opaque_material: true` verlangt deckende Bögen, bevor
+die Originalmaske aufgetragen wird. Das ist beim jetzigen Renderer wichtig:
+Halbtransparentes Material blendet sonst Originalpixel ein. Transparente
+Originalbereiche bleiben erhalten, glatte Außenkonturen entstehen dadurch nicht.
+
+`pack` erhält andere Motive eines kontextgebundenen Basispakets gleicher Skala;
+alte Varianten der gewählten gemeinsamen Schlüssel werden ersetzt. Identische
+Bilder werden nach Inhalt nur einmal gespeichert. Nachbarschaften bleiben
+geschützt, einschließlich Spiegelungen. Regelvereinfachung entfernt nur eine
+stärkere Regel, wenn eine bereits vorhandene schwächere Regel für dasselbe Bild
+und dieselbe Spiegelung sie vollständig abdeckt; die Menge erlaubter Umgebungen
+bleibt gleich. Unterschiedliche Motivbilder werden nicht so vereinfacht.
+
+Finaler Pilot: 47 Quellen, 2.361 erfasste Verwendungen, 659 unterschiedliche
+Nachbarschaften und 375 verbleibende Regeln, 255 Bilder einschließlich der
+erhaltenen Felsmotive. `shared-receipt.json` enthält Quellen-/Aufnahme-/Basispaket-
+Prüfsummen und Zählungen. Eine neue Umgebung braucht eine neue Aufnahme, keine
+neue KI-Grafik für einen bereits vorhandenen Schlüssel. Die rechte Mauer wurde
+so durch `captures/upper-stairs` ergänzt. Acht Frames ab
+`fixtures/block-1-1-upper-stairs/state.sav` in einem frischen Sammelprozess
+(`SNESRECOMP_HD_COLLECT=1`) lieferten die zusätzlichen Original-Zuordnungen.
+Der Sammler nimmt bereits häufig gesehene Schlüssel nicht unbegrenzt erneut auf.
+
+Aktuelles Quellen-/Paket-Backup mit SHA-256-Prüfung:
+`D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-19-shared-blocks`.
+Finale Route, Bilder und Messung: `artwork-local/shared-blocks-v1/review/v5/`.
+Elf native Prüfpunkte unverändert; HD-Bilder vor/nach Regelvereinfachung identisch.
+240 ungedrosselte Frames bei Kamera146/10×: ca.58 FPS auf diesem Rechner,
+noch kein Nachweis stabiler 60 FPS für die gesamte Strecke.
 
 ```powershell
 python tools/test_hd_route.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-lua --pack artwork-local/packs/pilot-reuse-v1 --fixture artwork-local/fixtures/block-1-1/state.sav
@@ -383,6 +443,7 @@ ein Gegner. Erst danach auf weitere Level ausweiten.
 python tools/test_hd_ppu.py
 python tools/test_hd_motifs.py
 python tools/test_hd_catalog.py
+python tools/test_hd_shared.py
 python tools/test_sciv_state.py
 python tools/test_hd_contours.py
 python tools/test_hd_render.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-lua

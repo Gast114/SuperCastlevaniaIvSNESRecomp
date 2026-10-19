@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "scale": 10,
+  "name": "Block 1-1 shared masonry and stairs v1",
+  "generator": "Built-in image_gen; technical grid registration, no artistic postprocessing",
+  "sheets": [
+    {
+      "name": "wall-extra",
+      "image": "../../artwork-local/shared-blocks-v1/generated/wall-extra-opaque.png",
+      "reference": "../../artwork-local/shared-blocks-v1/source/wall-extra-registration.png",
+      "opaque_material": true,
+      "columns": 6,
+      "keys": [
+        "102dda94e2de81a5",
+        "8b0e19000096cf61",
+        "7d9ffa0c3ea5b2b4",
+        "0cfa4e71b390a2b1",
+        "6b947a1fbb7901b6",
+        "e3aeca17a96f4d49",
+        "3ec71c732b50bcf7",
+        "67472bf6ca898050",
+        "83052297ed270170",
+        "b9c9a788fdde57a1",
+        "eca20f3ba3865743",
+        "5f09de5d744086cd",
+        "62c43bd0e782f3b2",
+        "45fdc858928c59d1",
+        "38943162eb735ec4",
+        "594f0c8b06cbefca",
+        "43f613ab66b73efb",
+        "1ec06f162079ff07",
+        "c66d3858172d457b",
+        "1d8ac7519a297cbb",
+        "8731913588a0db5c",
+        "ca0415da106c3b79",
+        null,
+        null
+      ],
+      "prompt": "Use case: style-transfer. Technical game tile atlas SIX columns by FOUR rows, EXACT3:2 ratio,1536x1024. The LAST TWO cells are unused padding, fill them dark. Other22 cells are cropped green-grey broken masonry and mortar fragments. Repaint original image1's geometry with image2's dark mossy grey-green stone material. Preserve every original fragment and highlight position, all joints and partial bricks, cell boundaries and original small brick scale. Subtle grey-violet stone variation where present. Brown pixels become dark earth/mortar, black gaps stay near-black, no new brick in a gap. Do NOT rearrange the tiles or compose a new wall. Smooth fine mineral grain, worn chips, restrained olive moss, soft subdued light. ALL pixels must be fully opaque, including native transparent gaps filled with nearly-black matching mortar. Engine supplies native silhouette masking separately. No transparent or partially transparent pixels, no labels, grid, separators, padding margins, scenery or perspective. The atlas is sliced into individual square cells, so do not shift or rescale any structure. Output high-resolution hand-painted material detail, not pixel art."
+    },
+    {
+      "name": "stair-reliefs",
+      "image": "../../artwork-local/shared-blocks-v1/generated/stair-reliefs-opaque.png",
+      "reference": "../../artwork-local/shared-blocks-v1/source/stair-reliefs-registration.png",
+      "opaque_material": true,
+      "columns": 4,
+      "keys": [
+        "16610d0901d2abad",
+        "aef32e2ca0793b6f",
+        "cfa313cbd269a467",
+        "c7fd6d6c19f1b1f6",
+        "dbd4652f0361bb8b",
+        "7e4fe2b96406a55a",
+        "a4da82b470101c53",
+        "fb1e8ce3a33d7278"
+      ],
+      "prompt": "Use case: style-transfer. Technical game tile atlas FOUR columns by TWO rows, EXACT2:1 ratio,1536x768. Eight cropped fragments of orange-red sandstone staircase ornament and its shadow face. Image1 is the exact layout blueprint; image2 is color/material style only. Repaint the existing ochre-orange ridges, curved carved relief features, deep purple-red faces and brown-red shadows at their exact positions. Preserve original light-dark motif geometry and individual cell boundaries. These fragments join into the repeating ornament underneath a horizontal stone walkway; do NOT draw a diagonal staircase or separate blocks. Fine pitted sandstone, subtly carved ridges, worn golden edges with subdued grey highlights. Do not add new ornament or cracks larger than existing features. ALL pixels must be fully opaque, including native transparent gaps filled with nearly-black matching mortar. Engine supplies native silhouette masking separately. No transparent or partially transparent pixels, no labels, grid, separators, padding margins, scenery or perspective. The atlas is sliced into individual square cells, so do not shift or rescale any structure. Output high-resolution hand-painted material detail, not pixel art."
+    },
+    {
+      "name": "masonry-edges",
+      "image": "../../artwork-local/shared-blocks-v1/generated/wall-edges-opaque.png",
+      "opaque_material": true,
+      "opacity_edit_prompt": "Use case: precise-object-edit. Image1 is a finished technical game texture atlas. Keep its EXACT dimensions, aspect ratio, registration, color, stone shapes, every joint and every detail. Make this entire image FULLY OPAQUE. It is a material atlas, with silhouette masking provided separately by the game. Fill every previously transparent hole with opaque very dark subdued mortar/earth matching its adjacent material. Preserve the RGB appearance of all existing stone; remove their accidental partial transparency so every stone surface is fully opaque. No semi-transparent pixels anywhere. Keep all small shapes at exact locations, no new geometry, no grid lines, no text. No scenery, no margin, no empty transparent background. Output a solid opaque atlas, edge to edge. Do not lighten the dark gaps. Preserve aspect ratio and output at least input resolution.",
+      "reference": "../../artwork-local/shared-blocks-v1/source/wall-edges-registration.png",
+      "columns": 4,
+      "keys": [
+        "9fd50fc81228d477",
+        "3c3e704d7327dad9",
+        "d9efc5f5d220d345",
+        "92a8b52466ec4bc9",
+        "5a0bb36867c96ac8",
+        "5f2e8a45142b5ed7",
+        "fe221131edaa350c",
+        "b65126d078819d89",
+        "c2a4ed2531647459",
+        "16f0dc05b3b37461",
+        "a38e59e45f88247f",
+        "557fa2f48aaa1e64"
+      ],
+      "prompt": "Use case: style-transfer. Asset: technical game TILE ATLAS, 4 columns by 3 rows of square tiles. Canvas exactly4:3, at least1536x1152. Image1 is the EXACT layout blueprint, not a scene sketch. Its twelve square cells each correspond to a DIFFERENT cropped broken-wall tile; keep every cell in the same position, no gaps, borders or drawn grid. Image2 is ONLY the matching mossy stone material and restrained color style. Repaint image1's existing stone fragments in that style without moving ANY large color region, stone edge, mortar gap or transparency. Keep original broken silhouettes, small brick counts, dark mortar positions and normalized highlights precisely. Fine mineral pores, chipped stone, very subdued olive moss and grey-green worn stone, small brown earthy crevices where original brown pixels are. The individual cells are incomplete wall fragments, not twelve complete blocks or twelve little scenes. They must remain edge-cut at their existing cell boundaries. Repeated brick courses in different cells need matching thickness. Original dark areas stay dark; no white bright edge outlines or glow. No extra stones filling gaps, no diagonal wall-wide crack, no background scenery, no text. Actual transparent areas in image1 remain transparent; dark opaque stone remains opaque. Smooth high-resolution hand-painted material detail, not enlarged pixel art; preserve source geometry for technical registration."
+    },
+    {
+      "name": "masonry-repeat",
+      "image": "../../artwork-local/shared-blocks-v1/generated/wall-repeat-opaque.png",
+      "opaque_material": true,
+      "opacity_edit_prompt": "Use case: precise-object-edit. Image1 is a finished technical game texture atlas. Keep its EXACT dimensions, aspect ratio, registration, color, stone shapes, every joint and every detail. Make this entire image FULLY OPAQUE. It is a material atlas, with silhouette masking provided separately by the game. Fill every previously transparent hole with opaque very dark subdued mortar/earth matching its adjacent material. Preserve the RGB appearance of all existing stone; remove their accidental partial transparency so every stone surface is fully opaque. No semi-transparent pixels anywhere. Keep all small shapes at exact locations, no new geometry, no grid lines, no text. No scenery, no margin, no empty transparent background. Output a solid opaque atlas, edge to edge. Do not lighten the dark gaps. Preserve aspect ratio and output at least input resolution.",
+      "reference": "../../artwork-local/shared-blocks-v1/source/wall-repeat-reference.png",
+      "columns": 2,
+      "keys": [
+        "23152b73b62758a0",
+        "254f6b227d15676f"
+      ],
+      "prompt": "Use case: style-transfer. Asset: a seamless repeat module for a gothic game's mossy stone wall, exactly twice as wide as tall, 1536x768 pixels. Image 1 is the exact 16x8 native repeat module to repaint. Treat its pixel geometry as a layout blueprint. The pattern has EXACTLY TWO horizontal courses: top course spans y=0..50%, bottom course y=50..100%. Each stone is approximately half the canvas width. Top course has vertical joints at x=25% and75% (edge-cut half stones left and right), bottom course has its joint at x=50%, as in the reference. Keep the existing positions and sizes if the reference differs from this verbal description. Canvas is filled by the stone pattern edge to edge; border stones continue seamlessly across opposite edges, horizontally AND vertically. Do not add top cap, sky, wall silhouette, diagonal crack, extra courses, perspective, border or padding. Detailed hand-painted dark grey-green rough stone with restrained dark olive moss; muted grey highlights, near-black thin mortar. Each stone has subtly rounded worn corners and tiny pores, only fine cracks within stones. Keep subdued original colors and light from upper left. Match reference brick count and joint placement strictly. The image will be sliced once in half vertically and repeatedly recombined; both halves must join without discontinuous mortar. Preserve original transparency, no invented transparent region; no text or grid. High-resolution material detail, not pixelated enlargement."
+    },
+    {
+      "name": "stair-materials",
+      "image": "../../artwork-local/shared-blocks-v1/generated/stair-tiles-opaque.png",
+      "opaque_material": true,
+      "opacity_edit_prompt": "Use case: precise-object-edit. Image1 is a finished technical game texture atlas. Keep its EXACT dimensions, aspect ratio, registration, color, stone shapes, every joint and every detail. Make this entire image FULLY OPAQUE. It is a material atlas, with silhouette masking provided separately by the game. Fill every previously transparent hole with opaque very dark subdued mortar/earth matching its adjacent material. Preserve the RGB appearance of all existing stone; remove their accidental partial transparency so every stone surface is fully opaque. No semi-transparent pixels anywhere. Keep all small shapes at exact locations, no new geometry, no grid lines, no text. No scenery, no margin, no empty transparent background. Output a solid opaque atlas, edge to edge. Do not lighten the dark gaps. Preserve aspect ratio and output at least input resolution.",
+      "reference": "../../artwork-local/shared-blocks-v1/source/stair-tiles-registration.png",
+      "columns": 3,
+      "keys": [
+        "6a41c0313b800178",
+        "6e8fead4155d24ff",
+        "f5cad3eb08a34448"
+      ],
+      "prompt": "Use case: style-transfer. Asset type: TECHNICAL texture atlas, three square 8x8 game tiles in one row. Edit image1, keeping its exact 3:1 rectangle, output at least1536x512. This is NOT an illustration of stairs. DO NOT DRAW A STAIRCASE, isolated objects, perspective, borders, gaps or margins. Repaint only the surfaces within the existing layout as high-resolution subtly worn red sandstone for a dark gothic game. Preserve exact major colors and their normalized boundaries. Left THIRD: warm orange narrow lip across top, burgundy-purple face center with rusty dark lower bands; it is a cropped piece of stone, filling the whole square. Middle THIRD: deep burgundy sandstone shadow face, purple shaded middle, dark reddish brown edges. Right THIRD: a closely related dark rust-red shadow face, purple lower-left patch, nearly black brown right edge. These three squares are adjacent technical texture samples, not three scene objects. Preserve their registration exactly and fill all original opaque area with stone (no invented alpha holes). Keep same diffuse muted lighting, no glow, no vivid orange highlights. Add fine mineral pores, rubbed grain, tiny worn unevenness and soft material shading, smooth high-resolution finish, no visible pixel grid. Do not introduce large new cracks or block outlines. Existing transparent corners remain transparent; other areas remain opaque. No letters or numbers. The atlas will be cut at exactly one-third and two-thirds width."
+    }
+  ],
+  "studies": [
+    {
+      "image": "wall-study.png",
+      "status": "rejected for shared sources: major crack geometry shifted",
+      "prompt": "Use case: style-transfer. Asset: reusable high resolution game tile material. Image 1 is the exact 32x32 ORIGINAL masonry module to repaint, not a loose inspiration. Produce a square 1024x1024 RGBA image. Replace the pixel art with finely detailed hand-painted dark gothic mossy stone. Preserve the EXACT normalized geometry: every brick course, mortar line, broken edge, gap, and the long brown-green crack keeps its exact location and width. Do not redesign the wall or make larger stones. Preserve all eight small brick courses and the staggered bond. The repeated small stones should have consistent muted grey-green hue, dark olive moss and soft grey highlights, not bright cream edges. Flat orthographic side view, diffuse subdued light from upper left. Chipped stone pores and minute moss detail within the existing forms. Preserve edge-cut stones right to the canvas edge, no margins. Every transparent original area remains truly transparent, mortar stays dark. No new objects, foliage silhouettes, labels, framing, grid or background. Keep large-scale shading and colors faithful to the original. The result will be sliced at the ORIGINAL 8x8 boundaries, so shifting forms ruins the asset. Repaint material detail only."
+    },
+    {
+      "image": "stairs.png",
+      "status": "rejected: insufficient opaque connecting stone",
+      "prompt": "Use case: style-transfer. Asset: registered reusable staircase game tile module. Image 1 is the EXACT edit target, a 32x32 pixel crop of an ascending staircase. Repaint as detailed hand-painted dark gothic red-orange stone at 1024x1024 RGBA. Preserve EXACT normalized arrangement and silhouette: four equal small steps in profile, going from bottom-left to top-right. Tread starts at (0%,75%), (25%,50%), (50%,25%), (75%,0%). Each tread is 25% canvas width, each rise is25% canvas height. The top-right step is clipped flush by the top and right image edges, the lower-left one meets the left and bottom edges. There is no ground, base block, railing, backdrop or support wall: keep the transparent space both above AND below this narrow diagonal strip. Match the reference's dark burgundy-violet vertical stone faces and muted ochre thin rounded upper tread rims. Keep all four steps visually identical in scale and material; detail consists of tiny pits, worn grain and a few hairline cracks, no brick courses or decorative new forms. Fixed orthographic side view, no new perspective. Do not change step heights or widths, extend the slab undersides or add protrusions. Do not add moss to the outline. Fine painted high resolution detail with subdued lighting from upper left. Actual transparency, no checkerboard or matte. No text, border or padding."
+    },
+    {
+      "image": "stairs-solid-study.png",
+      "status": "rejected: still insufficient opaque connecting stone",
+      "prompt": "Use case: style-transfer. Image1 is EXACT original 32x32 game geometry to repaint. Image2 is material/style only; its detached cube geometry is WRONG. Make a 1024x1024 square RGBA high resolution painting of the original connected thick red sandstone staircase strip, matching original crop exactly. Four treads ascend bottom-left to top-right, each tread is exactly25% canvas width and each rise25%height. Crucial opaque silhouette: divide canvas into a 4x4 grid (DO NOT draw grid). Row1 ONLY column4 is opaque. Row2 columns3 AND4 are opaque. Row3 columns2 AND3 are opaque. Row4 columns1 AND2 are opaque. ALL these SEVEN square cells contain continuous stone, with NO transparency holes inside; other nine cells are transparent. This is a solid thick band with a STEPPED UNDERSIDE continuing underneath every tread, not four separate blocks touching at corners. Cells on the secondary diagonal are the dark burgundy-purple side/belly of the same stone. Within this strict silhouette, faithfully reproduce image1 fine structure with detailed dark gothic painted red-orange sandstone, fine mineral grain, tiny pits, worn ochre tread edges, deep burgundy shadow faces. Subdued highlights. Orthographic side view. No front-facing 3D staircase, no ground, no support wall below the specified band, no brick mortar on risers, no vegetation, no artificial black border. Edge-cut top-right step reaches top/right edges and bottom-left step reaches left/bottom edges, absolutely no margin. Keep all step edges on25% grid fractions. Actual transparent background; no text. Do not copy the detached cubes from image2: only copy its material."
+    }
+  ]
+}
