@@ -54,13 +54,15 @@ def main():
     build.add_argument('--scale', type=int, choices=range(1, 11), default=10)
     args = parser.parse_args()
     if args.action == 'export':
+        meta = json.loads((args.pack / 'pack.json').read_text())
+        if meta.get('regions'):
+            parser.error('Scene packs contain full planes; rebuild with hd_scene.py instead of tile export')
         scale, _, tiles = hd.load_pack(args.pack)
         # Avoid replacing artwork that the artist may have edited already.
         if args.out.exists() and any(args.out.iterdir()):
             parser.error('--out must be empty; preserve your edited PNGs')
         for key, tile in tiles.items():
             hd.save_rgba(tile, args.out / f'{key}.png')
-        meta = json.loads((args.pack / 'pack.json').read_text())
         if 'contexts' in meta:
             (args.out / 'contexts.json').write_text(json.dumps({
                 'contexts': meta['contexts'], 'requires': meta.get('requires', ['tile-context-v1'])}))

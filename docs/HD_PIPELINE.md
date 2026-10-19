@@ -1,9 +1,113 @@
 # HD-Grafik umschalten und bearbeiten
 
-Stand: 2026-10-19. **Escape → HD graphics → HD graphics enabled** schaltet
+Stand: 2026-10-20. **Escape → HD graphics → HD graphics enabled** schaltet
 zwischen Original und dem geladenen HD-Paket um. Die Simulation läuft beim
 Fortsetzen an derselben Stelle weiter. Originalgrafiken bleiben jederzeit
 verfügbar; fehlende Ersatztiles erscheinen automatisch im Original.
+
+## Aktueller Import: fertige Nutzerbilder für Stage 01 (20.10.)
+
+Der Nutzer erstellt alle Grafiken selbst. Codex generiert keine weiteren Bilder
+und bereitet keine neuen Ausschnitt-/Promptserien vor. Vollständige HD-Motive
+werden zusammen mit ihren nativen SD-Referenzen importiert. Die folgenden
+älteren Material-/Tilepiloten bleiben historische, optionale Werkzeuge.
+
+Installiert und ausgewählt: **`build/hd_packs/stage-01-user-v1`**, HD an, 10×.
+Finales Paket: `artwork-local/packs/stage-01-user-final`. Quellen unverändert
+in `artwork-local/stage01-user-v1/source`, aus
+`D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Stage 01` kopiert;
+`source-checksums.json` hält SHA-256 aller 21 Dateien fest. Kein Resizing, keine
+Farbänderung am HD-Original. Technische Ebenen-/Animationsausschnitte verändern
+nur die importierte Kopie. Das Rezept ist versioniert:
+`assets/hd/stage_01.recipe.json`.
+
+| Motiv | native Registrierung | Behandlung |
+|---|---|---|
+| Land/Treppe 6970×1800 | Welt −54,44; 697×180 | komplette Fläche inklusive linker Erweiterung |
+| Brücke/Burg 4350×1930 | Welt 643,31; 435×193 | rechte Erweiterung, getrennte Spielkomponenten |
+| Felsen 2850×1920 | BG2-Karte 0,0; Wiederholung 512×256 | echte Parallaxen-/Zeilenregister |
+| Mond 190×190 | Bildschirm 54,46 | ganze RGBA-Form, vier originale OBJ-Schlüssel maskiert |
+| Fledermäuse 260×60 | originale OBJ-Schlüssel und Posen | sechs 80×80-Tiles |
+| Wasser 1400×980 | BG2 y200; Inhalt x12…140, 128×24 | vier ganze Phasen, originale Palette 80 als Schutz |
+
+Brückendeck und Scharnier sind Mode 7, Burg und Kette sind native Sprites.
+Darum wird das Deck separat aus dem gelieferten Bild entnommen und mit der
+Originalmatrix gedreht. Die Burg bleibt fest; ihr gebundener Originalbereich
+mit OBJ-Palette 240 wird maskiert. Grasinseln bleiben ebenfalls fest und hinter
+dem Deck. Beim isolierten Grasstreifen entfernt eine Alpha-Komponentenmaske die
+am oberen Schnittrand anliegenden Deck-/Plattformfragmente. Das Rohbild bleibt
+unverändert. Kette und Fledermäuse folgen den nativen OBJ-Posen und behalten
+noch deren Rasterkontur; an der Kette sind Segmentkanten sichtbar.
+
+Das Wasser verwendet einen **kosmetischen Spielzähler-Takt**: vier Phasen à
+16 Frames aus WRAM `$3A`, 64-Frame-Schleife, somit ohne Sprung beim 8-bit-Wrap.
+Pausieren/State-Laden bleibt reproduzierbar. Dies behauptet keine exakte
+Synchronisation mit den Original-Wasserphasen. Die HDMA-Zeilenverschiebungen und
+native Farbmathematik wirken weiterhin auf die dargestellte Wasserfläche.
+
+Reproduzierbarer Neubau in ein **neues, leeres** Ziel:
+
+```powershell
+python tools/hd/hd_scene.py --recipe assets/hd/stage_01.recipe.json --source artwork-local/stage01-user-v1/source --dump artwork-local/stage01-user-v1/pilot-keys --dump artwork-local/stage01-user-v1/capture --video artwork-local/stage01-user-v1/water-video.bin --out artwork-local/packs/stage-01-next
+```
+
+`scene-receipt.json` enthält Rezept, Builder-/Quell-/SD-/Aufnahme-Prüfsummen,
+Zuordnungen und mehrdeutige Tilevarianten. 36 Schlüsselbilder (Mond 4,
+Fledermäuse 6, Wasser 15, Kette 11) ergänzen 13 Bildblöcke. Bilder über 4096 Pixel
+Breite werden an nativen Pixelgrenzen geteilt; der Loader verbindet passende
+benachbarte Blöcke wieder zu durchgehenden CPU-Ebenen (hier 11 Regionen), auch
+für affine Abtastung. Eine Quelle versorgt ihre wiederholten Vorkommen.
+
+### Szenenformat und Laufzeit
+
+`requires: ["scene-regions-v1"]` verlangt `scene_block`, `regions` und optional
+`tiles`. Unterstützte Layer sind BG1=0, BG2=1 und registrierte feste OBJ=4.
+Regionen benennen lokale PNGs, native `x/y`, `coordinates` (`world`, `map`,
+`screen`), `wrap_x/y`; optional Modi 1/7, feste BG1-Flächen, OBJ-Schlüsselmaske,
+Priorität und Animationsselektor. Pro Paket maximal 16 Dateiregionen und
+256 MiB decodierte Bilddaten; einzelne PNGs maximal 4096×4096. Kontexttiles
+und Szenenregionen dürfen nicht im selben Paket stehen. Ungültiger Reload
+behält das letzte gültige Paket. Szene ist auf Spielmodus 4, Ladephase 5 und
+den benannten Block begrenzt; Text/HUD bleiben nativ.
+
+Der Opt-in-Pfad sammelt read-only Kandidaten auch für transparente/verdeckt
+liegende BG-Pixel. RGBA wird vor der Sichtbarkeit mit nativen Prioritäten,
+Fenstern, Main/Subscreen, Farbmathematik und Helligkeit komponiert. Er kopiert
+pro Zeile den PPU-Zustand einschließlich Darstellungs-VRAM, Kamera und Zähler;
+Worker lesen diese unveränderlichen Kopien. Keine Zugriffe der Worker auf
+laufende CPU/PPU-Zustände und keine Änderungen an Spielkollisionen/-simulation.
+Nicht unterstützte Modi, Mosaic-/Hosttransformationen, Interlace/Hires oder
+Direct Color fallen auf Original zurück; Mode 7 ist hier nur für den tatsächlich
+geprüften Brückenfall verifiziert. Kein allgemeiner HD-Ersatz aller SNES-Effekte
+oder vollständiger bewegter Sprite-Stapel.
+
+Szenenpakete im laufenden Spiel mit `sciv_play.py hdshot` ansehen.
+`hd_preview.py` und `hd_tiles.py export` lehnen sie ausdrücklich ab, damit beim
+alten Tile-Export keine ganzen Ebenen stillschweigend verloren gehen.
+
+**Noch fehlend:** eigene linke Erweiterung des Felsen-Hintergrunds; dort bleibt
+Spiegelung, während die gelieferte FG-Erweiterung bereits eingebaut ist.
+Simon, HUD, Kerzen und Gegner haben weiterhin Originalgrafik. Weitere Blöcke
+benötigen passende Nutzerbilder und eine eigene Szenen-/Bewegungsprüfung.
+
+### Nachweis für dieses Paket
+
+`test_hd_scene.py` prüft echte Alpha-Konturen, Nearest-Identität bei 2×/4×/10×,
+Kategorien/falsche Szene und native Bilder/Zustände beim Start, Scrollen, auf der
+Brücke, in einer weiteren Wasserphase und bei echter Brückenrotation.
+Parallel (8) und seriell (1) liefern 33 bytegleiche gemeinsame PNGs. Zusätzlich
+elf Bewegungs-Checkpoints in `test_hd_route.py`, bestehender Tile-/Kontexttest
+und `test_hd_ppu.py`. Berichte und Bilder dauerhaft unter
+`artwork-local/stage01-user-v1/review`. Nutzer-Release-Menütest (Klick/Persistenz/Marker) und Startup mit RunAhead 0/1
+sind ebenfalls grün. Finale Messung über `sciv_play.py`, je 240 ungedrosselte
+Frames bei 10×: ca.60,8 FPS am Start, 58,0 FPS auf der Brücke auf diesem Rechner.
+Kein allgemeines 60-FPS-Versprechen und kein vollständiger Frame-CRC-Test des
+ganzen Spiels. Für Fortschritt und Quellen gilt HANDOFF.md.
+
+```powershell
+python tools/test_hd_scene.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-lua --pack artwork-local/packs/stage-01-user-final
+python tools/test_hd_route.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-lua --pack artwork-local/packs/stage-01-user-final --fixture artwork-local/fixtures/block-1-1/state.sav
+```
 
 ## Umschalten und 4K-Ziel
 
@@ -32,7 +136,7 @@ verfügbar; fehlende Ersatztiles erscheinen automatisch im Original.
 
 ## Eigene Grafikvarianten
 
-### Materialpilot Block 1-1
+### Historischer Materialpilot Block 1-1
 
 Lokales Paket **`build/hd_packs/pilot-1-1-painted-v2`** im Menü auswählen,
 HD aktivieren, 10× wählen. Drei mit dem eingebauten Imagegen neu ausgearbeitete
@@ -245,7 +349,7 @@ PNG-Schreiben läuft in einem Hintergrundthread mit begrenzter Warteschlange.
 Bei Schreibfehlern stoppt die Sammlung und meldet dies im Menü und `game.log`.
 Bei einem erzwungenen Prozessende können noch ausstehende Bilder fehlen.
 
-## Live-Renderer: Umfang und Grenzen
+## Tile-/Kontext-Renderer: Umfang und Grenzen (älterer Paketpfad)
 
 `src/hd_render.cpp` ordnet nach jeder nativen PPU-Zeile Ersatztiles anhand
 von Pixeln und Palette zu. Dadurch berücksichtigt er die tatsächliche
@@ -295,7 +399,7 @@ Noch auszuarbeiten: hochwertige 80×80-Motive mit konsistentem Stil und
 sauberen Nähten, vollständige Figurenanimationen, echte HD-Silhouetten,
 Mode-7-Ersatzgrafiken und eine Szenenprüfung über das gesamte Spiel.
 
-## Gemeinsame Tile-Bibliothek und Vergleichsstrecke (19.10.)
+## Historische gemeinsame Tile-Bibliothek und Vergleichsstrecke (19.10.)
 
 Wiederkehrende Bausteine werden einmal gestaltet und referenziert. Der Katalog
 erkennt Originalschlüssel über mehrere Aufnahmen hinweg und zählt ihre
@@ -428,14 +532,11 @@ Ohne `--fixture` erzeugt das Werkzeug den Startzustand aus dem Boot-Skript.
 `test_hd_contours.py` beweist im **Offline-Referenzrenderer** Subpixel-Alpha,
 Konturen außerhalb der nativen Silhouette, Durchsicht auf BG2, Sprite-Priorität
 und Spiegelungen. Ein echter Marker wird zunächst nativ pixelgenau rekonstruiert.
-Das cyanfarbene Diagnosebild ist kein Artwork. **Die neue Konturkomposition ist
-noch nicht im Live-Renderer integriert**; Fenster, Farbmathematik und vollständige
-Sprite-Stapel sind damit ebenfalls nicht gelöst.
+Das cyanfarbene Diagnosebild ist kein Artwork. Die damalige Offline-Probe ist inzwischen durch den oben beschriebenen
+Live-Szenenpfad ergänzt. Allgemeine bewegte Sprite-Stapel bleiben offen.
 
-Nächste Reihenfolge: gemeinsame Bausteine des ersten Abschnitts gestalterisch
-freigeben, damit die restlichen Motive ergänzen; echte Konturen in den Live-Pfad
-einbauen und an dieser Strecke prüfen; anschließend Simon-Animationsprobe und
-ein Gegner. Erst danach auf weitere Level ausweiten.
+Für die Fortsetzung gilt der aktuelle Nutzerbild-Import oben; diese älteren
+Materialversuche werden nicht automatisch weiter erzeugt.
 
 ## Tests
 

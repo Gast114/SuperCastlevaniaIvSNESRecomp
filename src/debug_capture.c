@@ -80,9 +80,12 @@ size_t Cv4CapturePpuJson(char *out, size_t capacity)
             (unsigned)g_ppu->vScroll[i]);
     if (n < capacity)
         n += (size_t)snprintf(out + n, capacity - n,
-                              "],\"extra\":%u,\"left\":%u,\"right\":%u}",
+                              "],\"extra\":%u,\"left\":%u,\"right\":%u,\"main\":%u,\"sub\":%u,\"math\":%u,\"color_control\":%u,\"m7\":[%d,%d,%d,%d,%d,%d,%d,%d],\"m7sel\":%u}",
                               (unsigned)g_ppu->extraLeftRight, (unsigned)g_ppu->extraLeftCur,
-                              (unsigned)g_ppu->extraRightCur);
+                              (unsigned)g_ppu->extraRightCur, (unsigned)g_ppu->screenEnabled[0],
+                              (unsigned)g_ppu->screenEnabled[1], (unsigned)g_ppu->cgadsub, (unsigned)g_ppu->cgwsel,
+                              g_ppu->m7matrix[0],g_ppu->m7matrix[1],g_ppu->m7matrix[2],g_ppu->m7matrix[3],
+                              g_ppu->m7matrix[4],g_ppu->m7matrix[5],g_ppu->m7matrix[6],g_ppu->m7matrix[7],g_ppu->m7sel);
     return n < capacity ? n : capacity - 1;
 }
 

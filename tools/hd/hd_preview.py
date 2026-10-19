@@ -241,8 +241,10 @@ def main():
             raise SystemExit('no debug marker with lines.bin found')
         marker = found[0]
     manifest = args.pack / 'pack.json'
-    if manifest.exists() and json.loads(manifest.read_text()).get('contexts'):
-        raise SystemExit('Context packs require the live renderer: use sciv_play.py hdshot')
+    if manifest.exists():
+        meta = json.loads(manifest.read_text())
+        if meta.get('contexts') or meta.get('regions'):
+            raise SystemExit('Context/scene packs require the live renderer: use sciv_play.py hdshot')
     scale, _size, pack_tiles = hd.load_pack(args.pack) if manifest.exists() else (4, 32, {})
     m = Machine(marker)
     tiles = Tiles(m, pack_tiles, scale)
