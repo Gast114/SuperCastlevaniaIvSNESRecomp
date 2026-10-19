@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "name": "Block 1-1 first stairs comparison",
+  "boot_script": "widescreen_smoke.input",
+  "marker_frame": 1088,
+  "steps": [
+    {"name": "start", "buttons": "", "frames": 1},
+    {"name": "left-edge", "buttons": "Left", "frames": 80, "expect": {"player_x": [11, 11], "camera_x": [0, 0]}},
+    {"name": "approach-stairs", "buttons": "Right", "frames": 150},
+    {"name": "climb", "buttons": "Up+Right", "frames": 64, "expect": {"player_state": [11, 11], "player_y": [120, 145]}},
+    {"name": "upper-stairs", "buttons": "Up+Right", "frames": 64, "expect": {"player_state": [11, 11], "player_y": [70, 100]}},
+    {"name": "descend", "buttons": "Down+Left", "frames": 160, "expect": {"player_y": [177, 177], "player_state": [6, 6]}},
+    {"name": "jump", "buttons": "Right+B", "frames": 12, "expect": {"player_state": [4, 4], "player_y": [120, 140]}},
+    {"name": "land", "buttons": "", "frames": 40, "expect": {"player_state": [2, 2], "player_y": [165, 165]}},
+    {"name": "whip", "buttons": "Y", "frames": 12, "expect": {"player_pose": [40223, 40223]}},
+    {"name": "recover", "buttons": "", "frames": 24},
+    {"name": "return", "buttons": "Left", "frames": 100}
+  ]
+}

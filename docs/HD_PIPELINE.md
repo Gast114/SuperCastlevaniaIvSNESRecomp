@@ -295,11 +295,96 @@ Noch auszuarbeiten: hochwertige 80×80-Motive mit konsistentem Stil und
 sauberen Nähten, vollständige Figurenanimationen, echte HD-Silhouetten,
 Mode-7-Ersatzgrafiken und eine Szenenprüfung über das gesamte Spiel.
 
+## Gemeinsame Tile-Bibliothek und Vergleichsstrecke (19.10.)
+
+Wiederkehrende Bausteine werden einmal gestaltet und referenziert. Der Katalog
+erkennt Originalschlüssel über mehrere Aufnahmen hinweg und zählt ihre
+Vorkommen. H/V-Spiegelungen benötigen keine zusätzlichen Quellbilder.
+Palettenvarianten werden als Familie angezeigt, bleiben aber getrennte Schlüssel.
+Die Zählung beschreibt die Aufnahmen, nicht die Anzahl eindeutiger Weltpositionen.
+
+```powershell
+python tools/hd/hd_catalog.py --dump artwork-local/captures/pilot --out artwork-local/library --scale 10
+```
+
+`native/<Originalschlüssel>.png` dient als Referenz. Die zugehörige neue Grafik
+liegt unter `shared/<Originalschlüssel>.png`: 80×80 echte RGBA-Pixel, in der
+ungespiegelten Orientierung. Nach dem Kataloglauf enthält `shared_tiles.json`
+die verfügbaren Quellen. Vorhandene Quellbilder werden niemals überschrieben.
+Aktuell: 2.944 Originalschlüssel, 46.736 aufgezeichnete Vorkommen, 1.971
+Palettenfamilien. **Noch keine freigegebenen HD-Bausteine in `shared/`**; die
+drei bereits gemalten Motive bleiben kontextgebundene Varianten.
+
+Ein Motiv-Rezept kann auf dieselbe Bibliothek verweisen:
+
+```json
+{
+  "version": 1,
+  "scale": 10,
+  "shared_library": "../library/shared_tiles.json",
+  "motifs": [
+    {"name": "masonry", "reference": "source/bg1.png", "rect": [0, 128, 96, 64], "artwork": "generated/masonry.png"}
+  ]
+}
+```
+
+Bibliothekspfade gelten relativ zur Indexdatei. Optionales `shared_tiles` direkt
+im Rezept überschreibt einzelne Einträge; dessen Pfade gelten relativ zum Rezept.
+Gemeinsame Quellen ersetzen passende Originalschlüssel in allen registrierten
+Motiven. Das Motivbild liefert noch nicht abgedeckte Bausteine; es darf entfallen,
+wenn sämtliche eingeschlossenen Schlüssel in der Bibliothek vorliegen.
+Die bisherigen Nachbarschaftsprüfungen bleiben erhalten: Eine Wiederholung in
+einer neuen Nachbarschaft muss zunächst registriert werden.
+
+Der Import speichert pixelidentische Bildstücke nur einmal, auch wenn mehrere
+Platzierungen darauf zeigen. `motifs.json.reuse` zeigt die tatsächliche Ersparnis.
+Eine Änderung der gemeinsamen Quelle und erneuter Paketbau aktualisiert alle
+Referenzen. Unterschiedliche gemalte Varianten werden nicht automatisch
+vereinheitlicht: Der bestehende Pilot hat weiterhin 312 unterschiedliche Bilder
+für 178 Originalschlüssel. Sein Neubau unter `artwork-local/packs/pilot-reuse-v1`
+erhält alle 312 Platzierungen pixelgenau. Globale Zuordnung unpassender
+Motivfragmente würde die bereits beobachteten Flickstellen zurückbringen.
+
+Originalquellen, Prompts, Aufnahmen und Startzustände liegen dauerhaft unter
+`artwork-local/` (gitignored), zusätzlich mit SHA-256-geprüfter Kopie unter
+`D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-19-hd-library`.
+Der Nutzer-Build behält sein bisheriges auswählbares Pilotpaket.
+
+```powershell
+python tools/test_hd_route.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-lua --pack artwork-local/packs/pilot-reuse-v1 --fixture artwork-local/fixtures/block-1-1/state.sav
+python tools/test_hd_contours.py --marker artwork-local/fixtures/contour-reference
+```
+
+Die versionierte Strecke `assets/hd/block_1_1.route.json` prüft elf Punkte:
+Start, linker Rand, Anlauf, zwei Treppenpositionen, Abstieg, Sprung, Landung,
+Peitsche, Erholung und Rückweg. Zustands-/Höhenprüfungen stellen sicher, dass die
+Aktionen tatsächlich stattfinden. Abstieg endet durch gehaltenes Down geduckt
+(Y=177); im Stehen ist Y=165. Drei Durchläufe vom selben Savestate vergleichen
+Original → HD → Original: native Bilder und benannte RAM-Felder müssen gleich
+bleiben. Bericht enthält ROM-/Build-/Paket-/Strecken-/State-Prüfsummen.
+Das ist ein Checkpoint-Test, kein vollständiger Frame-CRC-Vergleich oder Recorder.
+Ohne `--fixture` erzeugt das Werkzeug den Startzustand aus dem Boot-Skript.
+
+`test_hd_contours.py` beweist im **Offline-Referenzrenderer** Subpixel-Alpha,
+Konturen außerhalb der nativen Silhouette, Durchsicht auf BG2, Sprite-Priorität
+und Spiegelungen. Ein echter Marker wird zunächst nativ pixelgenau rekonstruiert.
+Das cyanfarbene Diagnosebild ist kein Artwork. **Die neue Konturkomposition ist
+noch nicht im Live-Renderer integriert**; Fenster, Farbmathematik und vollständige
+Sprite-Stapel sind damit ebenfalls nicht gelöst.
+
+Nächste Reihenfolge: gemeinsame Bausteine des ersten Abschnitts gestalterisch
+freigeben, damit die restlichen Motive ergänzen; echte Konturen in den Live-Pfad
+einbauen und an dieser Strecke prüfen; anschließend Simon-Animationsprobe und
+ein Gegner. Erst danach auf weitere Level ausweiten.
+
 ## Tests
 
 ```powershell
 python tools/test_hd_ppu.py
 python tools/test_hd_motifs.py
+python tools/test_hd_catalog.py
+python tools/test_sciv_state.py
+python tools/test_hd_contours.py
 python tools/test_hd_render.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-lua
 python tools/test_hd_ui.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-dev --pack build/hd_pack
 python tools/test_hd_pipeline.py --build-dir build-dev

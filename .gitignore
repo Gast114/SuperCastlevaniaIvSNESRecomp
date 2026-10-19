@@ -38,6 +38,7 @@
 /hd_pack/
 /hd_settings.json
 /hd_packs/
+/artwork-local/
 /debug_markers/
 /build/*/simon_full_frames.reference.png
 

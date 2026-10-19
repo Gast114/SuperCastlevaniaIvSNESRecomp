@@ -108,11 +108,17 @@ def parse_buttons(text):
 
 
 def read_state(lua):
-    reads = ','.join(
+    reads = [
         f'mainmemory.read_u{8 * size}{"_le" if size > 1 else ""}({addr})'
-        for addr, size in FIELDS.values())
-    result = lua.eval(f'return emu.framecount(),{reads}')
+        for addr, size in FIELDS.values()]
+    # The bridge returns at most 16 Lua values. Include the frame plus at most
+    # 15 fields, then fetch the remainder while the machine stays paused.
+    result = lua.eval('return emu.framecount(),' + ','.join(reads[:15]))
     values = [int(v) for v in result['values']]
+    for start in range(15, len(reads), 16):
+        values.extend(int(v) for v in lua.eval('return ' + ','.join(reads[start:start+16]))['values'])
+    if len(values) != len(FIELDS)+1:
+        raise RuntimeError('Lua bridge truncated the named game state')
     state = {'frame': values[0], 'paused': result['paused']}
     state.update({name: value for name, value in zip(FIELDS, values[1:])})
     return state
