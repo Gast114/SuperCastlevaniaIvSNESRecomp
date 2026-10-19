@@ -1,7 +1,8 @@
 # Arbeitsstand & Übergabe (Stand 2026-10-19)
 
 Kurzreferenz für die nächste Sitzung. Antworten an den Nutzer auf Deutsch. Aktueller Nutzerfokus: jederzeit umschaltbare, austauschbare HD-Grafik mit 4K-Ziel.
-**Aktueller Auftrag:** zunächst Material-/Stilpilot am Anfang von Block 1-1, danach konsistenter Workflow fürs ganze Spiel. Erste drei KI-Motive sind im Spiel testbar; der komplette erste Abschnitt und die Simon-Animationsprobe sind noch nicht fertig. Siehe Pilotstand unten.
+**Aktueller Auftrag – Richtungswechsel des Nutzers:** Keine weitere Bildgenerierung hier. Der bisherige Kleinst-Tile-Artworkansatz ist dem Nutzer zu teuer und gestalterisch falsch. Codex liefert ganze zusammenhängende Originalausschnitte und Aufträge; der Nutzer erstellt die HD-Bilder in einem normalen ChatGPT-Fenster und liefert die heruntergeladenen PNGs zurück. Codex übernimmt Zuordnung, Import und gezielte Spielprüfung. Erst ein Motiv validieren, bevor weitere Bilder entstehen. Keine automatische Fortsetzung der alten Generierungsserie.
+**Vorbereitet:** `artwork-local/chatgpt-handoff/block-1-1-probe-01/` plus gleichnamige ZIP: vollständige sichtbare BG2-Felsenformation (native 256×160, Ziel 2560×1600) und komplette erste Treppe mit beiden Schrägen/Mauer/Boden (384×176, Ziel 3840×1760), getrennte Aufträge, Stilbeispiel des Nutzers und Originalkoordinaten. Zunächst nur Felsen bearbeiten lassen. Vorlagen sind technische Nearest-Vergrößerungen; keine KI-Generierung und keine Paketänderung. Treppenausschnitt kommt aus dem Downloads-Bogen, Laufzeitzuordnung noch nötig. Rückgabe: unveränderte PNG-Ausgabe in voller Auflösung plus Stilfeedback, kein Screenshot. Maße/Alpha/Geometrie prüfen; glatte Live-Konturen bleiben eine separate offene Aufgabe. Der komplette erste Abschnitt und die Simon-Animationsprobe sind weiterhin nicht fertig.
 **Neuester Stand:** 47 gemeinsame HD-Mauer-/Treppenquellen erzeugt und als `hd_packs/pilot-1-1-shared-v5` installiert. Rechte Mauer/obere Plattform durch zusätzliche Aufnahme zugeordnet, ohne neue Bilder pro Vorkommen. Stil-/Technikpilot, noch kein fertiger Abschnitt: Übergänge, rote Treppengeometrie, restliche Umgebung/Figuren und echte Live-HD-Konturen offen.
 RAM-Map / Spielmodi: `D:\Reverse Engineering\docs\sc4\analysis.md`.
 
@@ -13,6 +14,7 @@ RAM-Map / Spielmodi: `D:\Reverse Engineering\docs\sc4\analysis.md`.
 - Kennzeichnen, was verifiziert (gebaut/ausgeführt/gelesen) vs. Vermutung ist. Token sparen, Qualität halten.
 - Klarstellung des Nutzers: **NEW GAME+ bedeutet den originalen schwereren zweiten Durchgang nach dem Durchspielen** (wie START 2), nicht den Sandbox-Raum. Umsetzung noch offen, Bedeutung bereits geklärt.
 - Wiederkehrende Tiles sollen **einmal** als HD-Quelle entstehen und wiederverwendet werden, auch über Level hinweg. Keine erneute KI-Generierung pro Vorkommen.
+- Artwork künftig als zusammenhängende Motive/Ebenen extern vom Nutzer erstellen lassen. Technisches Zerlegen/Wiederverwenden bleibt Codex-Aufgabe; keine handwerkliche Tile-Zuordnung vom Nutzer verlangen. Nutzerbeispiel bestimmt Stil, Originalvorlage Geometrie. Bestehenden Pilot als historischen Versuch behandeln.
 
 ## Git
 - Arbeitsbranch `dev` (lokal): … 633733b Widescreen-Ränder · aac6d65 natives NEW GAME+ · c81539d Handoff · **57b62dc Savestate-Ausführungszustand** · **6570042 Debug-Marker** · (+ Handoff-Commit).
