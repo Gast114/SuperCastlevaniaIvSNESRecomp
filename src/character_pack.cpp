@@ -266,8 +266,8 @@ extern "C" void Cv4CharacterEnd(Ppu*p){p->hostObjPixels=nullptr;}
 extern "C" void Cv4CharacterEditor(){
   if(!initialized)return;
   auto display=ImGui::GetIO().DisplaySize;
-  ImGui::SetNextWindowPos({24,45},ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize({std::min(600.f,display.x-48),std::min(760.f,display.y-60)},ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowPos({24,76},ImGuiCond_Always);
+  ImGui::SetNextWindowSize({std::min(600.f,display.x-48),std::min(760.f,display.y-92)},ImGuiCond_Always);
   if(!ImGui::Begin("Character workshop")){ImGui::End();return;}
   ImGui::TextWrapped("%s",status.c_str());
   if(ImGui::Checkbox("Use character pack",&enabled))std::ofstream("characters/selected.txt")<<(enabled?active.directory:"");

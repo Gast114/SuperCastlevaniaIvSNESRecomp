@@ -81,8 +81,12 @@ std::array<uint8_t, contextRegisterBytes> contextRegisters;
 std::array<uint8_t, contextPolicyBytes> contextPolicies;
 unsigned contextBoundaries = 255, contextHudSplit = 0;
 bool HasArt() { return !pack.tiles.empty() || !pack.regions.empty(); }
-bool SceneActive() { return pack.block < 0 || (g_ram[0x32] == 4 && g_ram[0x70] == 5 && g_ram[0x86] == pack.block); }
-bool SharedObjectsActive() { return !pack.sharedObjects.empty() && g_ram[0x32] == 4 && g_ram[0x70] == 5; }
+bool LevelPictureActive() {
+    unsigned phase=g_ram[0x70];
+    return g_ram[0x32]==4 && (phase==3 || phase==4 || phase==5 || phase==6 || phase==10 || phase==12);
+}
+bool SceneActive() { return pack.block < 0 || (LevelPictureActive() && g_ram[0x86] == pack.block); }
+bool SharedObjectsActive() { return !pack.sharedObjects.empty() && LevelPictureActive(); }
 
 void ContextScanline(Ppu *p, int line) {
     if (pack.contexts.empty()) return;
@@ -477,12 +481,13 @@ struct ScenePixel {
     int8_t fast = -1;
 };
 std::vector<ScenePixel> scenePixels;
-struct SceneLine { Ppu ppu; int cameraX=0,cameraY=0,clock=0; bool valid=false; };
+struct SceneLine { Ppu ppu; int cameraX=0,cameraY=0,clock=0; bool valid=false,regionsActive=false; };
 std::vector<SceneLine> sceneLines;
 std::array<const uint32_t *,224> sceneNativeRows{};
 std::array<unsigned,224> sceneMatches{};
 uint64_t sceneEpoch=0;
 thread_local int sceneCameraX=0,sceneCameraY=0,sceneClock=0;
+thread_local bool sceneRegionsActive=true;
 bool sceneFrame = false;
 bool timing = std::getenv("SCIV_HD_TIMINGS") != nullptr;
 double gatherSeconds=0, composeSeconds=0;
@@ -490,6 +495,7 @@ unsigned timingFrames=0;
 using HdClock=std::chrono::steady_clock;
 int Wrap(int n, int width) { return (n % width + width) % width; }
 Sample RegionAt(Ppu *p, int x, int line, unsigned layer, const PpuTileSource *native=nullptr, bool stationary=false) {
+    if(!sceneRegionsActive)return {};
     if (!(layers & (1u << layer))) return {};
     for (const auto &r : pack.regions) {
         if (r.layer != int(layer)) continue;
@@ -618,6 +624,7 @@ bool GatherSceneLine(Ppu *p, int line) {
     if ((PPU_mode(p) != 1 && PPU_mode(p) != 7) || PPU_forcedBlank(p) || line <= std::max(32, int(p->wsHudSplitHeight & 127))) return false;
     // Unsupported host transforms/mosaic keep the ordinary picture.
     for (const auto &r : pack.regions) {
+        if(!sceneRegionsActive)break;
         if (r.layer == 4) continue;
         if(!(r.modes&(1u<<PPU_mode(p))))continue;
         if (PPU_mode(p) == 7) break;
@@ -662,7 +669,7 @@ bool GatherSceneLine(Ppu *p, int line) {
             if (!c.art.region && !c.art.affine && s.source.valid) {
                 // OBJ provenance must still identify the real winning object.
                 if (layer < 3 || PpuGetTileSource(p,x,line,s.pixel,&c.art.source))
-                    c.art = FindSource(p,x,line,layer,s.source);
+                    c.art = FindSource(p,x,line,layer,s.source,!sceneRegionsActive);
             }
             if (c.art.tile || c.art.region || c.art.affine) ++sceneMatches[line-1];
             else if (!(c.rgba >> 24)) c.screens = 0;
@@ -731,6 +738,7 @@ void RenderRows(void *, size_t begin, size_t end, unsigned) {
                     std::copy(std::begin(line.ppu.cgram),std::end(line.ppu.cgram),colours.begin());
                 }
                 sceneCameraX=line.cameraX;sceneCameraY=line.cameraY;sceneClock=line.clock;
+                sceneRegionsActive=line.regionsActive;
                 sceneValid=GatherSceneLine(&line.ppu,int(y)+1);
             }
         }
@@ -811,7 +819,7 @@ extern "C" void Cv4HdRenderBegin(Ppu *p) {
     try {
         surface.resize(size_t(frameWidth) * 224 * scale * scale);
         pixels.resize(size_t(frameWidth) * 224);
-        sceneFrame = !pack.regions.empty() && SceneActive();
+        sceneFrame = !pack.regions.empty() && (SceneActive() || SharedObjectsActive());
         if (sceneFrame) {
             scenePixels.resize(size_t(frameWidth)*224);sceneLines.resize(224);
             for(auto &line:sceneLines)line.valid=false;
@@ -834,12 +842,13 @@ extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
         auto t=timing?HdClock::now():HdClock::time_point{};
         sceneNativeRows[line-1]=native;
         auto &copy=sceneLines[line-1];copy.valid=false;
-        if(SceneActive()&&!PPU_forcedBlank(p)&&(PPU_mode(p)==1||PPU_mode(p)==7)&&line>std::max(32,int(p->wsHudSplitHeight&127))) {
+        if((SceneActive()||SharedObjectsActive())&&!PPU_forcedBlank(p)&&(PPU_mode(p)==1||PPU_mode(p)==7)&&line>std::max(32,int(p->wsHudSplitHeight&127))) {
             copy.ppu=*p;
             if(p->renderVram)std::copy_n(p->renderVram,32768,copy.ppu.vram);
             copy.ppu.renderVram=nullptr;
             copy.cameraX=g_ram[0x1c]|g_ram[0x1d]<<8;copy.cameraY=g_ram[0x1e]|g_ram[0x1f]<<8;
             copy.clock=g_ram[0x3a];
+            copy.regionsActive=SceneActive();
             copy.valid=true;
         }
         if(timing)gatherSeconds+=std::chrono::duration<double>(HdClock::now()-t).count();

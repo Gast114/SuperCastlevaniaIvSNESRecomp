@@ -92,23 +92,37 @@ def object_frames(spec, source, video, scale):
                 native[y*8:y*8+8,x*8:x*8+8] = hd.TileInfo(4,colours,pixels).rgba()
                 cells.append((key,x,y))
         decoded.append((native,cells))
-    with Image.open(source/spec['image']) as im:
-        art = im.convert('RGBA').crop(tuple(spec['art_crop_px']))
-        if art.width < width*scale or art.height < height*scale:
-            raise ValueError('Object material is below the requested HD resolution')
-        art = np.array(art.resize((width*scale,height*scale),Image.Resampling.LANCZOS))
+    if 'frame_images' not in spec:
+        with Image.open(source/spec['image']) as im:
+            art = im.convert('RGBA').crop(tuple(spec['art_crop_px']))
+            if art.width < width*scale or art.height < height*scale:
+                raise ValueError('Object material is below the requested HD resolution')
+            art = np.array(art.resize((width*scale,height*scale),Image.Resampling.LANCZOS))
+    elif len(spec['frame_images']) != len(spec['frames']):
+        raise ValueError('Each object phase needs one HD frame image')
     base = decoded[0][0]
     result, receipts = {}, []
     for n,(native,cells) in enumerate(decoded):
-        painted = art.copy()
+        if 'frame_images' in spec:
+            with Image.open(source/spec['frame_images'][n]) as im:
+                im=im.convert('RGBA')
+                factor=min(width*scale/im.width,height*scale/im.height)
+                if factor>1:raise ValueError('Object frame would require upscaling')
+                fitted=im.resize((round(im.width*factor),round(im.height*factor)),Image.Resampling.LANCZOS)
+                canvas=Image.new('RGBA',(width*scale,height*scale))
+                canvas.paste(fitted,((canvas.width-fitted.width)//2,0))
+                painted=np.array(canvas)
+        else:
+            painted = art.copy()
         # Preserve HD material, applying only the original per-pixel colour
         # delta and holes at each damage phase. No runtime positional overlay.
         ratio = native[...,:3].astype(np.float32) / np.maximum(base[...,:3],8)
         ratio = np.clip(ratio,0,2).repeat(scale,0).repeat(scale,1)
-        if n:
+        if n and 'frame_images' not in spec:
             painted[...,:3] = np.clip(np.rint(painted[...,:3]*ratio),0,255).astype(np.uint8)
-        alpha = native[...,3].repeat(scale,0).repeat(scale,1).astype(np.uint16)
-        painted[...,3] = (painted[...,3].astype(np.uint16)*alpha//255).astype(np.uint8)
+        if 'frame_images' not in spec:
+            alpha = native[...,3].repeat(scale,0).repeat(scale,1).astype(np.uint16)
+            painted[...,3] = (painted[...,3].astype(np.uint16)*alpha//255).astype(np.uint8)
         for key,x,y in cells:
             tile = painted[y*8*scale:(y+1)*8*scale,x*8*scale:(x+1)*8*scale]
             if key in result and not np.array_equal(result[key],tile):
@@ -183,8 +197,9 @@ def build(recipe_path, source, dumps, output, videos=()):
             if key in tiles and not np.array_equal(tiles[key],tile):
                 raise ValueError('Object conflicts with a decorative tile')
             tiles[key] = tile
-        objects.append({'name':spec['name'],'frames':frames,'image_sha256':sha(source/spec['image']),
-                        'damage_source':'native colour delta and silhouette'})
+        objects.append({'name':spec['name'],'frames':frames,
+                        'image_sha256':[sha(source/f) for f in spec['frame_images']] if 'frame_images' in spec else sha(source/spec['image']),
+                        'damage_source':'authored HD frames, aspect fit, top aligned' if 'frame_images' in spec else 'native colour delta and silhouette'})
     # Validate all region dimensions before producing files.
     regions = []
     for region in recipe['regions']:

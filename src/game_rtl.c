@@ -281,10 +281,10 @@ void GameDrawPpuFrame(void)
          * restore the register immediately after capturing/rendering the row.
          * Never change guest VRAM, HDMA tables or simulation state. */
         uint16_t bg2_v = g_ppu->vScroll[1];
-        int water_edge = g_ram[0x32] == 4 && g_ram[0x70] == 5 && g_ram[0x86] == 0 &&
+          int phase = g_ram[0x70];
+          int water_edge = g_ram[0x32] == 4 && (phase == 3 || phase == 4 || phase == 5 || phase == 6 || phase == 10 || phase == 12) && g_ram[0x86] == 0 &&
             line == 192 && PPU_mode(g_ppu) == 1 && bg2_v == 1023 &&
-            PPU_bgTilemapAdr(g_ppu, 1) == 0x4800 &&
-            g_ppu->hScroll[1] == g_ppu->hScroll[0];
+            PPU_bgTilemapAdr(g_ppu, 0) == 0x4000 && PPU_bgTilemapAdr(g_ppu, 1) == 0x4800;
         if (water_edge) g_ppu->vScroll[1] = 0;
         Cv4HdRecordLine(g_ppu, line);
         ppu_runLine(g_ppu, line);

@@ -70,6 +70,7 @@
           160
         ]
       ],
+      "priority": 28672,
       "modes": [
         1
       ]
@@ -213,13 +214,6 @@
   "objects": [
     {
       "name": "crumbling-stone",
-      "image": "HD/02_SPIELEBENE_HD_3810x1930.png",
-      "art_crop_px": [
-        250,
-        1420,
-        430,
-        1600
-      ],
       "size": [
         16,
         16
@@ -232,7 +226,13 @@
         164,
         166
       ],
-      "video_index": 0
+      "video_index": 0,
+      "frame_images": [
+        "HD/STEIN_STUFE_1_HD_200x170.png",
+        "HD/STEIN_STUFE_2_HD_200x170.png",
+        "HD/STEIN_STUFE_3_HD_200x170.png",
+        "HD/STEIN_STUFE_4_HD_200x170.png"
+      ]
     }
   ]
 }

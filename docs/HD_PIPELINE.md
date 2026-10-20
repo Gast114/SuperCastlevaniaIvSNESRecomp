@@ -1,6 +1,6 @@
 # HD-Grafik umschalten und bearbeiten
 
-Stand: 2026-10-20. **Escape → HD graphics → HD graphics enabled** schaltet
+Stand: 2026-10-20. **Strg+H** oder **Escape → HD graphics → HD graphics enabled** schaltet
 zwischen Original und dem geladenen HD-Paket um. Die Simulation läuft beim
 Fortsetzen an derselben Stelle weiter. Originalgrafiken bleiben jederzeit
 verfügbar; fehlende Ersatztiles erscheinen automatisch im Original.
@@ -12,11 +12,11 @@ und bereitet keine neuen Ausschnitt-/Promptserien vor. Vollständige HD-Motive
 werden zusammen mit ihren nativen SD-Referenzen importiert. Die folgenden
 älteren Material-/Tilepiloten bleiben historische, optionale Werkzeuge.
 
-Installiert und ausgewählt: **`build/hd_packs/stage-01-user-v2-final`**, HD an, 10×.
-Finales Paket: `artwork-local/packs/stage-01-user-v2-final`. Quellen unverändert
-in `artwork-local/stage01-user-v2/source`, aus
+Installiert und ausgewählt: **`build/hd_packs/stage-01-user-v3-water-final`**, HD an, 10×.
+Finales Paket: `artwork-local/packs/stage-01-user-v3-water-final`. Quellen unverändert
+in `artwork-local/stage01-user-v3/source`, aus
 `D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Stage 01` kopiert;
-`source-checksums.json` hält SHA-256 aller 25 Dateien fest. Kein Resizing, keine
+`source-checksums.json` hält SHA-256 aller 29 Dateien fest. Kein Resizing, keine
 Farbänderung am HD-Original. Technische Ebenen-/Animationsausschnitte verändern
 nur die importierte Kopie. Das Rezept ist versioniert:
 `assets/hd/stage_01.recipe.json`.
@@ -48,7 +48,7 @@ native Farbmathematik wirken weiterhin auf die dargestellte Wasserfläche.
 Reproduzierbarer Neubau in ein **neues, leeres** Ziel:
 
 ```powershell
-python tools/hd/hd_scene.py --recipe assets/hd/stage_01.recipe.json --source artwork-local/stage01-user-v2/source --dump artwork-local/stage01-user-v2/pilot-keys --dump artwork-local/stage01-user-v2/capture --video artwork-local/stage01-user-v2/water-video.bin --out artwork-local/packs/stage-01-next
+python tools/hd/hd_scene.py --recipe assets/hd/stage_01.recipe.json --source artwork-local/stage01-user-v3/source --dump artwork-local/stage01-user-v3/pilot-keys --dump artwork-local/stage01-user-v3/capture --video artwork-local/stage01-user-v3/water-video.bin --out artwork-local/packs/stage-01-next
 ```
 
 `scene-receipt.json` enthält Rezept, Builder-/Quell-/SD-/Aufnahme-Prüfsummen,
@@ -67,8 +67,8 @@ Regionen benennen lokale PNGs, native `x/y`, `coordinates` (`world`, `map`,
 Priorität und Animationsselektor. Pro Paket maximal 16 Dateiregionen und
 256 MiB decodierte Bilddaten; einzelne PNGs maximal 4096×4096. Kontexttiles
 und Szenenregionen dürfen nicht im selben Paket stehen. Ungültiger Reload
-behält das letzte gültige Paket. Szene ist auf Spielmodus 4, Ladephase 5 und
-den benannten Block begrenzt; Text/HUD bleiben nativ.
+behält das letzte gültige Paket. Szene ist auf Spielmodus 4, Anzeigephasen 3/4/5/6/10/12 und
+den benannten Block begrenzt (einschließlich Upgrade/Tod); Text/HUD bleiben nativ.
 
 Der Opt-in-Pfad sammelt read-only Kandidaten auch für transparente/verdeckt
 liegende BG-Pixel. RGBA wird vor der Sichtbarkeit mit nativen Prioritäten,
@@ -85,46 +85,48 @@ Szenenpakete im laufenden Spiel mit `sciv_play.py hdshot` ansehen.
 `hd_preview.py` und `hd_tiles.py export` lehnen sie ausdrücklich ab, damit beim
 alten Tile-Export keine ganzen Ebenen stillschweigend verloren gehen.
 
-### Bewegliche Steine, Wasser und Randkorrektur (v2)
+### Bewegliche Steine, Wasser und Bedienung (v3)
 
-Die vier Steine wurden aus der festen Spielebene entfernt. `objects` im Rezept
-registriert 16×16-OBJ-Phasen `$A0/A2/A4/A6` aus dem vorhandenen Video-Dump
-(Base `$6000`, Palette240). Ein 180×180-Ausschnitt des Nutzerbildes wird auf
-160×160 verkleinert. Die native Silhouette und Farbänderung je Bruchphase
-übertragen die Original-Risse auf dieses Material. **Vorläufige technische
-Bruchmasken, ausdrücklich vom Nutzer bestätigt; keine neu gemalten HD-Risse.**
-Die Frame-/Key-Zuordnung samt Quellhash steht unter `scene-receipt.json.objects`.
-Die Simulation bestimmt Timing, Position, Fallbewegung und Verschwinden.
+`objects.frame_images` bindet pro nativer Phase eine gelieferte HD-Datei.
+Die vier `STEIN_STUFE_1..4_HD_200x170.png` ersetzen die früheren Rissmasken:
+16×16-OBJ, Frames `$A0/A2/A4/A6`, Base `$6000`, Palette240. Seitenverhältnis
+erhalten, ohne Upscaling: 200×170 →160×136, oben in einem 160×160-Canvas.
+Keine nativen Rissfarben über dem fertigen Bild. Die Frame-/Key-Zuordnung
+und alle vier Quellhashes stehen unter `scene-receipt.json.objects`.
+Timing, Fallbewegung und Verschwinden folgen der nativen Simulation.
+OBJ-Provenienz behält die native Rasterkontur als technische Grenze.
 
-`requires: ["scene-regions-v1", "shared-objects-v1"]` und `shared_objects`
-registrieren diese 16 Originalschlüssel für Wiederverwendung in anderen
-Gameplay-Blöcken (Mode4/Phase5). Außerhalb der Landschaftsszene werden nur die
-exakten OBJ-Tiles ersetzt; BG-Regionen und andere dekorative Schlüssel greifen
-dort nicht. Abweichende Originalpaletten benötigen eine weitere Registrierung.
-So entstehen keine starren Kopien und kein Landschaftsersatz in fremden Blöcken.
+`shared-objects-v1` registriert 16 exakte Schlüssel zur Wiederverwendung in
+anderen Gameplay-Blöcken. Dort greift dieselbe Alpha-Komposition, jedoch ohne
+Landschaftsregionen oder andere dekorative Tiles. Worker erhalten den
+Szenenfilter in unveränderlichen Zeilenkopien. Andere Originalpaletten brauchen
+eine weitere Registrierung; identische Steine brauchen keine neue Grafik.
 
-Zwei weitere Guarded Patches im OAM-Emitter `$00:8ED2/8EDA` erweitern beide
-signed Grenzen von −16…255 auf −64…303, nur bei Widescreen. Damit werden echte
-Sprites bereits im Rand emittiert; das behebt den 4:3-Pop-in zusätzlich zu den
-früher erweiterten Event-/Objektgrenzen. Originalformat behält Retail-Grenzen.
+Wasser: Felsen im See Priorität `$7000`, Wasser `$7100`, Ufer darüber.
+Die native Main/Subscreen-Farbmathematik lässt Felsen durch Wasser scheinen.
+Zwei unabhängige Farbproben prüfen, dass beide Flächen sichtbar beitragen,
+während das trockene Ufer nicht von der Wasserfärbung beeinflusst wird.
+Der Hintergrund hat die gelieferte linke 54px-Erweiterung bei Karten-X−54;
+regulärer Wrap512×256 unverändert.
 
-Die HD-Wasserregionen verwenden explizit Priorität `$7100` hinter der
-Spielebene. Die normale FG-Priorität bleibt bestehen, damit Simon weiterhin
-vor Säulen steht. Der linke Felsen-Anbau ist bei X−54 registriert; negative
-Koordinaten umgehen die alte Spiegelung, ohne das normale Karten-Wrap-Fenster
-zu verschieben (sonst würde der Anbau fälschlich rechts wiederkehren).
+Der native Strich auf Bildzeile191 wird nur für Block0/Mode1, Zeile192,
+BG1-Map`$4000`/BG2-Map`$4800`, VScroll1023 und die oben genannten Anzeigephasen
+korrigiert: V0 während dieser Zeile, danach sofort restauriert. Keine
+Guest-VRAM-/HDMA-/Simulationsänderung. Auch ohne HD wirksam.
+Die bestehenden Widescreen-Guarded-Patches im OAM-Emitter `$00:8ED2/8EDA`
+bleiben erhalten; Sprites erscheinen bereits bei −64…303 im breiten Rand.
 
-Der auch ohne HD sichtbare Erdstrich ist als eng begrenzte Darstellungskorrektur
-in `GameDrawPpuFrame` beseitigt: ausschließlich Block0/Phase5/Mode1, Zeile192,
-BG2-Map `$4800`, VScroll1023 und gleicher BG1/2-HScroll. Die Zeile liest vorübergehend
-V0 statt der alten Bodenzeile; nach PPU-/HD-Aufnahme wird das Register restauriert.
-Dies ist kein globaler HDMA-Timing-Fix. Guest-VRAM, HDMA-Tabellen und Simulation
-bleiben unverändert. Ein vorher/nachher-Vergleich zeigt im Originalformat nur
-die beabsichtigten Änderungen auf Bildzeile191; Widescreen zusätzlich Rand-OBJs.
+**Escape → Shortcuts:** Tastenkürzel anklicken, neue Kombination drücken,
+Konflikte auflösen; Änderungen sind sofort aktiv und werden gezielt gespeichert.
+Escape bricht die Erfassung ab. `Default` setzt die Menübindung auf Escape;
+andere Aktionen können gelöscht werden. **Strg+H** HD/Original,
+**Strg+D** Debugmarker mit Notiz, **Strg+Enter** Notiz speichern.
+Debug-/Rewind-Pad-Gesten sind ebenfalls im Shortcuts-Menü auswählbar.
+Bei Fensterstufe1 erweitert sich das Menü vorübergehend auf mindestens800×600.
 
-Weiterhin original: Simon, HUD, Kerzen, Gegner. Bewegte Kette/Fledermäuse haben
-noch native OBJ-Rasterkonturen. Weitere Landschaften benötigen passende
-Nutzerbilder und eine eigene Szenen-/Bewegungsprüfung.
+Installiert auch unter **`build-play/game`**, da der Nutzer tatsächlich diesen
+Startpfad verwendet. Spielersaves/config/keybinds unverändert; F1 lädt
+`save0.sav`. Debugmarker werden neben der jeweiligen EXE gespeichert.
 
 ### Nachweis für dieses Paket
 

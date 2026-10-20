@@ -165,6 +165,19 @@ def main():
                 x=615-states['edge']['camera_x']+margin
                 assert np.array_equal(clean[2080:2160,x*10:(x+8)*10],changed[2080:2160,x*10:(x+8)*10]),'Water overlays foreground bank'
                 assert np.any(clean[2000:]!=changed[2000:]),'Water-priority probe missed lake'
+                # Both surfaces must contribute below the waterline: tinting
+                # water changes submerged rocks; tinting rocks changes water.
+                # The dry bank above remains untouched by the water tint.
+                rock_x=700-states['edge']['camera_x']+margin
+                patch=(slice(2100,2160),slice(rock_x*10,(rock_x+8)*10))
+                assert np.any(clean[patch]!=changed[patch]),'Water is behind submerged rocks'
+                submerged=work/'submerged-rocks';shutil.copytree(a.pack,submerged)
+                meta=json.loads((submerged/'pack.json').read_text())
+                for region in meta['regions']:
+                    if region.get('priority')==0x7000:
+                        f=submerged/region['image'];rgba=np.array(Image.open(f));rgba[...,:3]=(0,255,255);Image.fromarray(rgba).save(f)
+                command('hd','pack '+str(submerged.resolve()));capture('submerged-rocks',a.stage_fixes/'edge/state.sav',True)
+                assert np.any(clean[patch]!=image(work/'submerged-rocks-hd.png')[patch]),'Water is opaque over submerged rocks'
                 command('hd','pack '+str(a.pack.resolve()))
                 shared=work/'shared-object-guard';shutil.copytree(a.pack,shared)
                 meta=json.loads((shared/'pack.json').read_text());meta['scene_block']=9

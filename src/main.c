@@ -269,6 +269,7 @@ static void Cv4Shutdown(void)
     Cv4HdFlush();
     Cv4HdRenderShutdown();
 }
+static void Cv4ToggleHd(void) { Cv4HdEnable(!Cv4HdEnabled()); }
 
 static const SnesDesktopHostGame kGameHost = {
     .display_name        = "Super Castlevania IV",
@@ -299,6 +300,7 @@ static const SnesDesktopHostGame kGameHost = {
     .on_shutdown         = &Cv4Shutdown,
     .presentation_scale  = &Cv4HdPresentationScale,
     .draw_hd_frame       = &Cv4HdPresent,
+    .toggle_hd           = &Cv4ToggleHd,
     /* Ctrl+D / Select+L3: freeze, record and describe a problem spot. */
     .debug_marker_open    = &Cv4DebugMarkerOpen,
     .debug_marker_is_open = &Cv4DebugMarkerIsOpen,
