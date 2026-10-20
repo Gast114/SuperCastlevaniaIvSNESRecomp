@@ -5,6 +5,35 @@ zwischen Original und dem geladenen HD-Paket um. Die Simulation läuft beim
 Fortsetzen an derselben Stelle weiter. Originalgrafiken bleiben jederzeit
 verfügbar; fehlende Ersatztiles erscheinen automatisch im Original.
 
+## FPS prüfen: PC-Renderkosten und SNES-Slowdown unterscheiden
+
+`tools/profile_sciv_fps.py` spielt einen Savestate in einer isolierten Lua-EXE ab.
+Es protokolliert CPU-/Raster-/Bildkopie-/Present-Zeiten und den originalen
+Logikzähler `$3A`. Der Profiler schreibt weder Spieler-Konfiguration noch Saves.
+Default ist Originalgeschwindigkeit; `--unthrottled` misst ausschließlich die
+Rechenreserve des PCs. Ein hoher Wert dabei ist kein neuer Spielgeschwindigkeitswert.
+
+```powershell
+python tools/profile_sciv_fps.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-lua --fixture artwork-local/stage01-user-v4/fixtures/F4.sav --pack artwork-local/packs/stage-01-user-v4-final --scale 10 --frames 300 --unthrottled
+python tools/profile_sciv_fps.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-lua --fixture artwork-local/performance-2026-10-20/fixtures/medusa-24.sav --frames 240
+```
+
+Ergebnis: eigener Ordner `fps-profile-*` mit `report.json`, Rohdaten
+`timing.csv`, Log und Vergleichsbildern. `--scale 0` prüft Originalgrafik,
+`--scale 6/10` HD; `--workers 1..32` vergleicht die CPU-Parallelisierung.
+`--medusa-death-at 120` ist ein ausdrücklich synthetischer Test: vorhandene
+Medusaköpfe wechseln in ihren nativen Todeszustand und der Originalcode baut
+seine Fragmente auf. Er prüft nicht den Tastendruck-/Trefferpfad.
+
+Messung vom20.10.: Brücke benötigt bei10× ungefähr20ms pro Bild statt rund4ms
+mit Originalgrafik. Der CPU-Compositor ist der größte Posten. Bei24 künstlich
+erzeugten Gegnern zeigt dagegen auch Originalgrafik~60 Bilder/s bei nur~30
+Logikupdates/s: Das beibehaltene SNES-Zeitbudget erzeugt eigene Slowdowns.
+Auch der separate Test mit Todesfragmenten lässt zusätzliche Logikupdates aus.
+HD-Optimierung und optionale Reduktion dieser ursprünglichen Slowdowns sind
+zwei getrennte Arbeiten. Tempo und HD-Qualität wurden für die Diagnose nicht verändert.
+Details und Grenzen der Messung stehen am Anfang von `HANDOFF.md`.
+
 ## Aktueller Import: fertige Nutzerbilder für Stage 01 (20.10.)
 
 Der Nutzer erstellt alle Grafiken selbst. Codex generiert keine weiteren Bilder
