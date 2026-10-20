@@ -144,9 +144,13 @@ extern "C" int Cv4DebugMarkerOpen(void) {
   g_scene = scene ? scene : "";
   g_created = created;
   g_frame = Cv4CaptureFrameNumber();
-  g_dir = fs::path("debug_markers") / (std::string(stamp) + "_" + (scene ? scene : "other"));
+  const auto base = fs::path("debug_markers") / (std::string(stamp) + "_" + (scene ? scene : "other"));
   std::error_code error;
-  fs::create_directories(g_dir, error);
+  fs::create_directories(base.parent_path(), error);
+  if (!error) for (unsigned suffix=0;;++suffix) {
+    g_dir = suffix ? fs::path(base.string()+"_"+std::to_string(suffix)) : base;
+    if (fs::create_directory(g_dir,error) || error) break;
+  }
   if (error) {
     std::fprintf(stderr, "[debug marker] cannot create %s\n", g_dir.string().c_str());
     return 0;

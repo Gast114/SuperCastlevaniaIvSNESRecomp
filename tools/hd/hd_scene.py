@@ -252,6 +252,7 @@ def build(recipe_path, source, dumps, output, videos=()):
             if not crop and not clear and not remove_top and rect == [0,0,im.width,im.height]: shutil.copy2(path, output / region['image'])
             else: im.crop(rect).save(output / region['image'])
     meta.update(requires=['scene-regions-v1'], scene_block=recipe['scene_block'], regions=[r for r, *_ in regions])
+    if 'native_maps' in recipe:meta['native_maps']=recipe['native_maps']
     if objects:
         meta['requires'].append('shared-objects-v1')
         meta['shared_objects'] = sorted({key for obj in objects for frame in obj['frames'] for key in frame['keys']})

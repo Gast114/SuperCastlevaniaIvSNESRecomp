@@ -71,7 +71,10 @@ extern uint8 g_ram[0x20000];
  * Keep this as byte-checked host policy, not a modified ROM: a wrong revision
  * must fail closed, savestates can temporarily suspend registered patches,
  * and 4:3 continues to execute the retail bounds. The locations and wider
- * values are independently documented by bogaa's SCIV event-handler notes. */
+ * values are independently documented by bogaa's SCIV event-handler notes.
+ * The inset must INCREASE: [-96,352) becomes [-144,400). Shrinking it to
+ * 48 made reverse-spawned exit events immediately despawn outside the
+ * object's narrower left bound, leaving stairs without their room exit. */
 enum { kCv4WidePatchCount = 8 };
 static GuardedPatch g_cv4_wide_patches[kCv4WidePatchCount];
 /* The cartridge image the patches are bound to. The guest executes from
@@ -101,9 +104,9 @@ static void Cv4BindWidescreenObjectBounds(void)
         uint8_t wide[3];
     } kPatches[kCv4WidePatchCount] = {
         { 0x498bu, "SCIV widescreen object left bound",
-          { 0xe9, 0x60, 0x00 }, { 0xe9, 0x30, 0x00 } },
+          { 0xe9, 0x60, 0x00 }, { 0xe9, 0x90, 0x00 } },
         { 0x4991u, "SCIV widescreen object span",
-          { 0x69, 0xc0, 0x01 }, { 0x69, 0xf0, 0x01 } },
+          { 0x69, 0xc0, 0x01 }, { 0x69, 0x20, 0x02 } },
         /* The event stream has its own camera-relative read window. Without
          * widening both forward and reverse traversal, scripted enemies,
          * doors, candles and moving set pieces still appear/disappear at the

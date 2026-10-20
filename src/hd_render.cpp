@@ -53,6 +53,7 @@ struct Pack {
     std::vector<Region> regions;
     std::unordered_set<uint64_t> sharedObjects;
     int block = -1;
+    std::array<int,2> nativeMaps{{-1,-1}};
     int objectMaskPalette = -1;
 };
 Pack pack;
@@ -82,10 +83,16 @@ std::array<uint8_t, contextPolicyBytes> contextPolicies;
 unsigned contextBoundaries = 255, contextHudSplit = 0;
 bool HasArt() { return !pack.tiles.empty() || !pack.regions.empty(); }
 bool LevelPictureActive() {
-    unsigned phase=g_ram[0x70];
-    return g_ram[0x32]==4 && (phase==3 || phase==4 || phase==5 || phase==6 || phase==10 || phase==12);
+    return g_ram[0x32]==4;
 }
-bool SceneActive() { return pack.block < 0 || (LevelPictureActive() && g_ram[0x86] == pack.block); }
+bool SceneActive(Ppu *p=g_ppu) {
+    if(pack.block<0)return true;
+    if(!LevelPictureActive())return false;
+    bool mapped=pack.nativeMaps[0]>=0;
+    if(mapped&&(!p||PPU_bgTilemapAdr(p,0)!=pack.nativeMaps[0]||PPU_bgTilemapAdr(p,1)!=pack.nativeMaps[1]))return false;
+    // The guest advances its block before fading the outgoing picture.
+    return g_ram[0x86]==pack.block || (mapped&&g_ram[0x70]==6);
+}
 bool SharedObjectsActive() { return !pack.sharedObjects.empty() && LevelPictureActive(); }
 
 void ContextScanline(Ppu *p, int line) {
@@ -239,6 +246,15 @@ int Load(const char *path) {
         if (auto scene = j.object.find("scene_block"); scene != j.object.end()) {
             next.block = scene->second.number();
             if (next.block < 0 || next.block > 255) throw std::runtime_error("Invalid scene block");
+        }
+        if(auto maps=j.object.find("native_maps");maps!=j.object.end()) {
+            const auto &v=maps->second.items();
+            if(v.size()!=2)throw std::runtime_error("Expected two native tilemap guards");
+            for(int i=0;i<2;++i) {
+                next.nativeMaps[i]=v[i].number();
+                if(next.nativeMaps[i]<0||next.nativeMaps[i]>0x7fff||next.nativeMaps[i]%0x400)
+                    throw std::runtime_error("Invalid native tilemap guard");
+            }
         }
         if (auto mask = j.object.find("object_mask_palette"); mask != j.object.end()) {
             next.objectMaskPalette = mask->second.number();
@@ -481,13 +497,14 @@ struct ScenePixel {
     int8_t fast = -1;
 };
 std::vector<ScenePixel> scenePixels;
-struct SceneLine { Ppu ppu; int cameraX=0,cameraY=0,clock=0; bool valid=false,regionsActive=false; };
+struct SceneLine { Ppu ppu; int cameraX=0,cameraY=0,clock=0; bool valid=false,regionsActive=false,tileOnly=false; };
 std::vector<SceneLine> sceneLines;
 std::array<const uint32_t *,224> sceneNativeRows{};
 std::array<unsigned,224> sceneMatches{};
 uint64_t sceneEpoch=0;
 thread_local int sceneCameraX=0,sceneCameraY=0,sceneClock=0;
 thread_local bool sceneRegionsActive=true;
+thread_local bool sceneSharedOnly=false;
 bool sceneFrame = false;
 bool timing = std::getenv("SCIV_HD_TIMINGS") != nullptr;
 double gatherSeconds=0, composeSeconds=0;
@@ -621,7 +638,7 @@ uint32_t SceneColour(const ScenePixel &p, int dx, int dy) {
     return Compose(colour, main.rgb, other);
 }
 bool GatherSceneLine(Ppu *p, int line) {
-    if ((PPU_mode(p) != 1 && PPU_mode(p) != 7) || PPU_forcedBlank(p) || line <= std::max(32, int(p->wsHudSplitHeight & 127))) return false;
+    if ((PPU_mode(p) != 1 && PPU_mode(p) != 7) || PPU_forcedBlank(p)) return false;
     // Unsupported host transforms/mosaic keep the ordinary picture.
     for (const auto &r : pack.regions) {
         if(!sceneRegionsActive)break;
@@ -669,7 +686,7 @@ bool GatherSceneLine(Ppu *p, int line) {
             if (!c.art.region && !c.art.affine && s.source.valid) {
                 // OBJ provenance must still identify the real winning object.
                 if (layer < 3 || PpuGetTileSource(p,x,line,s.pixel,&c.art.source))
-                    c.art = FindSource(p,x,line,layer,s.source,!sceneRegionsActive);
+                    c.art = FindSource(p,x,line,layer,s.source,sceneSharedOnly);
             }
             if (c.art.tile || c.art.region || c.art.affine) ++sceneMatches[line-1];
             else if (!(c.rgba >> 24)) c.screens = 0;
@@ -738,12 +755,13 @@ void RenderRows(void *, size_t begin, size_t end, unsigned) {
                     std::copy(std::begin(line.ppu.cgram),std::end(line.ppu.cgram),colours.begin());
                 }
                 sceneCameraX=line.cameraX;sceneCameraY=line.cameraY;sceneClock=line.clock;
-                sceneRegionsActive=line.regionsActive;
+                sceneRegionsActive=line.regionsActive && y>=size_t(std::max(32,int(line.ppu.wsHudSplitHeight&127)));
+                sceneSharedOnly=!line.regionsActive;
                 sceneValid=GatherSceneLine(&line.ppu,int(y)+1);
             }
         }
         for (int nx = 0; nx < frameWidth; ++nx) {
-            if (sceneFrame) {
+            if (sceneFrame && !sceneLines[y].tileOnly) {
                 if(!sceneValid) {
                     for(int dy=0;dy<scale;++dy)std::fill_n(first+size_t(dy)*frameWidth*scale+nx*scale,scale,sceneNativeRows[y][nx]);
                     continue;
@@ -822,7 +840,7 @@ extern "C" void Cv4HdRenderBegin(Ppu *p) {
         sceneFrame = !pack.regions.empty() && (SceneActive() || SharedObjectsActive());
         if (sceneFrame) {
             scenePixels.resize(size_t(frameWidth)*224);sceneLines.resize(224);
-            for(auto &line:sceneLines)line.valid=false;
+            for(auto &line:sceneLines){line.valid=false;line.tileOnly=false;}
             sceneMatches.fill(0);++sceneEpoch;
         }
     }
@@ -842,17 +860,20 @@ extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
         auto t=timing?HdClock::now():HdClock::time_point{};
         sceneNativeRows[line-1]=native;
         auto &copy=sceneLines[line-1];copy.valid=false;
-        if((SceneActive()||SharedObjectsActive())&&!PPU_forcedBlank(p)&&(PPU_mode(p)==1||PPU_mode(p)==7)&&line>std::max(32,int(p->wsHudSplitHeight&127))) {
+        copy.tileOnly=line<=std::max(32,int(p->wsHudSplitHeight&127));
+        if(!copy.tileOnly&&(SceneActive(p)||SharedObjectsActive())&&!PPU_forcedBlank(p)&&(PPU_mode(p)==1||PPU_mode(p)==7)) {
             copy.ppu=*p;
             if(p->renderVram)std::copy_n(p->renderVram,32768,copy.ppu.vram);
             copy.ppu.renderVram=nullptr;
             copy.cameraX=g_ram[0x1c]|g_ram[0x1d]<<8;copy.cameraY=g_ram[0x1e]|g_ram[0x1f]<<8;
             copy.clock=g_ram[0x3a];
-            copy.regionsActive=SceneActive();
+            copy.regionsActive=SceneActive(p);
             copy.valid=true;
         }
         if(timing)gatherSeconds+=std::chrono::duration<double>(HdClock::now()-t).count();
-        return;
+        // HUD uses custom native BG3 placement. Its exact visible pixels
+        // remain authoritative; allow the ordinary OBJ tile path there.
+        if(!copy.tileOnly)return;
     }
     if (!SceneActive() && !SharedObjectsActive()) {
         for (int nx=0; nx<frameWidth; ++nx) { auto &out=pixels[size_t(line-1)*frameWidth+nx];out={};out.native=native[nx]; }
@@ -876,6 +897,7 @@ extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
             continue;
         }
         ++replaced;
+        if(sceneFrame)++sceneMatches[line-1];
         uint32_t original = Rgb(PpuPixelColor(p, m, i));
         uint32_t other = Rgb(useSub ? PpuPixelColor(p, sub, i) : p->fixedColor);
         /* Host character colours are RGB24; preserve them when a replaced

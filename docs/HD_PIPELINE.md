@@ -12,8 +12,13 @@ und bereitet keine neuen Ausschnitt-/Promptserien vor. Vollständige HD-Motive
 werden zusammen mit ihren nativen SD-Referenzen importiert. Die folgenden
 älteren Material-/Tilepiloten bleiben historische, optionale Werkzeuge.
 
-Installiert und ausgewählt: **`build/hd_packs/stage-01-user-v3-water-final`**, HD an, 10×.
-Finales Paket: `artwork-local/packs/stage-01-user-v3-water-final`. Quellen unverändert
+Installiert und ausgewählt: **`build/hd_packs/stage-01-user-v4-final`**, HD an, 10×.
+Auch unter `build-play/game/hd_packs/` installiert. Beide Konfigurationen nutzen
+`DisableFrameDelay=0` für normale NTSC-Geschwindigkeit; `sciv_play.py --fast`
+verwendet ausschließlich eigene Sitzungsordner. HD-Brücke erreicht im letzten
+Test etwa 48 FPS; stabile 60 FPS in HD bleiben offen.
+
+Finales Paket: `artwork-local/packs/stage-01-user-v4-final`. Quellen unverändert
 in `artwork-local/stage01-user-v3/source`, aus
 `D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Stage 01` kopiert;
 `source-checksums.json` hält SHA-256 aller 29 Dateien fest. Kein Resizing, keine
@@ -48,12 +53,12 @@ native Farbmathematik wirken weiterhin auf die dargestellte Wasserfläche.
 Reproduzierbarer Neubau in ein **neues, leeres** Ziel:
 
 ```powershell
-python tools/hd/hd_scene.py --recipe assets/hd/stage_01.recipe.json --source artwork-local/stage01-user-v3/source --dump artwork-local/stage01-user-v3/pilot-keys --dump artwork-local/stage01-user-v3/capture --video artwork-local/stage01-user-v3/water-video.bin --out artwork-local/packs/stage-01-next
+python tools/hd/hd_scene.py --recipe assets/hd/stage_01.recipe.json --source artwork-local/stage01-user-v3/source --dump artwork-local/stage01-user-v3/pilot-keys --dump artwork-local/stage01-user-v3/capture --video artwork-local/stage01-user-v3/water-video.bin --video artwork-local/stage01-user-v4/chain-video.bin --out artwork-local/packs/stage-01-next
 ```
 
 `scene-receipt.json` enthält Rezept, Builder-/Quell-/SD-/Aufnahme-Prüfsummen,
-Zuordnungen und mehrdeutige Tilevarianten. 52 Schlüsselbilder (Mond 4,
-Fledermäuse 6, Wasser 15, Kette 11, zerbrechende Steine 16) ergänzen 13 Bildblöcke. Bilder über 4096 Pixel
+Zuordnungen und mehrdeutige Tilevarianten. 62 Schlüsselbilder (Mond 4,
+Fledermäuse 6, Wasser 15, Kette 21, zerbrechende Steine 16) ergänzen 13 Bildblöcke. Bilder über 4096 Pixel
 Breite werden an nativen Pixelgrenzen geteilt; der Loader verbindet passende
 benachbarte Blöcke wieder zu durchgehenden CPU-Ebenen (hier 11 Regionen), auch
 für affine Abtastung. Eine Quelle versorgt ihre wiederholten Vorkommen.
@@ -67,8 +72,11 @@ Regionen benennen lokale PNGs, native `x/y`, `coordinates` (`world`, `map`,
 Priorität und Animationsselektor. Pro Paket maximal 16 Dateiregionen und
 256 MiB decodierte Bilddaten; einzelne PNGs maximal 4096×4096. Kontexttiles
 und Szenenregionen dürfen nicht im selben Paket stehen. Ungültiger Reload
-behält das letzte gültige Paket. Szene ist auf Spielmodus 4, Anzeigephasen 3/4/5/6/10/12 und
-den benannten Block begrenzt (einschließlich Upgrade/Tod); Text/HUD bleiben nativ.
+behält das letzte gültige Paket. Szene gilt in allen Levelphasen von Spielmodus4. Optionales `native_maps: [16384,18432]`
+prüft BG1/BG2-Kartenadressen. Bei passenden Karten erhält auch Übergangsphase6
+das ausgehende HD-Bild nach Erhöhung der Blocknummer; im neuen Raum greifen
+die Landschaftsflächen nicht. HUD-Schrift bleibt nativ, passende sichtbare
+OBJ-Tiles der Kette werden auch dort ersetzt.
 
 Der Opt-in-Pfad sammelt read-only Kandidaten auch für transparente/verdeckt
 liegende BG-Pixel. RGBA wird vor der Sichtbarkeit mit nativen Prioritäten,

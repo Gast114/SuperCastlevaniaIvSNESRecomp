@@ -31,6 +31,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import time
 
 import sciv_test_support as sciv
@@ -134,7 +135,11 @@ def start(args):
         except OSError:
             pass
     build = sciv.build_dir(args)
-    folder = (sciv.ROOT / 'build-play' / 'game').resolve()
+    # A test's --fast flag and generated config must never become the
+    # player's normal launch settings or overwrite their saves/markers.
+    sessions = sciv.ROOT / 'build-play' / 'sessions'
+    sessions.mkdir(parents=True, exist_ok=True)
+    folder = Path(tempfile.mkdtemp(prefix='session-', dir=sessions)).resolve()
     graphics = {'Widescreen': int(args.widescreen)}
     general = {'DisableFrameDelay': 1} if args.fast else {}
     sciv.prepare(folder, build, {'Graphics': graphics, 'General': general})

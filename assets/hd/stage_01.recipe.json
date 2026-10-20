@@ -2,6 +2,7 @@
   "version": 1,
   "scale": 10,
   "scene_block": 0,
+  "native_maps": [16384,18432],
   "regions": [
     {
       "layer": 0,
@@ -186,10 +187,10 @@
       "reference": "Original/SNES - Super Castlevania IV - Backgrounds - Stage 01_ Castle Entrance - 02.png",
       "image": "HD/02_SPIELEBENE_HD_3810x1930.png",
       "crop": [
-        0,
+        125,
         0,
         337,
-        145
+        161
       ]
     }
   ],

@@ -2,6 +2,7 @@
 checks every capture file and that the game runs on afterwards."""
 import argparse
 import json
+import datetime
 
 from PIL import Image
 
@@ -14,13 +15,26 @@ args = parser.parse_args()
 build = sciv.build_dir(args)
 folder = sciv.work_dir(build, 'marker-check-')
 sciv.prepare(folder, build, {'Graphics': {'Widescreen': 1}})
+# Occupy the current second and its neighbours, like an earlier capture.
+# The real capture must allocate a fresh suffix without touching these files.
+occupied = []
+now = datetime.datetime.now()
+for seconds in range(-120, 181):
+    stamp = (now + datetime.timedelta(seconds=seconds)).strftime('%Y-%m-%d_%H-%M-%S')
+    old = folder / 'debug_markers' / (stamp + '_level')
+    old.mkdir(parents=True)
+    sentinel = old / 'note.md'
+    sentinel.write_text('earlier user capture')
+    occupied.append(sentinel)
 log = sciv.run(folder, 'widescreen_smoke.input', args.rom, sciv.clean_env(
     SNESRECOMP_RUN_FRAMES=1400, SNESRECOMP_DEBUG_MARKER_AT=1300,
     SNESRECOMP_DEBUG_MARKER_NOTE='smoke test note'))
 assert 'debug marker CLOSED after 5 pumps' in log, 'marker panel did not close'
-found = list((folder / 'debug_markers').glob('*_level'))
+found = [p for p in (folder / 'debug_markers').iterdir() if (p / 'marker.json').exists()]
 assert len(found) == 1, f'expected one level marker, got {found}'
 marker = found[0]
+assert marker.name.endswith('_level_1'), marker
+assert all(p.read_text() == 'earlier user capture' for p in occupied), 'previous capture modified'
 sizes = {p.name: p.stat().st_size for p in marker.iterdir()}
 assert sizes.get('wram.bin') == 0x20000, sizes
 assert sizes.get('video.bin') == 0x10000 + 0x200 + 0x200 + 0x20, sizes
