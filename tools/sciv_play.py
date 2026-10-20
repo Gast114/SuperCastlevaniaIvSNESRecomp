@@ -16,6 +16,7 @@ every step reproducible. Output is JSON, one object per command.
   python tools/sciv_play.py loadfile build/debug_markers/<id>/state.sav
   python tools/sciv_play.py ppu                   # BG modes, tilemaps, scroll, widescreen margins
   python tools/sciv_play.py dump vram.bin         # VRAM+CGRAM+OAM raw (0x10000+0x200+0x200+0x20)
+  python tools/sciv_play.py lines lines.bin       # last field's 225 scanline register records
   python tools/sciv_play.py layers 0x11           # render filter for later shots (bit0=BG1..bit4=OBJ)
   python tools/sciv_play.py peek 0x54a 2          # read WRAM (bytes, little endian)
   python tools/sciv_play.py poke 0x1f0 3          # write one WRAM byte
@@ -195,6 +196,7 @@ def main():
     sub.add_parser('loadfile').add_argument('path')
     sub.add_parser('ppu')
     sub.add_parser('dump').add_argument('path')
+    sub.add_parser('lines').add_argument('path')
     sub.add_parser('layers').add_argument('mask', nargs='?', default='0xff')
     p = sub.add_parser('peek')
     p.add_argument('addr', type=lambda v: int(v, 0))
@@ -232,9 +234,9 @@ def main():
             out({'result': result, **read_state(lua)})
         elif args.cmd == 'ppu':
             out(json.loads(lua.eval('return game.command("ppu")')['values'][0]))
-        elif args.cmd == 'dump':
+        elif args.cmd in ('dump', 'lines'):
             path = str(Path(args.path).resolve())
-            out({'dump': path, 'result': lua.eval(f'return game.command("dump", {json.dumps(path)})')['values'][0]})
+            out({args.cmd: path, 'result': lua.eval(f'return game.command("{args.cmd}", {json.dumps(path)})')['values'][0]})
         elif args.cmd == 'layers':
             out({'layers': lua.eval(f'return game.command("layers", "{args.mask}")')['values'][0]})
         elif args.cmd == 'loadfile':

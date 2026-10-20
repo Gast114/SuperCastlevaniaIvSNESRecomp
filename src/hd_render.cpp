@@ -22,6 +22,7 @@ extern "C" {
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <chrono>
 
@@ -41,7 +42,7 @@ struct Region {
     unsigned modes=(1u<<1)|(1u<<7);
     bool stationary=false;
     bool screen=false;
-    int priority=0xa300;
+    int priority=-1;
     std::vector<uint64_t> maskKeys;
     int framePeriod=0,frameCount=1,framePhase=0;
 };
@@ -50,6 +51,7 @@ struct Pack {
     std::unordered_map<uint64_t, std::vector<uint32_t>> tiles;
     std::unordered_map<uint64_t, std::vector<Context>> contexts;
     std::vector<Region> regions;
+    std::unordered_set<uint64_t> sharedObjects;
     int block = -1;
     int objectMaskPalette = -1;
 };
@@ -80,6 +82,7 @@ std::array<uint8_t, contextPolicyBytes> contextPolicies;
 unsigned contextBoundaries = 255, contextHudSplit = 0;
 bool HasArt() { return !pack.tiles.empty() || !pack.regions.empty(); }
 bool SceneActive() { return pack.block < 0 || (g_ram[0x32] == 4 && g_ram[0x70] == 5 && g_ram[0x86] == pack.block); }
+bool SharedObjectsActive() { return !pack.sharedObjects.empty() && g_ram[0x32] == 4 && g_ram[0x70] == 5; }
 
 void ContextScanline(Ppu *p, int line) {
     if (pack.contexts.empty()) return;
@@ -153,7 +156,7 @@ int Load(const char *path) {
         auto j = character_json::Reader(text).read();
         if (auto required = j.object.find("requires"); required != j.object.end())
             for (const auto &feature : required->second.items())
-                if (feature.string() != "tile-context-v1" && feature.string() != "scene-regions-v1")
+                if (feature.string() != "tile-context-v1" && feature.string() != "scene-regions-v1" && feature.string() != "shared-objects-v1")
                     throw std::runtime_error("Unsupported pack feature");
         Pack next;
         next.scale = j.at("scale").number(); next.size = j.at("tile_size").number();
@@ -197,6 +200,14 @@ int Load(const char *path) {
                     }
             }
         }
+        if (auto shared = j.object.find("shared_objects"); shared != j.object.end()) {
+            for (const auto &entry : shared->second.items()) {
+                auto key = ParseKey(entry.string());
+                if (!next.tiles.count(key) || next.sharedObjects.size() >= 4096)
+                    throw std::runtime_error("Invalid shared object key");
+                next.sharedObjects.insert(key);
+            }
+        }
         if (auto contexts = j.object.find("contexts"); contexts != j.object.end()) {
             if (contexts->second.kind != '{') throw std::runtime_error("Expected contexts object");
             size_t count = 0;
@@ -236,6 +247,7 @@ int Load(const char *path) {
             for (const auto &item : regions->second.items()) {
                 Region r{};
                 r.layer = item.at("layer").number(); r.x = item.at("x").number(); r.y = item.at("y").number();
+                if (r.layer == 4) r.priority = 0xa300;
                 r.wrapX = item.at("wrap_x").number(); r.wrapY = item.at("wrap_y").number();
                 auto coordinates = item.at("coordinates").string();
                 if (coordinates != "world" && coordinates != "map" && coordinates != "screen") throw std::runtime_error("Invalid region coordinates");
@@ -382,10 +394,11 @@ Cached Lookup(Ppu *p, const PpuTileSource &r) {
     }
     return it->second;
 }
-Sample FindSource(Ppu *p, int x, int line, unsigned layer, const PpuTileSource &source) {
+Sample FindSource(Ppu *p, int x, int line, unsigned layer, const PpuTileSource &source, bool sharedOnly=false) {
     Sample s; s.source = source;
     if (!(layers & (1u << layer)) || !source.valid) return s;
     auto lookup = Lookup(p, s.source);
+    if (sharedOnly && (layer != 4 || !pack.sharedObjects.count(lookup.key))) return s;
     s.tile = lookup.tile;
     auto choices = pack.contexts.find(lookup.key);
     if (layer >= 3 || choices == pack.contexts.end()) return s;
@@ -419,7 +432,7 @@ Sample Find(Ppu *p, int x, int line, uint16_t pixel) {
     if (layer == 6) layer = 4;
     PpuTileSource source{};
     if (!PpuGetTileSource(p, x, line, pixel, &source)) return {};
-    return FindSource(p, x, line, layer, source);
+    return FindSource(p, x, line, layer, source, !SceneActive());
 }
 uint32_t SampleRgb(const Sample &s, int tx, int ty, uint32_t original) {
     if (!s.tile) return original;
@@ -530,10 +543,12 @@ Sample RegionAt(Ppu *p, int x, int line, unsigned layer, const PpuTileSource *na
         } else {
             wx = x + p->hScroll[layer]; wy = line + p->vScroll[layer];
             int band = PpuWidescreenLayerWorldBandAt(p, layer, line);
-            if (band >= 0 && wx < p->wsWorldLeft[band][layer]) {
+            // Authored negative map coordinates replace the old reflected
+            // margin. Keep reflection only where no extension was supplied.
+            if (band >= 0 && wx < p->wsWorldLeft[band][layer] && !(r.x < 0 && wx >= r.x)) {
                 wx = 2 * p->wsWorldLeft[band][layer] - 1 - wx; flip = 1;
             }
-            if (r.wrapX) wx = Wrap(wx, r.wrapX);
+            if (r.wrapX && !(r.x < 0 && wx < 0 && wx >= r.x)) wx = Wrap(wx, r.wrapX);
             if (r.wrapY) wy = Wrap(wy, r.wrapY);
         }
         int px = wx - r.x, py = wy - r.y;
@@ -643,6 +658,7 @@ bool GatherSceneLine(Ppu *p, int line) {
                 if(hide) { c.rgba=0;c.screens=0;continue; }
             }
             c.art = layer < 2 ? RegionAt(p, x, line, layer, &s.source) : Sample{};
+            if (c.art.owner && c.art.owner->priority >= 0) c.priority = c.art.owner->priority;
             if (!c.art.region && !c.art.affine && s.source.valid) {
                 // OBJ provenance must still identify the real winning object.
                 if (layer < 3 || PpuGetTileSource(p,x,line,s.pixel,&c.art.source))
@@ -795,7 +811,7 @@ extern "C" void Cv4HdRenderBegin(Ppu *p) {
     try {
         surface.resize(size_t(frameWidth) * 224 * scale * scale);
         pixels.resize(size_t(frameWidth) * 224);
-        sceneFrame = !pack.regions.empty();
+        sceneFrame = !pack.regions.empty() && SceneActive();
         if (sceneFrame) {
             scenePixels.resize(size_t(frameWidth)*224);sceneLines.resize(224);
             for(auto &line:sceneLines)line.valid=false;
@@ -829,7 +845,7 @@ extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
         if(timing)gatherSeconds+=std::chrono::duration<double>(HdClock::now()-t).count();
         return;
     }
-    if (!SceneActive()) {
+    if (!SceneActive() && !SharedObjectsActive()) {
         for (int nx=0; nx<frameWidth; ++nx) { auto &out=pixels[size_t(line-1)*frameWidth+nx];out={};out.native=native[nx]; }
         return;
     }

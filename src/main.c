@@ -72,7 +72,7 @@ extern uint8 g_ram[0x20000];
  * must fail closed, savestates can temporarily suspend registered patches,
  * and 4:3 continues to execute the retail bounds. The locations and wider
  * values are independently documented by bogaa's SCIV event-handler notes. */
-enum { kCv4WidePatchCount = 6 };
+enum { kCv4WidePatchCount = 8 };
 static GuardedPatch g_cv4_wide_patches[kCv4WidePatchCount];
 /* The cartridge image the patches are bound to. The guest executes from
  * cart->rom, a copy SnesInit makes after on_rom_loaded, so the patches are
@@ -116,6 +116,14 @@ static void Cv4BindWidescreenObjectBounds(void)
           { 0x69, 0x20, 0x01 }, { 0x69, 0x50, 0x01 } },
         { 0x55f2u, "SCIV widescreen event left trailing edge",
           { 0xe9, 0x20, 0x00 }, { 0xe9, 0x50, 0x00 } },
+        /* The metasprite emitter independently rejects each 8/16px OAM
+         * component outside [-16,256). Both comparisons are signed (BMI/BPL),
+         * so extend both ends by 48px. Object/event lifetime alone does not
+         * prevent crumbling stones and other sprites popping in at 4:3. */
+        { 0x0ed2u, "SCIV widescreen OAM right edge",
+          { 0xc9, 0x00, 0x01 }, { 0xc9, 0x30, 0x01 } },
+        { 0x0edau, "SCIV widescreen OAM left edge",
+          { 0xc9, 0xf0, 0xff }, { 0xc9, 0xc0, 0xff } },
     };
 
     if (!g_snes || !g_snes->cart || !g_snes->cart->rom ||

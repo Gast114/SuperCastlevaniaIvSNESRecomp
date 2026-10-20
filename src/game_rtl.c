@@ -273,9 +273,23 @@ void GameDrawPpuFrame(void)
             trigger = g_snes->vIrqEnabled ? (int)g_snes->vTimer : -1;
         }
         Cv4CampaignRasterLine(line);
+        /* Retail block 1-1 switches BG2 to the water scroll at line 192.
+         * With its -1 vertical scroll that exposes the last repeating earth
+         * row of the rock backdrop across the open lake, above the water.
+         * Use the following (empty sky) row at this single transition only.
+         * This is a scoped presentation correction, including Original mode;
+         * restore the register immediately after capturing/rendering the row.
+         * Never change guest VRAM, HDMA tables or simulation state. */
+        uint16_t bg2_v = g_ppu->vScroll[1];
+        int water_edge = g_ram[0x32] == 4 && g_ram[0x70] == 5 && g_ram[0x86] == 0 &&
+            line == 192 && PPU_mode(g_ppu) == 1 && bg2_v == 1023 &&
+            PPU_bgTilemapAdr(g_ppu, 1) == 0x4800 &&
+            g_ppu->hScroll[1] == g_ppu->hScroll[0];
+        if (water_edge) g_ppu->vScroll[1] = 0;
         Cv4HdRecordLine(g_ppu, line);
         ppu_runLine(g_ppu, line);
         Cv4HdRenderLine(g_ppu, line);
+        if (water_edge) g_ppu->vScroll[1] = bg2_v;
     }
     Cv4CharacterEnd(g_ppu);
     Cv4HdRenderEnd();

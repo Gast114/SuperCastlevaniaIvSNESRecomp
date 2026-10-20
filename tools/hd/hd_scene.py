@@ -1,7 +1,8 @@
 """Register complete user-painted scene planes and original animated tile sheets.
 
-Image files are copied unchanged. Native references identify animated tiles by
-their actual pixels, including flips. No image generation or resizing occurs.
+Source files are preserved. Runtime planes are cropped/split, and a shared
+sprite material may be normalized downward to native bounds. Native references
+identify frames and flips. No image generation or upscaling occurs.
 """
 import argparse
 import hashlib
@@ -11,6 +12,7 @@ import shutil
 import struct
 
 import numpy as np
+from PIL import Image
 
 import hd_common as hd
 from hd_tiles import write_pack
@@ -57,6 +59,63 @@ def video_tiles(path):
         colours=list(palette[pal:pal+16]);key=fnv_key(4,pixels,colours)
         result[key]=hd.TileInfo(4,colours,pixels).rgba()
     return result
+
+
+def object_frames(spec, source, video, scale):
+    """Bind one reusable material to native OBJ poses, including break masks.
+
+    Guest frames own the silhouette and damage changes. This is a technical
+    material transfer, not newly painted damage artwork. An explicit HD frame
+    sheet can replace this temporary native_delta source later.
+    """
+    raw = Path(video).read_bytes()
+    if len(raw) != 0x10420: raise ValueError('Invalid object video dump')
+    vram = struct.unpack('<32768H', raw[:0x10000])
+    palette = struct.unpack('<256H', raw[0x10000:0x10200])
+    width, height = spec['size']
+    if width % 8 or height % 8 or not 8 <= width <= 64 or not 8 <= height <= 64:
+        raise ValueError('Object size must use native 8-pixel cells, up to 64x64')
+    decoded = []
+    for frame in spec['frames']:
+        cells = []
+        native = np.zeros((height, width, 4), np.uint8)
+        for y in range(height // 8):
+            for x in range(width // 8):
+                addr = (spec['base'] + ((frame+x+y*16)&255)*16) & 0x7fff
+                pixels = []
+                for row in range(8):
+                    a,b = vram[(addr+row)&0x7fff],vram[(addr+row+8)&0x7fff]
+                    for bit in range(7,-1,-1):
+                        pixels.append((a>>bit&1)|(a>>(bit+8)&1)<<1|(b>>bit&1)<<2|(b>>(bit+8)&1)<<3)
+                colours = list(palette[spec['palette']:spec['palette']+16])
+                key = fnv_key(4,pixels,colours)
+                native[y*8:y*8+8,x*8:x*8+8] = hd.TileInfo(4,colours,pixels).rgba()
+                cells.append((key,x,y))
+        decoded.append((native,cells))
+    with Image.open(source/spec['image']) as im:
+        art = im.convert('RGBA').crop(tuple(spec['art_crop_px']))
+        if art.width < width*scale or art.height < height*scale:
+            raise ValueError('Object material is below the requested HD resolution')
+        art = np.array(art.resize((width*scale,height*scale),Image.Resampling.LANCZOS))
+    base = decoded[0][0]
+    result, receipts = {}, []
+    for n,(native,cells) in enumerate(decoded):
+        painted = art.copy()
+        # Preserve HD material, applying only the original per-pixel colour
+        # delta and holes at each damage phase. No runtime positional overlay.
+        ratio = native[...,:3].astype(np.float32) / np.maximum(base[...,:3],8)
+        ratio = np.clip(ratio,0,2).repeat(scale,0).repeat(scale,1)
+        if n:
+            painted[...,:3] = np.clip(np.rint(painted[...,:3]*ratio),0,255).astype(np.uint8)
+        alpha = native[...,3].repeat(scale,0).repeat(scale,1).astype(np.uint16)
+        painted[...,3] = (painted[...,3].astype(np.uint16)*alpha//255).astype(np.uint8)
+        for key,x,y in cells:
+            tile = painted[y*8*scale:(y+1)*8*scale,x*8*scale:(x+1)*8*scale]
+            if key in result and not np.array_equal(result[key],tile):
+                raise ValueError('Conflicting object tile artwork')
+            result[key] = tile.copy()
+        receipts.append({'frame':spec['frames'][n],'keys':[key for key,_,_ in cells]})
+    return result, receipts
 
 
 def build(recipe_path, source, dumps, output, videos=()):
@@ -117,6 +176,15 @@ def build(recipe_path, source, dumps, output, videos=()):
                               'frame_key_counts':frame_counts,
                               'frame_keys':frame_key_lists,
                               'reference_sha256': sha(ref), 'image_sha256': sha(art)})
+    objects = []
+    for spec in recipe.get('objects',[]):
+        mapped, frames = object_frames(spec,source,videos[spec.get('video_index',0)],scale)
+        for key,tile in mapped.items():
+            if key in tiles and not np.array_equal(tiles[key],tile):
+                raise ValueError('Object conflicts with a decorative tile')
+            tiles[key] = tile
+        objects.append({'name':spec['name'],'frames':frames,'image_sha256':sha(source/spec['image']),
+                        'damage_source':'native colour delta and silhouette'})
     # Validate all region dimensions before producing files.
     regions = []
     for region in recipe['regions']:
@@ -169,12 +237,16 @@ def build(recipe_path, source, dumps, output, videos=()):
             if not crop and not clear and not remove_top and rect == [0,0,im.width,im.height]: shutil.copy2(path, output / region['image'])
             else: im.crop(rect).save(output / region['image'])
     meta.update(requires=['scene-regions-v1'], scene_block=recipe['scene_block'], regions=[r for r, *_ in regions])
+    if objects:
+        meta['requires'].append('shared-objects-v1')
+        meta['shared_objects'] = sorted({key for obj in objects for frame in obj['frames'] for key in frame['keys']})
     for animation in recipe.get('animations',[]):
         registration=next(r for r in registrations if r['name']==animation['tilesheet'])
         sheet=next(r for r in recipe['tilesheets'] if r['name']==animation['tilesheet'])
         with Image.open(source/sheet['image']) as im:
-            # Explicit frame identity follows guest picture memory, not wall
-            # time. The first frame is the fallback for the remaining phase.
+            # The runtime game-clock selector is deterministic across pause
+            # and savestate restore. Native VRAM keys are retained as phase
+            # evidence, not claimed to synchronize this cosmetic HD loop.
             for frame in list(range(1,len(sheet['frames'])))+[0]:
                 x0,y0,x1,y1=sheet['frames'][frame]
                 x0=animation['content_x'][0];x1=animation['content_x'][1]
@@ -185,13 +257,14 @@ def build(recipe_path, source, dumps, output, videos=()):
                 meta['regions'].append({'layer':animation['layer'],'image':name,'coordinates':'map',
                     'x':animation['x'],'y':animation['y'],'wrap_x':x1-x0,'wrap_y':256,
                     'source_palette':animation['palette'],'select_address':animation['select_address'],
+                    **({'priority':animation['priority']} if 'priority' in animation else {}),
                     'select_keys':registration['frame_keys'][frame] if frame else [],
                     'frame_period':animation.get('period',16),'frame_count':len(sheet['frames']),'frame_phase':frame})
     if 'object_mask_palette' in recipe: meta['object_mask_palette'] = recipe['object_mask_palette']
     (output / 'pack.json').write_text(json.dumps(meta, indent=2))
     receipt = {'recipe_sha256': sha(recipe_path), 'builder_sha256':sha(__file__),'recipe':recipe,'regions': [
         {'source': str(p.resolve()), 'sha256': sha(p), 'source_rect': rect, 'crop':crop, 'clear':clear, 'preserve':preserve,'remove_top_components':bool(remove_top), **r} for r, p, rect, crop, clear, preserve,remove_top in regions],
-        'tilesheets': registrations, 'ambiguous_tile_variants': conflicts,
+        'tilesheets': registrations, 'objects':objects, 'ambiguous_tile_variants': conflicts,
         'dump_sha256': [sha(Path(d)/'tiles.tsv') for d in dumps],
         'video_sha256': [sha(v) for v in videos]}
     (output / 'scene-receipt.json').write_text(json.dumps(receipt, indent=2))

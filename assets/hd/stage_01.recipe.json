@@ -54,6 +54,12 @@
           0,
           435,
           193
+        ],
+        [
+          24,
+          140,
+          97,
+          161
         ]
       ],
       "preserve": [
@@ -70,9 +76,9 @@
     },
     {
       "layer": 1,
-      "image": "HD/03_HINTERGRUND_HD_2850x1920.png",
+      "image": "HD/03_HINTERGRUND_HD_LINKS_3390x1920.png",
       "coordinates": "map",
-      "x": 0,
+      "x": -54,
       "y": 0,
       "wrap_x": 512,
       "wrap_y": 256
@@ -200,7 +206,33 @@
       "height": 24,
       "palette": 80,
       "select_address": 9936,
-      "period": 16
+      "period": 16,
+      "priority": 28928
+    }
+  ],
+  "objects": [
+    {
+      "name": "crumbling-stone",
+      "image": "HD/02_SPIELEBENE_HD_3810x1930.png",
+      "art_crop_px": [
+        250,
+        1420,
+        430,
+        1600
+      ],
+      "size": [
+        16,
+        16
+      ],
+      "base": 24576,
+      "palette": 240,
+      "frames": [
+        160,
+        162,
+        164,
+        166
+      ],
+      "video_index": 0
     }
   ]
 }

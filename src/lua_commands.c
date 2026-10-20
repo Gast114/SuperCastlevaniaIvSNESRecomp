@@ -17,6 +17,7 @@
 #include "common_rtl.h"
 #include "debug_capture.h"
 #include "hd_render.h"
+#include "hd_collect.h"
 #include "host_main.h"
 #include "lua_bridge.h"
 #include "snes/ppu.h"
@@ -79,6 +80,16 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
         snprintf(result, capacity, ok ? "vram+cgram+oam" : "cannot write '%s'", args);
         return ok;
     }
+    if (!strcmp(name, "lines")) {
+        FILE *file = fopen(args, "wb");
+        int ok = 0;
+        if (file) {
+            ok = fwrite(Cv4HdLines(), sizeof(Cv4HdLine), kCv4HdLines, file) == kCv4HdLines;
+            if (fclose(file)) ok = 0;
+        }
+        snprintf(result, capacity, ok ? "225 scanline records" : "cannot write '%s'", args);
+        return ok;
+    }
     if (!strcmp(name, "loadfile")) {
         /* A save state outside the slots, e.g. a debug marker's state.sav. */
         int ok = RtlLoadSnapshot(args);
@@ -97,7 +108,7 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
         snprintf(result, capacity, "reset");
         return 1;
     }
-    snprintf(result, capacity, "unknown command '%s' (screenshot, save, load, loadfile, ppu, dump, layers, reset)", name);
+    snprintf(result, capacity, "unknown command '%s' (screenshot, hdshot, hd, save, load, loadfile, ppu, dump, lines, layers, reset)", name);
     return 0;
 }
 

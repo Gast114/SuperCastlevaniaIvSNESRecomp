@@ -12,11 +12,11 @@ und bereitet keine neuen Ausschnitt-/Promptserien vor. Vollständige HD-Motive
 werden zusammen mit ihren nativen SD-Referenzen importiert. Die folgenden
 älteren Material-/Tilepiloten bleiben historische, optionale Werkzeuge.
 
-Installiert und ausgewählt: **`build/hd_packs/stage-01-user-v1`**, HD an, 10×.
-Finales Paket: `artwork-local/packs/stage-01-user-final`. Quellen unverändert
-in `artwork-local/stage01-user-v1/source`, aus
+Installiert und ausgewählt: **`build/hd_packs/stage-01-user-v2-final`**, HD an, 10×.
+Finales Paket: `artwork-local/packs/stage-01-user-v2-final`. Quellen unverändert
+in `artwork-local/stage01-user-v2/source`, aus
 `D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Stage 01` kopiert;
-`source-checksums.json` hält SHA-256 aller 21 Dateien fest. Kein Resizing, keine
+`source-checksums.json` hält SHA-256 aller 25 Dateien fest. Kein Resizing, keine
 Farbänderung am HD-Original. Technische Ebenen-/Animationsausschnitte verändern
 nur die importierte Kopie. Das Rezept ist versioniert:
 `assets/hd/stage_01.recipe.json`.
@@ -25,7 +25,7 @@ nur die importierte Kopie. Das Rezept ist versioniert:
 |---|---|---|
 | Land/Treppe 6970×1800 | Welt −54,44; 697×180 | komplette Fläche inklusive linker Erweiterung |
 | Brücke/Burg 4350×1930 | Welt 643,31; 435×193 | rechte Erweiterung, getrennte Spielkomponenten |
-| Felsen 2850×1920 | BG2-Karte 0,0; Wiederholung 512×256 | echte Parallaxen-/Zeilenregister |
+| Felsen 3390×1920 | BG2-Karte −54,0; Wiederholung 512×256 | neue linke Erweiterung, echte Parallaxen-/Zeilenregister |
 | Mond 190×190 | Bildschirm 54,46 | ganze RGBA-Form, vier originale OBJ-Schlüssel maskiert |
 | Fledermäuse 260×60 | originale OBJ-Schlüssel und Posen | sechs 80×80-Tiles |
 | Wasser 1400×980 | BG2 y200; Inhalt x12…140, 128×24 | vier ganze Phasen, originale Palette 80 als Schutz |
@@ -48,12 +48,12 @@ native Farbmathematik wirken weiterhin auf die dargestellte Wasserfläche.
 Reproduzierbarer Neubau in ein **neues, leeres** Ziel:
 
 ```powershell
-python tools/hd/hd_scene.py --recipe assets/hd/stage_01.recipe.json --source artwork-local/stage01-user-v1/source --dump artwork-local/stage01-user-v1/pilot-keys --dump artwork-local/stage01-user-v1/capture --video artwork-local/stage01-user-v1/water-video.bin --out artwork-local/packs/stage-01-next
+python tools/hd/hd_scene.py --recipe assets/hd/stage_01.recipe.json --source artwork-local/stage01-user-v2/source --dump artwork-local/stage01-user-v2/pilot-keys --dump artwork-local/stage01-user-v2/capture --video artwork-local/stage01-user-v2/water-video.bin --out artwork-local/packs/stage-01-next
 ```
 
 `scene-receipt.json` enthält Rezept, Builder-/Quell-/SD-/Aufnahme-Prüfsummen,
-Zuordnungen und mehrdeutige Tilevarianten. 36 Schlüsselbilder (Mond 4,
-Fledermäuse 6, Wasser 15, Kette 11) ergänzen 13 Bildblöcke. Bilder über 4096 Pixel
+Zuordnungen und mehrdeutige Tilevarianten. 52 Schlüsselbilder (Mond 4,
+Fledermäuse 6, Wasser 15, Kette 11, zerbrechende Steine 16) ergänzen 13 Bildblöcke. Bilder über 4096 Pixel
 Breite werden an nativen Pixelgrenzen geteilt; der Loader verbindet passende
 benachbarte Blöcke wieder zu durchgehenden CPU-Ebenen (hier 11 Regionen), auch
 für affine Abtastung. Eine Quelle versorgt ihre wiederholten Vorkommen.
@@ -85,21 +85,61 @@ Szenenpakete im laufenden Spiel mit `sciv_play.py hdshot` ansehen.
 `hd_preview.py` und `hd_tiles.py export` lehnen sie ausdrücklich ab, damit beim
 alten Tile-Export keine ganzen Ebenen stillschweigend verloren gehen.
 
-**Noch fehlend:** eigene linke Erweiterung des Felsen-Hintergrunds; dort bleibt
-Spiegelung, während die gelieferte FG-Erweiterung bereits eingebaut ist.
-Simon, HUD, Kerzen und Gegner haben weiterhin Originalgrafik. Weitere Blöcke
-benötigen passende Nutzerbilder und eine eigene Szenen-/Bewegungsprüfung.
+### Bewegliche Steine, Wasser und Randkorrektur (v2)
+
+Die vier Steine wurden aus der festen Spielebene entfernt. `objects` im Rezept
+registriert 16×16-OBJ-Phasen `$A0/A2/A4/A6` aus dem vorhandenen Video-Dump
+(Base `$6000`, Palette240). Ein 180×180-Ausschnitt des Nutzerbildes wird auf
+160×160 verkleinert. Die native Silhouette und Farbänderung je Bruchphase
+übertragen die Original-Risse auf dieses Material. **Vorläufige technische
+Bruchmasken, ausdrücklich vom Nutzer bestätigt; keine neu gemalten HD-Risse.**
+Die Frame-/Key-Zuordnung samt Quellhash steht unter `scene-receipt.json.objects`.
+Die Simulation bestimmt Timing, Position, Fallbewegung und Verschwinden.
+
+`requires: ["scene-regions-v1", "shared-objects-v1"]` und `shared_objects`
+registrieren diese 16 Originalschlüssel für Wiederverwendung in anderen
+Gameplay-Blöcken (Mode4/Phase5). Außerhalb der Landschaftsszene werden nur die
+exakten OBJ-Tiles ersetzt; BG-Regionen und andere dekorative Schlüssel greifen
+dort nicht. Abweichende Originalpaletten benötigen eine weitere Registrierung.
+So entstehen keine starren Kopien und kein Landschaftsersatz in fremden Blöcken.
+
+Zwei weitere Guarded Patches im OAM-Emitter `$00:8ED2/8EDA` erweitern beide
+signed Grenzen von −16…255 auf −64…303, nur bei Widescreen. Damit werden echte
+Sprites bereits im Rand emittiert; das behebt den 4:3-Pop-in zusätzlich zu den
+früher erweiterten Event-/Objektgrenzen. Originalformat behält Retail-Grenzen.
+
+Die HD-Wasserregionen verwenden explizit Priorität `$7100` hinter der
+Spielebene. Die normale FG-Priorität bleibt bestehen, damit Simon weiterhin
+vor Säulen steht. Der linke Felsen-Anbau ist bei X−54 registriert; negative
+Koordinaten umgehen die alte Spiegelung, ohne das normale Karten-Wrap-Fenster
+zu verschieben (sonst würde der Anbau fälschlich rechts wiederkehren).
+
+Der auch ohne HD sichtbare Erdstrich ist als eng begrenzte Darstellungskorrektur
+in `GameDrawPpuFrame` beseitigt: ausschließlich Block0/Phase5/Mode1, Zeile192,
+BG2-Map `$4800`, VScroll1023 und gleicher BG1/2-HScroll. Die Zeile liest vorübergehend
+V0 statt der alten Bodenzeile; nach PPU-/HD-Aufnahme wird das Register restauriert.
+Dies ist kein globaler HDMA-Timing-Fix. Guest-VRAM, HDMA-Tabellen und Simulation
+bleiben unverändert. Ein vorher/nachher-Vergleich zeigt im Originalformat nur
+die beabsichtigten Änderungen auf Bildzeile191; Widescreen zusätzlich Rand-OBJs.
+
+Weiterhin original: Simon, HUD, Kerzen, Gegner. Bewegte Kette/Fledermäuse haben
+noch native OBJ-Rasterkonturen. Weitere Landschaften benötigen passende
+Nutzerbilder und eine eigene Szenen-/Bewegungsprüfung.
 
 ### Nachweis für dieses Paket
 
 `test_hd_scene.py` prüft echte Alpha-Konturen, Nearest-Identität bei 2×/4×/10×,
 Kategorien/falsche Szene und native Bilder/Zustände beim Start, Scrollen, auf der
 Brücke, in einer weiteren Wasserphase und bei echter Brückenrotation.
-Parallel (8) und seriell (1) liefern 33 bytegleiche gemeinsame PNGs. Zusätzlich
+Der v1-Stand lieferte parallel (8) und seriell (1) 33 bytegleiche gemeinsame PNGs.
+Der erweiterte v2-Test prüft zusätzlich Bruchphasen, Fallen/keine statischen
+Reste, frischen Widescreen-Eintritt, Wasser hinter dem Ufer, fehlenden Erdstrich,
+linke Erweiterung und gemeinsame Objekt-Schlüssel außerhalb der Landschaftsszene. Zusätzlich
 elf Bewegungs-Checkpoints in `test_hd_route.py`, bestehender Tile-/Kontexttest
 und `test_hd_ppu.py`. Berichte und Bilder dauerhaft unter
-`artwork-local/stage01-user-v1/review`. Nutzer-Release-Menütest (Klick/Persistenz/Marker) und Startup mit RunAhead 0/1
-sind ebenfalls grün. Finale Messung über `sciv_play.py`, je 240 ungedrosselte
+`artwork-local/stage01-user-v2/review`. Zusätzlich SHA-256-geprüftes v2-Backup:
+`D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-20-stage01-fixes`. Nutzer-Release-Menütest (Klick/Persistenz/Marker) und Startup mit RunAhead 0/1
+sind ebenfalls grün. Messung des v1-Pakets über `sciv_play.py`, je 240 ungedrosselte
 Frames bei 10×: ca.60,8 FPS am Start, 58,0 FPS auf der Brücke auf diesem Rechner.
 Kein allgemeines 60-FPS-Versprechen und kein vollständiger Frame-CRC-Test des
 ganzen Spiels. Für Fortschritt und Quellen gilt HANDOFF.md.
