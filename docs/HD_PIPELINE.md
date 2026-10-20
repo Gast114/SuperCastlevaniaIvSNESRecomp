@@ -5,6 +5,54 @@ zwischen Original und dem geladenen HD-Paket um. Die Simulation läuft beim
 Fortsetzen an derselben Stelle weiter. Originalgrafiken bleiben jederzeit
 verfügbar; fehlende Ersatztiles erscheinen automatisch im Original.
 
+Das HD-Menü verwendet ausschließlich **10× (4K target)**;2×/4×/6× werden
+auf Nutzerwunsch nicht mehr angeboten. Diagnose-CLI-Parameter sind intern
+weiter vorhanden. Weitere Prüfungen sollen gezielt und notwendig sein;
+keine wiederholten Skalierungsmatrizen für den normalen Nutzerworkflow.
+
+## Simon: drei gelieferte HD-Posen zur Probe
+
+In beiden Startordnern ist **Character workshop → Simon HD preview (3 poses)**
+ausgewählt: Stehen, Ducken und eine Sprungpose. **Strg+H** stellt auch diese
+Posen wieder auf Original. Über **Use character pack** lässt sich nur die
+Figurenprobe deaktivieren. Fehlende Lauf-, Treppen- und Angriffsposen verwenden
+weiterhin Originalgrafik. Die Probe enthält keine neu erfundenen Animationen.
+
+Für weitere Posen bitte das jetzige Format beibehalten:
+
+- Je Animationsframe eine native SD-Referenz und ein transparentes RGBA-PNG in10×.
+- Breite **und** Höhe der jeweiligen Vorlage verzehnfachen:24×46 →240×460.
+  Ducken/Springen behalten ihre eigenen Abmessungen; nicht alle Posen auf
+  dieselbe Figurenhöhe strecken. DPI-Angaben ändern die Darstellung nicht.
+- Haare, Hände, Waffenführung und Schuhe vollständig erhalten; transparente
+  Sicherheitsränder weder abschneiden noch nachträglich unterschiedlich skalieren.
+  Zusätzlichen Rand in SD und HD an derselben Stelle vorsehen, ebenfalls10×.
+- Figur, Rüstung, Proportionen, Licht und Stil zwischen Frames konstant halten.
+  Nur die Rechtsansicht liefern; die andere Blickrichtung entsteht automatisch.
+- Namen wie `Walking-01.png` / `Walking-01_HD_10x_<Breite>x<Höhe>.png` verwenden.
+  Ein vollständiger Laufzyklus ist die sinnvollste nächste Gruppe.
+
+Der Import übernimmt Verankerung und Zuordnung. Ein großer Spritebogen oder
+manuelles Zerlegen in Tiles ist für den Nutzer nicht nötig. Gleiche Posen
+werden wiederverwendet. Einzelbilder eines Angriffs müssen zur nativen
+Hand-/Peitschenposition passen; die Spielmechanik bleibt erhalten.
+
+Technisch bleibt das Character-Manifest Version1 kompatibel. Jeder Frame kann
+optional ein `hd`-Objekt mit `image`, `scale:10` und `offset:[x,y]` in seiner
+nativen96×96-Zelle besitzen. `body.png` dient als Vorschau/Verankerung;
+die tatsächlichen HD-Pixel bleiben in den einzelnen Quelldateien. Änderungen
+an diesen PNGs werden live geladen; unvollständiges Speichern ersetzt kein
+gültiges Bild. Der Compositor liest die volle Detailauflösung und verwendet
+native OBJ-Priorität, Fenster, Sichtbarkeit und Farbmathematik.
+
+```powershell
+python tools/import_character_hd.py --template build-play/game/characters/simon-template --source "../Assets (ausgeschnitten)/Simon Belmont" --out artwork-local/characters/neue-probe
+python tools/test_character_hd.py --rom "Super Castlevania IV (USA).sfc" --build-dir build-lua --character artwork-local/characters/simon-user-hd-three-poses-v1 --pack artwork-local/packs/stage-01-user-v4-final --fixture artwork-local/fixtures/block-1-1/state.sav
+```
+
+Der Import legt ein neues Zielverzeichnis an und verändert die Nutzerbilder
+nicht. `import.json` enthält SHA-256, native Fingerprints und Offsets.
+
 ## Slowdowns reduzieren
 
 **Escape → Performance → SNES slowdown reduction** bietet Original SNES,

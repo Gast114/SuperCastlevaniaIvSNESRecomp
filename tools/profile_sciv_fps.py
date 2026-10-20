@@ -11,6 +11,7 @@ from pathlib import Path
 import socket
 import statistics
 import subprocess
+import shutil
 import time
 
 import sciv_play as play
@@ -22,6 +23,7 @@ def main():
     parser.add_argument('--rom', type=Path, required=True)
     parser.add_argument('--fixture', type=Path, required=True)
     parser.add_argument('--pack', type=Path)
+    parser.add_argument('--character',type=Path,help='Optional character pack copied into the isolated session')
     parser.add_argument('--scale', type=int, choices=(0, 2, 4, 6, 10), default=0)
     parser.add_argument('--workers', type=int, choices=range(1, 33), default=16)
     parser.add_argument('--frames', type=int, default=360)
@@ -51,6 +53,9 @@ def main():
     work = sciv.work_dir(build, 'fps-profile-')
     exe = sciv.prepare(work, build, {'Graphics': {'Widescreen': 1},
         'General': {'DisableFrameDelay': int(args.unthrottled)}, 'Sound': {'EnableAudio':int(args.audio)}})
+    if args.character:
+        shutil.copytree(args.character,work/'characters/profile-character')
+        (work/'characters/selected.txt').write_text('profile-character')
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]

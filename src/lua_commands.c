@@ -21,6 +21,7 @@
 #include "host_main.h"
 #include "lua_bridge.h"
 #include "game_performance.h"
+#include "character_pack.h"
 #include "cpu_state.h"
 #include "snes/ppu.h"
 
@@ -39,6 +40,12 @@ static int Cv4LuaSlot(const char *args, int *slot)
 static int Cv4LuaCommand(const char *name, const char *args, char *result, size_t capacity)
 {
     int slot;
+    if(!strcmp(name,"characterhd")) {
+        const Cv4CharacterHdFrame *f=Cv4CharacterHd();
+        snprintf(result,capacity,"{\"active\":%d,\"pose\":\"%s\",\"x\":%d,\"y\":%d,\"width\":%d,\"height\":%d}",
+            f!=NULL,Cv4CharacterPose(),f?f->x:0,f?f->y:0,f?f->width:0,f?f->height:0);
+        return 1;
+    }
     if (!strcmp(name,"hdhash")) {
         snprintf(result,capacity,"%016llx",(unsigned long long)Cv4HdFrameChecksum());return 1;
     }

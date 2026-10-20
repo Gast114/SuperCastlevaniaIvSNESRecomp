@@ -1,6 +1,7 @@
 #include "character_pack.h"
 #include "character_json.h"
 #include "character_tuning.h"
+#include "hd_render.h"
 #include "snes/ppu.h"
 #include "snes/cart.h"
 #include "third_party/stb_image.h"
@@ -25,7 +26,13 @@ extern "C" { extern Snes *g_snes; }
 namespace {
 namespace fs = std::filesystem;
 constexpr int Cell=96, Columns=8, Rows=32, Width=Cell*Columns, Height=Cell*Rows;
-struct Frame { std::string id, label; int cell=0, ax=48, ay=48, hx=48, hy=48; };
+struct Frame {
+  std::string id, label; int cell=0, ax=48, ay=48, hx=48, hy=48;
+  std::string hdImage;int hdScale=10,hdX=0,hdY=0,hdW=0,hdH=0;
+  int displayW=0,displayH=0;
+  std::array<std::vector<uint32_t>,4> hdPixels;
+  fs::file_time_type hdTime{};
+};
 struct Pack {
   cv4tuning::Values gameplay;
   std::string directory, name;
@@ -49,6 +56,8 @@ unsigned matchedFlip=0;
 bool edgeClipped=false;
 std::array<uint8_t,0x13e0> previousPoseRam{};
 bool havePreviousPose=false;
+Cv4CharacterHdFrame hdFrame{};
+uint64_t hdRevision=0;
 uint16_t word(const uint8_t*r,unsigned a){return r[a]|uint16_t(r[a+1])<<8;}
 int oamX(const Ppu*p,int s){int x=(p->oam[s*2]&255)|(((p->highOam[s>>2]>>((s&3)*2))&1)<<8);return x>=256+(int)p->extraRightCur?x-512:x;}
 int oamSize(const Ppu*p,int s){static const int sizes[8][2]={{8,16},{8,32},{8,64},{16,32},{16,64},{32,64},{16,32},{16,32}};return sizes[PPU_objSize(p)][(p->highOam[s>>2]>>((s&3)*2+1))&1];}
@@ -78,7 +87,11 @@ void save(Pack&p,bool image){
   for(int i=0;i<cv4tuning::Count;i++)
     f<<"    "<<character_json::quote(cv4tuning::definitions[i].key)<<": "<<p.gameplay.value[i]<<(i+1==cv4tuning::Count?"\n":",\n");
   f<<"  },\n  \"frames\": [\n";
-  for(size_t i=0;i<p.frames.size();++i){const auto&a=p.frames[i];f<<"    {\"id\": "<<character_json::quote(a.id)<<", \"label\": "<<character_json::quote(a.label)<<", \"cell\": "<<a.cell<<", \"anchor\": ["<<a.ax<<", "<<a.ay<<"], \"hand\": ["<<a.hx<<", "<<a.hy<<"]}"<<(i+1==p.frames.size()?"\n":",\n");}
+  for(size_t i=0;i<p.frames.size();++i){const auto&a=p.frames[i];f<<"    {\"id\": "<<character_json::quote(a.id)<<", \"label\": "<<character_json::quote(a.label)<<", \"cell\": "<<a.cell<<", \"anchor\": ["<<a.ax<<", "<<a.ay<<"], \"hand\": ["<<a.hx<<", "<<a.hy<<"]";
+    if(!a.hdImage.empty()){f<<", \"hd\": {\"image\": "<<character_json::quote(a.hdImage)<<", \"scale\": "<<a.hdScale<<", \"offset\": ["<<a.hdX<<", "<<a.hdY<<"]";
+      if(a.displayW)f<<", \"display_size\": ["<<a.displayW<<", "<<a.displayH<<"]";
+      f<<"}";}
+    f<<"}"<<(i+1==p.frames.size()?"\n":",\n");}
   f<<"  ]\n}\n";f.close();if(!f)throw std::runtime_error("Cannot save manifest");
   p.manifestTime=fs::last_write_time(path(p,"character.json"));
   if(image)p.imageTime=fs::last_write_time(path(p,"body.png"));
@@ -136,13 +149,41 @@ Pack load(const std::string&directory){
     a.ax=anchor[0].number();a.ay=anchor[1].number();a.hx=hand[0].number();a.hy=hand[1].number();
     if(a.id.empty()||a.cell<0||a.cell>=Columns*Rows||!ids.insert(a.id).second||!cells.insert(a.cell).second||
        a.ax<0||a.ax>=Cell||a.ay<0||a.ay>=Cell||a.hx<0||a.hx>=Cell||a.hy<0||a.hy>=Cell)throw std::runtime_error("Invalid/duplicate frame mapping");
-    p.frames.push_back(a);
+    if(auto it=v.object.find("hd");it!=v.object.end()) {
+      const auto &hd=it->second;a.hdImage=hd.at("image").string();a.hdScale=hd.at("scale").number();
+      const auto &offset=hd.at("offset").items();
+      if(offset.size()!=2||a.hdScale!=10||a.hdImage.empty()||fs::path(a.hdImage).filename()!=fs::path(a.hdImage))throw std::runtime_error("HD pose needs a local PNG, scale 10 and two offsets");
+      a.hdX=offset[0].number();a.hdY=offset[1].number();
+      int channels;
+      auto image=path(p,a.hdImage.c_str());
+      if(!stbi_info(image.string().c_str(),&a.hdW,&a.hdH,&channels)||a.hdW<=0||a.hdH<=0||a.hdW%10||a.hdH%10||a.hdX<0||a.hdY<0||a.hdX+a.hdW/10>Cell||a.hdY+a.hdH/10>Cell)throw std::runtime_error("HD pose exceeds its 96 x 96 native cell");
+      uint8_t *bytes=stbi_load(image.string().c_str(),&a.hdW,&a.hdH,&channels,4);
+      if(!bytes)throw std::runtime_error("Cannot load HD pose PNG");
+      int sourceW=a.hdW,sourceH=a.hdH;
+      if(auto display=hd.object.find("display_size");display!=hd.object.end()) {
+        const auto &size=display->second.items();
+        if(size.size()!=2){stbi_image_free(bytes);throw std::runtime_error("Invalid HD display size");}
+        a.displayW=size[0].number();a.displayH=size[1].number();
+        if(a.displayW<1||a.displayH<1||a.hdX+a.displayW>Cell||a.hdY+a.displayH>Cell){stbi_image_free(bytes);throw std::runtime_error("HD display size exceeds cell");}
+        a.hdW=a.displayW*10;a.hdH=a.displayH*10;
+      }
+      for(unsigned flip=0;flip<4;++flip) {
+        auto &dst=a.hdPixels[flip];dst.resize(size_t(a.hdW)*a.hdH);
+        for(int y=0;y<a.hdH;++y)for(int x=0;x<a.hdW;++x) {
+          int sx=(flip&1?a.hdW-1-x:x)*sourceW/a.hdW,sy=(flip&2?a.hdH-1-y:y)*sourceH/a.hdH;
+          size_t q=(size_t(sy)*sourceW+sx)*4;
+          dst[size_t(y)*a.hdW+x]=uint32_t(bytes[q+3])<<24|uint32_t(bytes[q])<<16|uint32_t(bytes[q+1])<<8|bytes[q+2];
+        }
+      }
+      stbi_image_free(bytes);a.hdTime=fs::last_write_time(image);
+    }
+    p.frames.push_back(std::move(a));
   }
   int w,h,n;if(!stbi_info(path(p,"body.png").string().c_str(),&w,&h,&n)||w!=Width||h!=Height)throw std::runtime_error("body.png must be 768 x 3072");
   uint8_t*bytes=stbi_load(path(p,"body.png").string().c_str(),&w,&h,&n,4);if(!bytes)throw std::runtime_error("Cannot read body.png");
   p.pixels.resize(Width*Height);for(size_t i=0;i<p.pixels.size();++i)p.pixels[i]=uint32_t(bytes[i*4+3])<<24|uint32_t(bytes[i*4])<<16|uint32_t(bytes[i*4+1])<<8|bytes[i*4+2];stbi_image_free(bytes);stamp(p);return p;
 }
-void selectPack(const std::string&directory){active=load(directory);selectedDirectory=directory;selected=0;std::ofstream("characters/selected.txt")<<directory;status="Loaded "+active.name;}
+void selectPack(const std::string&directory){active=load(directory);++hdRevision;selectedDirectory=directory;selected=0;std::ofstream("characters/selected.txt")<<directory;status="Loaded "+active.name;}
 void initialize(){
   fs::create_directories("characters");
   reference.directory="simon-template";reference.name="Simon template";
@@ -206,10 +247,27 @@ void captureFrame(const uint8_t*r){
 void publish(Ppu*p,const uint8_t*r){
   currentIndex=find(active,currentId);if(!enabled||currentIndex<0||!(p->renderFlags&kPpuRenderFlags_NewRenderer))return;
   const Frame&f=active.frames[currentIndex];int bx=f.cell%Columns*Cell,by=f.cell/Columns*Cell;
+  if(!f.hdImage.empty()&&(!Cv4HdEnabled()||!(Cv4HdLayerMask()&16)))return;
   unsigned flip=matchedFlip;bool fx=(flip&0x4000)!=0,fy=(flip&0x8000)!=0;
   for(int y=0;y<Cell;++y)for(int x=0;x<Cell;++x)rendered[y*Cell+x]=active.pixels[(by+(fy?Cell-1-y:y))*Width+bx+(fx?Cell-1-x:x)];
   p->hostObjX=originX-(fx?Cell-f.ax:f.ax);p->hostObjY=originY-(fy?Cell-f.ay:f.ay);
   p->hostObjWidth=p->hostObjHeight=p->hostObjStride=Cell;
+  if(!f.hdImage.empty()) {
+    // The PPU uses a small coverage proxy for native OBJ priority/windows.
+    // The compositor samples the immutable full-resolution image instead.
+    rendered.fill(0);
+    int ox=fx?Cell-f.hdX-f.hdW/10:f.hdX,oy=fy?Cell-f.hdY-f.hdH/10:f.hdY;
+    const auto &image=f.hdPixels[(fx?1:0)|(fy?2:0)];
+    for(int y=0;y<f.hdH/10;++y)for(int x=0;x<f.hdW/10;++x) {
+      uint64_t sums[3]={};unsigned alpha=0;
+      for(int dy=0;dy<10;++dy)for(int dx=0;dx<10;++dx) {
+        uint32_t c=image[size_t(y*10+dy)*f.hdW+x*10+dx];unsigned a=c>>24;alpha+=a;
+        for(int k=0;k<3;++k)sums[k]+=((c>>(k*8))&255)*a;
+      }
+      if(alpha)rendered[(oy+y)*Cell+ox+x]=0xff000000u|uint32_t(sums[0]/alpha)|uint32_t(sums[1]/alpha)<<8|uint32_t(sums[2]/alpha)<<16;
+    }
+    hdFrame={image.data(),p->hostObjX+ox,p->hostObjY+oy,f.hdW,f.hdH,10,hdRevision};
+  }
   p->hostObjSlot=127;memset(p->hostObjMask,0,sizeof(p->hostObjMask));
   for(const auto&part:parts){p->hostObjMask[part.slot>>3]|=1u<<(part.slot&7);p->hostObjSlot=std::min(p->hostObjSlot,(uint8_t)part.slot);}
   auto attr=parts.back().attr;p->hostObjPriority=SPRITE_PRIO_TO_PRIO((attr>>12)&3,(attr&0x800)==0)<<8;p->hostObjPixels=rendered.data();
@@ -241,13 +299,15 @@ extern "C" void Cv4CharacterBeforeFrame(void){
   }catch(const std::exception&e){status=e.what();cv4tuning::apply(cv4tuning::Values());}
 }
 extern "C" void Cv4CharacterBegin(Ppu*p,const uint8_t*r){
-  p->hostObjPixels=nullptr;currentIndex=-1;
+  p->hostObjPixels=nullptr;currentIndex=-1;hdFrame={};
   try{
     if(!initialized)initialize();
     // An art program can briefly leave an incomplete file while saving.
     // Keep rendering the last valid pack, then retry on the next poll.
     if(++ticks%30==0&&!active.directory.empty())try{
-      if(active.imageTime!=fs::last_write_time(path(active,"body.png"))||active.manifestTime!=fs::last_write_time(path(active,"character.json"))){active=load(active.directory);status="Reloaded "+active.name;}
+      bool changed=active.imageTime!=fs::last_write_time(path(active,"body.png"))||active.manifestTime!=fs::last_write_time(path(active,"character.json"));
+      for(const auto &f:active.frames)if(!f.hdImage.empty()&&f.hdTime!=fs::last_write_time(path(active,f.hdImage.c_str())))changed=true;
+      if(changed){active=load(active.directory);++hdRevision;status="Reloaded "+active.name;}
     }catch(const std::exception&e){status=std::string("Keeping last loaded art: ")+e.what();}
     bool visible=r[0x32]==4&&!PPU_forcedBlank(p);
     // The guest can advance its object state after assembling OAM. In that
@@ -260,9 +320,11 @@ extern "C" void Cv4CharacterBegin(Ppu*p,const uint8_t*r){
     if(matched){captureFrame(r);publish(p,r);}
     flushTemplate(false);
     if(visible&&std::getenv("SNESRECOMP_CHARACTER_TRACE"))fprintf(stderr,"[character_frame] %u matched=%d replaced=%d id=%s clipped=%d\n",ticks,matched,p->hostObjPixels!=nullptr,matched?currentId.c_str():"unknown",matched&&edgeClipped);
-  }catch(const std::exception&e){status=e.what();p->hostObjPixels=nullptr;}
+  }catch(const std::exception&e){status=e.what();p->hostObjPixels=nullptr;hdFrame={};}
 }
 extern "C" void Cv4CharacterEnd(Ppu*p){p->hostObjPixels=nullptr;}
+extern "C" const Cv4CharacterHdFrame *Cv4CharacterHd(void){return hdFrame.pixels?&hdFrame:nullptr;}
+extern "C" const char *Cv4CharacterPose(void){return currentId.c_str();}
 extern "C" void Cv4CharacterEditor(){
   if(!initialized)return;
   auto display=ImGui::GetIO().DisplaySize;
@@ -284,9 +346,9 @@ extern "C" void Cv4CharacterEditor(){
       p.directory="custom-"+std::to_string(n);p.name="Custom character "+std::to_string(n);save(p,true);selectPack(p.directory);enabled=true;
     }
     ImGui::EndDisabled();
-    ImGui::SameLine();if(ImGui::Button("Reload")&&!active.directory.empty()){active=load(active.directory);status="Reloaded "+active.name;}
+    ImGui::SameLine();if(ImGui::Button("Reload")&&!active.directory.empty()){active=load(active.directory);++hdRevision;status="Reloaded "+active.name;}
     if(!active.directory.empty()&&ImGui::Button("Add newly collected poses")){
-      active=load(active.directory);int added=0;
+      active=load(active.directory);++hdRevision;int added=0;
       for(const auto&f:reference.frames)if(find(active,f.id)<0&&active.frames.size()<Columns*Rows){std::set<int> used;for(auto&a:active.frames)used.insert(a.cell);int cell=0;while(used.count(cell))++cell;
         Frame copy=f;copy.cell=cell;for(int y=0;y<Cell;++y)std::copy_n(reference.pixels.data()+(f.cell/Columns*Cell+y)*Width+f.cell%Columns*Cell,Cell,active.pixels.data()+(cell/Columns*Cell+y)*Width+cell%Columns*Cell);active.frames.push_back(copy);++added;}
       save(active,true);status="Added "+std::to_string(added)+" poses";
@@ -329,6 +391,8 @@ extern "C" void Cv4CharacterEditor(){
   }
   ImGui::TextWrapped("Collected: %zu | Pack: %zu | Missing collected poses: %zu",reference.frames.size(),shown.frames.size(),reference.frames.size()-std::count_if(reference.frames.begin(),reference.frames.end(),[&](const Frame&f){return find(shown,f.id)>=0;}));
   ImGui::TextWrapped("Edit characters/%s/body.png in your art program. Each 96 x 96 cell is independent. PNG changes reload while playing.",shown.directory.c_str());
+  auto hdCount=std::count_if(shown.frames.begin(),shown.frames.end(),[](const Frame &f){return !f.hdImage.empty();});
+  if(hdCount)ImGui::TextWrapped("%zu HD poses: individual 10x PNGs render while HD graphics and Sprites are enabled. body.png is their native alignment preview. Ctrl+H restores original Simon for these poses.",size_t(hdCount));
   ImGui::TextWrapped("Unseen or missing poses use native Simon. Collect poses by walking, jumping, crouching, attacking and using stairs.");
   if(!currentId.empty())ImGui::Text("Last game pose: %s (%s)",currentId.c_str(),enabled&&currentIndex>=0?"in pack":"native fallback");
   if(!shown.frames.empty()){

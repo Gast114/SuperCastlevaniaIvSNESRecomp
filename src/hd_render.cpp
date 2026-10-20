@@ -3,6 +3,7 @@
  * read-only scanline snapshots, native priorities/windows and Mode 7 transforms.
  * Guest picture memory, collision and save states are never modified. */
 #include "hd_render.h"
+#include "character_pack.h"
 #include "character_json.h"
 #include "render_workers.h"
 extern "C" {
@@ -63,6 +64,7 @@ unsigned layers = 31, replaced = 0;
 std::string directory = "hd_pack", status = "No HD pack loaded";
 std::vector<uint32_t> surface;
 int frameWidth = 0, frameScale = 0;
+uint64_t characterRevision=0;
 uint32_t vramRevision = 0;
 std::array<uint16_t, 256> palette;
 struct Cached { const std::vector<uint32_t> *tile; uint64_t key; };
@@ -394,7 +396,16 @@ struct Sample {
     int ax = 0, ay = 0, xx = 0, xy = 0, yx = 0, yy = 0;
     uint8_t coverage = 2;
     const Region *owner=nullptr;
+    int imageScale=0;
 };
+Sample CharacterSample(int x,int line) {
+    const auto *f=Cv4CharacterHd();
+    if(!f)return {};
+    int px=x-f->x,py=line-1-f->y;
+    if(px<0||py<0||px>=f->width/f->scale||py>=f->height/f->scale)return {};
+    Sample s;s.region=f->pixels+size_t(py*f->scale)*f->width+px*f->scale;
+    s.stride=f->width;s.imageScale=f->scale;return s;
+}
 struct PixelColour {
     uint32_t native = 0, original = 0, other = 0;
     uint8_t flags = 0, brightness = 0;
@@ -448,6 +459,10 @@ Sample FindSource(Ppu *p, int x, int line, unsigned layer, const PpuTileSource &
     return s;
 }
 Sample Find(Ppu *p, int x, int line, uint16_t pixel) {
+    int i=x+kPpuExtraLeftRight;
+    if(p->hostObjPixels&&pixel==(p->hostObjPriority|0x80)&&(p->hostObjColors[i]>>24)) {
+        auto sample=CharacterSample(x,line);if(sample.region)return sample;
+    }
     unsigned layer = (pixel >> 8) & 15;
     if (layer == 6) layer = 4;
     PpuTileSource source{};
@@ -455,10 +470,12 @@ Sample Find(Ppu *p, int x, int line, uint16_t pixel) {
     return FindSource(p, x, line, layer, source, !SceneActive());
 }
 uint32_t SampleRgb(const Sample &s, int tx, int ty, uint32_t original) {
-    if (!s.tile) return original;
-    if (s.source.flip & 1) tx = pack.scale - 1 - tx;
-    if (s.source.flip & 2) ty = pack.scale - 1 - ty;
-    uint32_t c = (*s.tile)[(s.source.py * pack.scale + ty) * pack.size + s.source.px * pack.scale + tx];
+    if (!s.tile&&!s.region) return original;
+    int density=s.imageScale?s.imageScale:pack.scale;
+    tx=tx*density/scale;ty=ty*density/scale;
+    if (s.source.flip & 1) tx = density - 1 - tx;
+    if (s.source.flip & 2) ty = density - 1 - ty;
+    uint32_t c = s.region?s.region[size_t(ty)*s.stride+tx]:(*s.tile)[(s.source.py * pack.scale + ty) * pack.size + s.source.px * pack.scale + tx];
     unsigned a = c >> 24;
     if (a == 255) return c & 0xffffff;
     if (!a) return original;
@@ -606,6 +623,8 @@ Sample RegionAt(Ppu *p, int x, int line, unsigned layer, const PpuTileSource *na
 }
 uint32_t ArtRgba(const Candidate &c, int dx, int dy) {
     const auto &s = c.art;
+    int density=s.imageScale?s.imageScale:pack.scale;
+    dx=dx*density/scale;dy=dy*density/scale;
     if (s.affine) {
         int x = (s.ax+dx*s.xx+dy*s.yx)>>16, y = (s.ay+dx*s.xy+dy*s.yy)>>16;
         const auto &r = *s.affine;
@@ -613,8 +632,8 @@ uint32_t ArtRgba(const Candidate &c, int dx, int dy) {
         return r.rgba[size_t(y)*r.stride+x];
     }
     if (!s.tile && !s.region) return c.rgba;
-    if (s.source.flip & 1) dx = pack.scale - 1 - dx;
-    if (s.source.flip & 2) dy = pack.scale - 1 - dy;
+    if (s.source.flip & 1) dx = density - 1 - dx;
+    if (s.source.flip & 2) dy = density - 1 - dy;
     if (s.region) return s.region[size_t(dy) * s.stride + dx];
     return (*s.tile)[(s.source.py * pack.scale + dy) * pack.size + s.source.px * pack.scale + dx];
 }
@@ -692,8 +711,9 @@ bool GatherSceneLine(Ppu *p, int line) {
             // change the picture. Preserve the finished native pixel wherever
             // none matches; defer background provenance until a match needs it.
             const auto &s=samples[3][i];PpuTileSource source{};
-            bool shared=s.source.valid && PpuGetTileSource(p,x,line,s.pixel,&source) &&
-                FindSource(p,x,line,4,s.source,true).tile;
+            bool host=p->hostObjPixels&&s.pixel==(p->hostObjPriority|0x80)&&(p->hostObjColors[i]>>24)&&CharacterSample(x,line).region;
+            bool shared=host||(s.source.valid && PpuGetTileSource(p,x,line,s.pixel,&source) &&
+                FindSource(p,x,line,4,s.source,true).tile);
             if(!shared){StoreScenePixel(index,out);continue;}
             if(!backgroundsReady && !backgrounds())return false;
         }
@@ -722,6 +742,8 @@ bool GatherSceneLine(Ppu *p, int line) {
                 if(hide) { c.rgba=0;c.screens=0;continue; }
             }
             c.art = layer < 2 ? RegionAt(p, x, line, layer, &s.source) : Sample{};
+            if(layer==4&&p->hostObjPixels&&s.pixel==(p->hostObjPriority|0x80)&&(p->hostObjColors[i]>>24))
+                c.art=CharacterSample(x,line);
             if (c.art.owner && c.art.owner->priority >= 0) c.priority = c.art.owner->priority;
             if (!c.art.region && !c.art.affine && s.source.valid) {
                 // OBJ provenance must still identify the real winning object.
@@ -778,9 +800,9 @@ bool GatherSceneLine(Ppu *p, int line) {
 void RenderRows(void *, size_t begin, size_t end, unsigned) {
     /* Inputs contain the exact scanline state and immutable pack pixels.
      * Workers never read or change a live PPU, palette, cache or CPU. */
-    int detail = std::min(scale, pack.scale);
+    int detail = scale;
     int artOffset[10], cellOffset[10];
-    for (int d = 0; d < detail; ++d) artOffset[d] = d * pack.scale / detail;
+    for (int d = 0; d < detail; ++d) artOffset[d] = d;
     for (int d = 0; d < scale; ++d) cellOffset[d] = d * detail / scale;
     for (size_t y = begin; y < end; ++y) {
         uint32_t *first = surface.data() + y * frameWidth * scale * scale;
@@ -822,7 +844,7 @@ void RenderRows(void *, size_t begin, size_t end, unsigned) {
                     for(int dy=0;dy<scale;++dy) {
                         auto row=first+size_t(dy)*frameWidth*scale+nx*scale;
                         if(!c.art.region&&!c.art.affine)std::fill_n(row,scale,c.rgba&0xffffff);
-                        else if(c.art.region && !c.art.source.flip && pack.scale==scale) {
+                        else if(c.art.region && !c.art.source.flip && (c.art.imageScale?c.art.imageScale:pack.scale)==scale) {
                             const auto *src=c.art.region+size_t(dy)*c.art.stride;
                             for(int dx=0;dx<scale;++dx)row[dx]=src[dx]&0xffffff;
                         } else for(int dx=0;dx<scale;++dx)row[dx]=ArtRgba(c,artOffset[cellOffset[dx]],artOffset[cellOffset[dy]])&0xffffff;
@@ -838,7 +860,7 @@ void RenderRows(void *, size_t begin, size_t end, unsigned) {
             }
             if(sceneFrame)scenePixelValid[y*frameWidth+nx]=0;
             const Pixel &p = pixels[y * frameWidth + nx];
-            if (!p.main.tile && !p.sub.tile) {
+            if (!p.main.tile && !p.sub.tile && !p.main.region && !p.sub.region) {
                 for (int dy = 0; dy < scale; ++dy)
                     std::fill_n(first + size_t(dy) * frameWidth * scale + nx * scale, scale, p.native);
                 continue;
@@ -878,19 +900,21 @@ extern "C" uint64_t Cv4HdFrameChecksum(void) {
     for(uint32_t pixel:surface)hash=(hash^(pixel&0xffffff))*1099511628211ull;
     return hash;
 }
-extern "C" int Cv4HdPresentationScale(void) { Init(); return enabled && HasArt() ? scale : 1; }
+extern "C" int Cv4HdPresentationScale(void) { Init(); return enabled && (HasArt()||Cv4CharacterHd()) ? scale : 1; }
 
 extern "C" void Cv4HdRenderBegin(Ppu *p) {
     Init();
-    p->hdTracking = enabled && HasArt();
+    const auto *character=Cv4CharacterHd();
+    p->hdTracking = enabled && (HasArt()||character);
     replaced = 0; frameScale = 0;
     if (!p->hdTracking) return;
     frameWidth = 256 + 2 * p->extraLeftRight;
     try {
-        bool resetCells=surface.size()!=size_t(frameWidth)*224*scale*scale;
+        bool resetCells=surface.size()!=size_t(frameWidth)*224*scale*scale || (character&&characterRevision!=character->revision);
+        if(character)characterRevision=character->revision;
         surface.resize(size_t(frameWidth) * 224 * scale * scale);
         pixels.resize(size_t(frameWidth) * 224);
-        sceneFrame = !pack.regions.empty() && (SceneActive() || SharedObjectsActive());
+        sceneFrame = character || (!pack.regions.empty() && (SceneActive() || SharedObjectsActive()));
         if (sceneFrame) {
             scenePixels.resize(size_t(frameWidth)*224);sceneLines.resize(224);
             scenePixelDirty.resize(size_t(frameWidth)*224);
@@ -918,7 +942,7 @@ extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
         sceneNativeRows[line-1]=native;
         auto &copy=sceneLines[line-1];copy.valid=false;
         copy.tileOnly=line<=std::max(32,int(p->wsHudSplitHeight&127));
-        if(!copy.tileOnly&&(SceneActive(p)||SharedObjectsActive())&&!PPU_forcedBlank(p)&&(PPU_mode(p)==1||PPU_mode(p)==7)) {
+        if(!copy.tileOnly&&(SceneActive(p)||SharedObjectsActive()||Cv4CharacterHd())&&!PPU_forcedBlank(p)&&(PPU_mode(p)==1||PPU_mode(p)==7)) {
             copy.ppu=*p;
             if(p->renderVram)std::copy_n(p->renderVram,32768,copy.ppu.vram);
             copy.ppu.renderVram=nullptr;
@@ -950,7 +974,7 @@ extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
             if (flags & 1) mainSample = Find(p, x, line, m);
             if (useSub) subSample = Find(p, x, line, sub);
         }
-        if (!mainSample.tile && !subSample.tile) {
+        if (!mainSample.tile && !subSample.tile && !mainSample.region && !subSample.region) {
             continue;
         }
         ++replaced;

@@ -176,13 +176,8 @@ static void HdPanel() {
     if (frame == 3) ImGui::GetIO().AddMouseButtonEvent(0, false);
   }
   ImGui::TextWrapped("Switch back to original graphics at any time. Changes apply when you resume.");
-  int scale = Cv4HdScale();
-  const int factors[] = {2, 4, 6, 10};
-  const char *labels[] = {"2x", "4x", "6x", "10x (4K target)"};
-  for (int i = 0; i < 4; ++i) {
-    if (i) ImGui::SameLine();
-    if (ImGui::RadioButton(labels[i], scale == factors[i])) Cv4HdSetScale(factors[i]);
-  }
+  if(Cv4HdScale()!=10)Cv4HdSetScale(10);
+  ImGui::TextUnformatted("HD resolution: 10x (4K target)");
   unsigned mask = Cv4HdLayerMask();
   const char *categories[] = {"Backgrounds", "Text / HUD", "Sprites"};
   const unsigned bits[] = {3, 12, 16};
