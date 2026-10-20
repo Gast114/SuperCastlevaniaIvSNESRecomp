@@ -3,6 +3,7 @@
 #include "debug_marker.h"
 #include "hd_collect.h"
 #include "hd_render.h"
+#include "game_performance.h"
 
 #include "recomp_runtime_ui.h"
 #include "imgui.h"
@@ -22,7 +23,7 @@ void launcher_ini_kv_write(const char *, const char *, const char *, const char 
 }
 
 static bool s_initialized;
-enum { kSettings, kCharacters, kHd, kShortcuts };
+enum { kSettings, kCharacters, kHd, kShortcuts, kPerformance };
 static int s_tab=kSettings, s_capture=-1;
 static std::string s_bind_message;
 static const ImGuiWindowFlags kPanelFlags=ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse;
@@ -235,7 +236,7 @@ extern "C" bool Cv4RuntimeSettingsImGuiInit(void *window, void *gl_context) {
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
   ApplyStyle();
-  s_tab=std::getenv("SNESRECOMP_HD_UI_SELFTEST")?kHd:std::getenv("SNESRECOMP_CHARACTER_WORKSHOP_SELFTEST")?kCharacters:std::getenv("SNESRECOMP_SHORTCUT_UI_SELFTEST")?kShortcuts:kSettings;
+  s_tab=std::getenv("SNESRECOMP_PERFORMANCE_UI_SELFTEST")?kPerformance:std::getenv("SNESRECOMP_HD_UI_SELFTEST")?kHd:std::getenv("SNESRECOMP_CHARACTER_WORKSHOP_SELFTEST")?kCharacters:std::getenv("SNESRECOMP_SHORTCUT_UI_SELFTEST")?kShortcuts:kSettings;
   if (!ImGui_ImplSDL3_InitForOpenGL(static_cast<SDL_Window *>(window), gl_context) ||
       !ImGui_ImplOpenGL3_Init("#version 330 core")) {
     ImGui::DestroyContext();
@@ -306,7 +307,38 @@ extern "C" void Cv4RuntimeSettingsImGuiRender(void *ui_ptr, int width,
   ImGuiViewport *viewport=ImGui::GetMainViewport();
   ImVec2 oldPos=viewport->WorkPos,oldSize=viewport->WorkSize;
   viewport->WorkPos.y=72;viewport->WorkSize.y=std::max(120.f,ImGui::GetIO().DisplaySize.y-72);
-  if (s_tab == kCharacters) Cv4CharacterEditor();
+  if (s_tab == kPerformance) {
+    ImGui::SetNextWindowPos({16,76},ImGuiCond_Always);
+    ImGui::SetNextWindowSize({width-32.f,std::max(120.f,height-92.f)},ImGuiCond_Always);
+    if(ImGui::Begin("Performance",nullptr,kPanelFlags)) {
+      int timing=Cv4CpuTimingMode();
+      const char *labels[]={"Original SNES","FastROM","FastROM + CPU boost"};
+      const char *test=std::getenv("SNESRECOMP_PERFORMANCE_UI_SELFTEST");
+      static unsigned frame;
+      if(test && ++frame==1)std::fprintf(stderr,"performance initial=%d\n",timing);
+      bool open=ImGui::BeginCombo("SNES slowdown reduction",labels[timing]);
+      ImVec2 combo=ImGui::GetItemRectMin();
+      if(open) {
+        for(int i=0;i<3;++i) {
+          if(ImGui::Selectable(labels[i],timing==i))Cv4SetCpuTimingMode(i);
+          if(test && i==std::atoi(test) && (frame==6||frame==7)) {
+            ImVec2 p=ImGui::GetItemRectMin();ImGui::GetIO().AddMousePosEvent(p.x+12,p.y+8);
+            ImGui::GetIO().AddMouseButtonEvent(0,frame==6);
+          }
+        }
+        ImGui::EndCombo();
+      }
+      if(test && (frame==2||frame==3)) {
+        ImGui::GetIO().AddMousePosEvent(combo.x+12,combo.y+8);
+        ImGui::GetIO().AddMouseButtonEvent(0,frame==2);
+      }
+      if(test && frame==10)std::fprintf(stderr,"performance selected=%d\n",Cv4CpuTimingMode());
+      ImGui::TextWrapped("FastROM accelerates ROM access. CPU boost adds headroom for busy scenes. Video remains at its original NTSC rate; gameplay outside overload keeps its normal speed.");
+      ImGui::TextWrapped("HD graphics keep their full selected resolution. Unchanged HD cells are reused automatically.");
+    }
+    ImGui::End();
+  }
+  else if (s_tab == kCharacters) Cv4CharacterEditor();
   else if (s_tab == kHd) HdPanel();
   else if (s_tab == kShortcuts) ShortcutPanel();
   else recomp_runtime_ui_render_imgui(static_cast<RecompRuntimeUi *>(ui_ptr));
@@ -322,7 +354,12 @@ extern "C" void Cv4RuntimeSettingsImGuiRender(void *ui_ptr, int width,
   ImGui::SameLine();
   button("HD graphics",kHd);
   ImGui::SameLine();button("Shortcuts",kShortcuts);
+  ImGui::SameLine();button("Performance",kPerformance);
   ImGui::SameLine();if(ImGui::Button("Resume",{0,38})){s_capture=-1;recomp_runtime_ui_close(static_cast<RecompRuntimeUi *>(ui_ptr));}
+  if(std::getenv("SNESRECOMP_PERFORMANCE_UI_SELFTEST")) {
+    static bool reported;
+    if(!reported){reported=true;std::fprintf(stderr,"performance navigation fits=%d\n",ImGui::GetItemRectMax().x<ImGui::GetIO().DisplaySize.x-6);}
+  }
   ImGui::End();
   ImGui::PopStyleVar();
   ImGui::Render();

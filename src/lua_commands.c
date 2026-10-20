@@ -20,6 +20,8 @@
 #include "hd_collect.h"
 #include "host_main.h"
 #include "lua_bridge.h"
+#include "game_performance.h"
+#include "cpu_state.h"
 #include "snes/ppu.h"
 
 extern Ppu *g_ppu;
@@ -37,6 +39,18 @@ static int Cv4LuaSlot(const char *args, int *slot)
 static int Cv4LuaCommand(const char *name, const char *args, char *result, size_t capacity)
 {
     int slot;
+    if (!strcmp(name,"hdhash")) {
+        snprintf(result,capacity,"%016llx",(unsigned long long)Cv4HdFrameChecksum());return 1;
+    }
+    if (!strcmp(name, "performance")) {
+        if (!strcmp(args,"fastrom 0")) Cv4SetFastRom(0);
+        else if (!strcmp(args,"fastrom 1")) Cv4SetFastRom(1);
+        else if (!strcmp(args,"timing 0") || !strcmp(args,"timing 1") || !strcmp(args,"timing 2"))Cv4SetCpuTimingMode(args[7]-'0');
+        else if (args[0]) { snprintf(result,capacity,"performance: timing 0|1|2");return 0; }
+        snprintf(result,capacity,"{\"cpu_timing\":%d,\"rom_cost\":%u,\"wram_cost\":%u,\"mmio_cost\":%u}",
+            Cv4CpuTimingMode(),cpu_region_speed(0x008000),cpu_region_speed(0x7e8000),cpu_region_speed(0x002100));
+        return 1;
+    }
     if (!strcmp(name, "__reset"))
         return 1;
     if (!strcmp(name, "screenshot"))

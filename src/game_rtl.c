@@ -44,6 +44,7 @@
 #include "character_pack.h"
 #include "hd_collect.h"
 #include "scene.h"
+#include "game_performance.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,6 +158,7 @@ static void game_run_interrupt(uint32_t vector, uint64_t frame_end)
 
 void GameRunOneFrame(void)
 {
+    Cv4PerformanceBeforeFrame();
     Cv4CampaignBeforeFrame();
     Cv4CharacterBeforeFrame();
     const uint64_t frame_end = g_cpu.master_cycles + GAME_MASTER_CYCLES_PER_FRAME;

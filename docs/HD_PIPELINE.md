@@ -5,6 +5,27 @@ zwischen Original und dem geladenen HD-Paket um. Die Simulation läuft beim
 Fortsetzen an derselben Stelle weiter. Originalgrafiken bleiben jederzeit
 verfügbar; fehlende Ersatztiles erscheinen automatisch im Original.
 
+## Slowdowns reduzieren
+
+**Escape → Performance → SNES slowdown reduction** bietet Original SNES,
+FastROM und **FastROM + CPU boost** (neuer Standard). Reines FastROM beschleunigt
+ROM-Zugriffe; der zusätzliche Boost verkürzt CPU-Zugriffe auf WRAM und interne
+Rechenarbeit. Videotakt und normale Spielgeschwindigkeit bleiben bei NTSC
+60,0988Hz. Das entfernt ausgelassene Spielupdates bei hoher Gegnerlast.
+Die Originaleinstellung bleibt für Vergleiche jederzeit wählbar.
+
+Die Auswahl steht als `cpu_timing: 0/1/2` in `performance_settings.json` neben
+der gestarteten EXE. Savestate-Laden ändert diese Host-Einstellung nicht.
+Beide Spielerordner verwenden weiterhin `DisableFrameDelay=0`; HD bleibt10×.
+Unveränderte HD-Zellen werden wiederverwendet; reine Shared-OBJ-Szenen außerhalb
+gelieferter Landschaften prüfen BG-Provenienz erst bei einem passenden Objekt.
+Der HD-Pool nutzt bis16 Teilnehmer, begrenzt durch die verfügbaren CPUs.
+
+Im synthetischen 24-Gegner-Test steigt die Zahl der Logikupdates von89/179 auf
+179/179; bei gleichzeitigen nativen Todesanimationen von172/179 auf179/179.
+Unbelastete Spielzustände und Originalbilder bleiben im Vergleich identisch.
+Leistungszahlen und Grenzen der abschließenden Läufe stehen in `HANDOFF.md`.
+
 ## FPS prüfen: PC-Renderkosten und SNES-Slowdown unterscheiden
 
 `tools/profile_sciv_fps.py` spielt einen Savestate in einer isolierten Lua-EXE ab.
@@ -20,18 +41,22 @@ python tools/profile_sciv_fps.py --rom "Super Castlevania IV (USA).sfc" --build-
 
 Ergebnis: eigener Ordner `fps-profile-*` mit `report.json`, Rohdaten
 `timing.csv`, Log und Vergleichsbildern. `--scale 0` prüft Originalgrafik,
-`--scale 6/10` HD; `--workers 1..32` vergleicht die CPU-Parallelisierung.
+`--scale 6/10` HD; `--workers 1..32` vergleicht die CPU-Parallelisierung (Standard16).
+`--cpu-timing 0/1/2` wählt Original/FastROM/Boost; neue isolierte Läufe nutzen
+standardmäßig Boost. `--audio` bezieht Audioausgabe ein; `--buttons Right`
+misst während Bewegung, einschließlich etwaiger Raumladezeiten.
 `--medusa-death-at 120` ist ein ausdrücklich synthetischer Test: vorhandene
 Medusaköpfe wechseln in ihren nativen Todeszustand und der Originalcode baut
 seine Fragmente auf. Er prüft nicht den Tastendruck-/Trefferpfad.
 
-Messung vom20.10.: Brücke benötigt bei10× ungefähr20ms pro Bild statt rund4ms
+Diagnose **vor dem Fix** vom20.10.: Brücke benötigt bei10× ungefähr20ms pro Bild statt rund4ms
 mit Originalgrafik. Der CPU-Compositor ist der größte Posten. Bei24 künstlich
 erzeugten Gegnern zeigt dagegen auch Originalgrafik~60 Bilder/s bei nur~30
 Logikupdates/s: Das beibehaltene SNES-Zeitbudget erzeugt eigene Slowdowns.
 Auch der separate Test mit Todesfragmenten lässt zusätzliche Logikupdates aus.
-HD-Optimierung und optionale Reduktion dieser ursprünglichen Slowdowns sind
-zwei getrennte Arbeiten. Tempo und HD-Qualität wurden für die Diagnose nicht verändert.
+HD-Optimierung und Reduktion dieser ursprünglichen Slowdowns sind
+zwei getrennte Arbeiten und inzwischen implementiert. Tempo und HD-Qualität
+wurden für die damalige Diagnose nicht verändert.
 Details und Grenzen der Messung stehen am Anfang von `HANDOFF.md`.
 
 ## Aktueller Import: fertige Nutzerbilder für Stage 01 (20.10.)
@@ -44,8 +69,8 @@ werden zusammen mit ihren nativen SD-Referenzen importiert. Die folgenden
 Installiert und ausgewählt: **`build/hd_packs/stage-01-user-v4-final`**, HD an, 10×.
 Auch unter `build-play/game/hd_packs/` installiert. Beide Konfigurationen nutzen
 `DisableFrameDelay=0` für normale NTSC-Geschwindigkeit; `sciv_play.py --fast`
-verwendet ausschließlich eigene Sitzungsordner. HD-Brücke erreicht im letzten
-Test etwa 48 FPS; stabile 60 FPS in HD bleiben offen.
+verwendet ausschließlich eigene Sitzungsordner. Der neue Performance-Fix
+beschleunigt die volle10×-Darstellung; aktuelle Messungen siehe `HANDOFF.md`.
 
 Finales Paket: `artwork-local/packs/stage-01-user-v4-final`. Quellen unverändert
 in `artwork-local/stage01-user-v3/source`, aus

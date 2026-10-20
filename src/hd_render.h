@@ -21,6 +21,7 @@ const char *Cv4HdStatus(void);
 unsigned Cv4HdPackTiles(void);
 int Cv4HdPackScale(void);
 unsigned Cv4HdReplacedPixels(void);
+uint64_t Cv4HdFrameChecksum(void);
 int Cv4HdPresentationScale(void);
 void Cv4HdPresent(uint8_t *dst, size_t pitch, int width, int height, int scale);
 int Cv4HdScreenshot(const char *path);

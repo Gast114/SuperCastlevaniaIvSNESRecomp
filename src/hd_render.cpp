@@ -395,12 +395,12 @@ struct Sample {
     uint8_t coverage = 2;
     const Region *owner=nullptr;
 };
-struct Pixel {
-    Sample main, sub;
+struct PixelColour {
     uint32_t native = 0, original = 0, other = 0;
     uint8_t flags = 0, brightness = 0;
     bool math = false, half = false, subtract = false;
 };
+struct Pixel : PixelColour { Sample main, sub; };
 std::vector<Pixel> pixels;
 SnesRenderWorkers *workers = nullptr;
 bool workersInitialized = false;
@@ -467,7 +467,7 @@ uint32_t SampleRgb(const Sample &s, int tx, int ty, uint32_t original) {
         out |= (((c >> shift & 255) * a + (original >> shift & 255) * (255 - a) + 127) / 255) << shift;
     return out;
 }
-uint32_t Compose(const Pixel &p, uint32_t main, uint32_t other) {
+uint32_t Compose(const PixelColour &p, uint32_t main, uint32_t other) {
     uint32_t out = 0;
     for (unsigned shift : {0u, 8u, 16u}) {
         int v = p.flags & 1 ? (main >> shift) & 255 : 0;
@@ -490,7 +490,7 @@ struct ScenePixel {
     std::array<Candidate, 6> candidates;
     std::array<uint8_t,6> order{};
     uint8_t count=0;
-    Pixel colour;
+    PixelColour colour;
     uint32_t backdrop = 0, fixed = 0;
     uint8_t mathMask = 0, mainLayer = 5;
     bool addSub = false, halfFlag = false;
@@ -502,6 +502,26 @@ std::vector<SceneLine> sceneLines;
 std::array<const uint32_t *,224> sceneNativeRows{};
 std::array<unsigned,224> sceneMatches{};
 uint64_t sceneEpoch=0;
+std::vector<uint8_t> scenePixelValid, scenePixelDirty;
+int sceneCacheScale=0,sceneCacheWidth=0;
+bool sceneReuse = std::getenv("SCIV_HD_NO_REUSE") == nullptr;
+void StoreScenePixel(size_t index,const ScenePixel &out) {
+    const auto &previous=scenePixels[index];
+    bool same=false;
+    if(sceneReuse && scenePixelValid[index]) {
+        if(!previous.colour.brightness && !out.colour.brightness)
+            same=previous.colour.native==out.colour.native;
+        // The fast path draws only its opaque winning candidate. Changes
+        // behind it (including native animation) cannot change the cell.
+        else if(previous.fast>=0 && out.fast>=0) {
+            const auto &a=previous.candidates[previous.fast];
+            const auto &b=out.candidates[out.fast];
+            same=std::memcmp(&a,&b,sizeof(a))==0;
+        } else same=std::memcmp(&previous,&out,sizeof(out))==0;
+    }
+    scenePixelDirty[index]=!same;
+    if(!same)scenePixels[index]=out;
+}
 thread_local int sceneCameraX=0,sceneCameraY=0,sceneClock=0;
 thread_local bool sceneRegionsActive=true;
 thread_local bool sceneSharedOnly=false;
@@ -626,7 +646,7 @@ ScreenColour SceneScreen(const ScenePixel &p, unsigned screen, int dx, int dy) {
 }
 uint32_t SceneColour(const ScenePixel &p, int dx, int dy) {
     auto main = SceneScreen(p, 1, dx, dy);
-    Pixel colour = p.colour;
+    PixelColour colour = p.colour;
     colour.math = (colour.flags & 2) && (p.mathMask & (1u << main.layer));
     if (!colour.math && (colour.flags & 1) && colour.brightness == 15) return main.rgb;
     auto sub = colour.math && p.addSub ? SceneScreen(p, 2, dx, dy) : ScreenColour{p.backdrop,5,false};
@@ -649,14 +669,34 @@ bool GatherSceneLine(Ppu *p, int line) {
         if (!PpuGetBackgroundTileSource(p, 0, line, r.layer, &probe)) return false;
     }
     PpuLayerSample samples[4][kPpuBufWidth];
-    for (unsigned layer = 0; layer < 4; ++layer)
-        if (!PpuGetLayerScanline(p, line, layer == 3 ? 4 : layer, samples[layer], kPpuBufWidth)) return false;
+    if(!PpuGetLayerScanline(p,line,4,samples[3],kPpuBufWidth))return false;
+    bool backgroundsReady=false;
+    auto backgrounds=[&]() {
+        for(unsigned layer=0;layer<3;++layer)
+            if(!PpuGetLayerScanline(p,line,layer,samples[layer],kPpuBufWidth))return false;
+        backgroundsReady=true;return true;
+    };
+    if(!sceneSharedOnly && !backgrounds())return false;
     const auto *native = reinterpret_cast<const uint32_t *>(p->renderBuffer + (line-1)*p->renderPitch);
     for (int nx = 0; nx < frameWidth; ++nx) {
         int x = nx - p->extraLeftRight, i = x + kPpuExtraLeftRight;
-        auto &out = scenePixels[size_t(line-1)*frameWidth+nx];
-        out = {}; out.colour.native = native[nx];
-        if (x < -(int)p->extraLeftCur || x >= 256+p->extraRightCur) continue;
+        size_t index=size_t(line-1)*frameWidth+nx;
+        ScenePixel next{};
+        auto &out = next;
+        out.colour.native = native[nx];
+        if (x < -(int)p->extraLeftCur || x >= 256+p->extraRightCur) {
+            scenePixelValid[index]=0;scenePixels[index]=out;continue;
+        }
+        if(sceneSharedOnly) {
+            // Outside an authored landscape only registered shared OBJs can
+            // change the picture. Preserve the finished native pixel wherever
+            // none matches; defer background provenance until a match needs it.
+            const auto &s=samples[3][i];PpuTileSource source{};
+            bool shared=s.source.valid && PpuGetTileSource(p,x,line,s.pixel,&source) &&
+                FindSource(p,x,line,4,s.source,true).tile;
+            if(!shared){StoreScenePixel(index,out);continue;}
+            if(!backgroundsReady && !backgrounds())return false;
+        }
         uint16_t main = p->bgBuffers[0].data[i], sub = p->bgBuffers[1].data[i];
         out.mainLayer = main >> 8 & 15; out.backdrop = Rgb(p->cgram[0]);
         out.colour.original = Rgb(PpuPixelColor(p, main, i));
@@ -731,6 +771,7 @@ bool GatherSceneLine(Ppu *p, int line) {
                 break;
             }
         }
+        StoreScenePixel(index,out);
     }
     return true;
 }
@@ -763,9 +804,13 @@ void RenderRows(void *, size_t begin, size_t end, unsigned) {
         for (int nx = 0; nx < frameWidth; ++nx) {
             if (sceneFrame && !sceneLines[y].tileOnly) {
                 if(!sceneValid) {
+                    scenePixelValid[y*frameWidth+nx]=0;
                     for(int dy=0;dy<scale;++dy)std::fill_n(first+size_t(dy)*frameWidth*scale+nx*scale,scale,sceneNativeRows[y][nx]);
                     continue;
                 }
+                size_t index=y*frameWidth+nx;
+                if(scenePixelValid[index] && !scenePixelDirty[index])continue;
+                scenePixelValid[index]=1;
                 const auto &p = scenePixels[y*frameWidth+nx];
                 if (!p.colour.brightness || p.fast==-2) {
                     auto rgb=p.colour.brightness?SceneColour(p,0,0):p.colour.native;
@@ -791,6 +836,7 @@ void RenderRows(void *, size_t begin, size_t end, unsigned) {
                 }
                 continue;
             }
+            if(sceneFrame)scenePixelValid[y*frameWidth+nx]=0;
             const Pixel &p = pixels[y * frameWidth + nx];
             if (!p.main.tile && !p.sub.tile) {
                 for (int dy = 0; dy < scale; ++dy)
@@ -826,6 +872,12 @@ extern "C" const char *Cv4HdStatus(void) { Init(); return status.c_str(); }
 extern "C" unsigned Cv4HdPackTiles(void) { Init(); return (unsigned)pack.tiles.size(); }
 extern "C" int Cv4HdPackScale(void) { Init(); return pack.scale; }
 extern "C" unsigned Cv4HdReplacedPixels(void) { return replaced; }
+extern "C" uint64_t Cv4HdFrameChecksum(void) {
+    if(!frameScale)return 0;
+    uint64_t hash=1469598103934665603ull;
+    for(uint32_t pixel:surface)hash=(hash^(pixel&0xffffff))*1099511628211ull;
+    return hash;
+}
 extern "C" int Cv4HdPresentationScale(void) { Init(); return enabled && HasArt() ? scale : 1; }
 
 extern "C" void Cv4HdRenderBegin(Ppu *p) {
@@ -835,14 +887,19 @@ extern "C" void Cv4HdRenderBegin(Ppu *p) {
     if (!p->hdTracking) return;
     frameWidth = 256 + 2 * p->extraLeftRight;
     try {
+        bool resetCells=surface.size()!=size_t(frameWidth)*224*scale*scale;
         surface.resize(size_t(frameWidth) * 224 * scale * scale);
         pixels.resize(size_t(frameWidth) * 224);
         sceneFrame = !pack.regions.empty() && (SceneActive() || SharedObjectsActive());
         if (sceneFrame) {
             scenePixels.resize(size_t(frameWidth)*224);sceneLines.resize(224);
+            scenePixelDirty.resize(size_t(frameWidth)*224);
+            if(resetCells || scenePixelValid.size()!=scenePixels.size() || sceneCacheScale!=scale || sceneCacheWidth!=frameWidth)
+                scenePixelValid.assign(scenePixels.size(),0);
+            sceneCacheScale=scale;sceneCacheWidth=frameWidth;
             for(auto &line:sceneLines){line.valid=false;line.tileOnly=false;}
             sceneMatches.fill(0);++sceneEpoch;
-        }
+        } else std::fill(scenePixelValid.begin(),scenePixelValid.end(),0);
     }
     catch (const std::bad_alloc &) { enabled = false; p->hdTracking = false; status = "Not enough memory for HD surface"; return; }
     frameScale = scale; cache.clear(); contextCache.clear(); vramRevision = p->vramWriteCount;
@@ -913,7 +970,9 @@ extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
 extern "C" void Cv4HdRenderEnd(void) {
     if (!frameScale) return;
     if (!workersInitialized) {
-        workers = SnesRenderWorkersCreate(std::getenv("SNESRECOMP_RENDER_WORKERS") ? 0 : 8);
+        // With cell reuse, gathering the remaining scanlines benefits from
+        // more participants. The pool clamps this limit to available CPUs.
+        workers = SnesRenderWorkersCreate(std::getenv("SNESRECOMP_RENDER_WORKERS") ? 0 : 16);
         workersInitialized = true;
     }
     auto t=timing?HdClock::now():HdClock::time_point{};
@@ -932,6 +991,10 @@ extern "C" void Cv4HdRenderShutdown(void) {
 }
 extern "C" void Cv4HdPresent(uint8_t *dst, size_t pitch, int width, int height, int s) {
     if (frameScale == s && frameWidth == width && height == 224 && !surface.empty()) {
+        if(pitch==size_t(width)*s*4) {
+            std::memcpy(dst,surface.data(),surface.size()*sizeof(uint32_t));
+            return;
+        }
         for (int y = 0; y < height * s; ++y)
             std::memcpy(dst + size_t(y) * pitch, surface.data() + size_t(y) * width * s, size_t(width) * s * 4);
     } else if (g_ppu && g_ppu->renderBuffer) {
