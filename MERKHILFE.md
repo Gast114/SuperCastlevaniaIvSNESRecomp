@@ -149,6 +149,62 @@ Wenn du fertige Einzelbilder lieferst, gilt weiter:
 Die DPI-Zahl ist hier egal. Entscheidend sind die Pixelmaße.
 Neue Posen müssen zusätzlich zugeordnet werden. Das übernehme ich.
 
+## Blender für neue Bewegungen
+
+Blender ist jetzt auf diesem PC eingerichtet. Du findest es im Startmenü als
+**Blender 4.5 LTS**. Es kostet nichts.
+
+Die Programmdatei liegt hier:
+
+```text
+C:\Users\Gaming\AppData\Local\Programs\Blender-4.5.14\blender.exe
+```
+
+Unser erster Arbeitsordner liegt im Projekt unter:
+
+```text
+artwork-local\blender-pilot-2026-10-21
+```
+
+Dort gibt es eine Verknüpfung **Simon-Exportstudio**. Sie öffnet das vorbereitete
+Blender-Projekt. Kamera, Licht und Bildgröße sind schon eingestellt.
+Das Studio allein enthält noch keine bewegliche 3D-Figur.
+
+**Die fertige erste Probe öffnest du mit „Simon-Pilot“.** Dort ist die Farbfigur
+mit Skelett und Bewegungen enthalten. Die eigentliche Datei liegt unter
+`walk-final\Simon_Pilot.blend`. Mit der Leertaste startest und stoppst du die
+Wiedergabe in Blender. Speichere eigene Änderungen unter einem neuen Namen.
+
+Zum schnellen Ansehen brauchst du Blender gar nicht:
+
+- Öffne `walk-preview\Vorschau.html` im Arbeitsordner.
+- **Abspielen** zeigt die sechs Laufbilder als Bewegung.
+- **Nächstes Bild** zeigt jeweils ein einzelnes Bild.
+- Mit der Zahl daneben stellst du nur das Tempo der Vorschau ein.
+- In `attack-preview\Vorschau.html` gibt es zusätzlich drei Angriffsbilder.
+  Sie zeigen eine fertige Bibliotheksbewegung. Simons Peitschenangriff muss noch
+  passend zum Original gestellt werden.
+
+Die PNGs in den Vorschauordnern haben einen durchsichtigen Hintergrund.
+Die Datei `placement.json` merkt sich Größe und Position.
+Diese Bilder werden noch nicht automatisch im Spiel benutzt.
+
+Für diesen Versuch wurden 20 kostenlose Meshy-Credits verwendet.
+Der erste Skelett-Aufbau war kostenlos. Beim nächsten wollte Meshy ein Abo.
+Wir haben die Farbfigur deshalb lokal in Blender mit dem vorhandenen Skelett
+verbunden. Es wurde kein Abo gekauft.
+
+Die 3D-Probe sieht plastischer aus als deine gemalten Bilder. Sie hilft uns,
+den neuen Weg zu beurteilen. Sie ist noch kein fertiger Ersatz für alle Posen.
+
+Das Ziel bleibt: Eine Figur einmal aufbauen. Danach können wir sie für viele
+Bewegungen verwenden. Blender macht daraus durchsichtige PNG-Bilder in 10×.
+Die Bilder brauchen danach noch die passende Zuordnung zu den Originalposen.
+Das Tempo und die Bewegung im Spiel bestimmt weiter das Originalspiel.
+
+Deine bisherigen neun HD-Posen bleiben bis zur Auswahl einer fertigen neuen
+Probe aktiv. Das Blender-Studio ändert die Figur im Spiel nicht.
+
 ## Unsere Arbeitsweise
 
 - Nur notwendige, gezielte Prüfungen. Keine unnötigen Testreihen.

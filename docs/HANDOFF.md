@@ -1,6 +1,67 @@
-# Arbeitsstand & Übergabe (2026-10-21, Recherche zur Sprite-Produktion)
+# Arbeitsstand & Übergabe (2026-10-21, erster Blender-Sprite-Pilot)
 
 **Dauerhafte Nutzerpräferenz:** Vergessbare Bedienhinweise künftig immer in `MERKHILFE.md` im Projekt-Hauptordner ergänzen, in einfacher Sprache. Diese Datei ist die kurze Anleitung für den Nutzer; `HANDOFF.md` bleibt die technische Übergabe. Vorhandene Abschnitte aktualisieren, statt dieselben Hinweise auf viele neue Dateien zu verteilen.
+
+## Aktuell: Simon-Modell, Skelett, Bewegungen und PNG-Export erstellt
+
+Nutzer hat den Meshy/Blender-Piloten und gegebenenfalls die Blender-Installation
+beauftragt, Meshy selbst angemeldet und den Browser-Dateizugriff aktiviert.
+Offizielle Portable-Version **Blender4.5.14LTS** unter
+`C:/Users/Gaming/AppData/Local/Programs/Blender-4.5.14/blender.exe`; offizieller
+SHA-256-Abgleich und gültige Blender-Foundation-Signatur geprüft. Startmenülink
+**Blender4.5LTS**. Keine bestehende Installation gefunden, keine Systemänderung mit Adminrechten.
+
+**Echter Pilot:** `artwork-local/blender-pilot-2026-10-21/` enthält Referenz,
+Meshy-GLBs, `.blend`-Projekte und gerenderte Bilder. Eine neutrale A-Pose mit dem
+eingebauten Imagegen aus der letzten Idle-Nutzervorlage erzeugt, Prompt in
+`reference/prompt.txt`. Keine Einzelbild-KI-Animationsreihe. Meshy6Lite-Modell10Credits,
+Bildtextur10Credits; Check-in automatisch+30, Schlussstand110. Erster Rigging-Versuch
+gratis; zweiter für Farbversion hinter Abo-Sperre. Keine Zahlung oder Subscription.
+Vier reguläre Downloads innerhalb des freien Kontingents; Free-Lizenz im WebCCBY4.0.
+
+`tools/blender/sprite_pilot.py` nutzt deshalb lokal das vorhandene Rig und
+überträgt Gewichte auf das heruntergeladene Farbmesh desselben Körpers; UVs/PBR
+bleiben erhalten. **66.815Vertices**, nächster maximaler Positionsabstand nach
+Ruhehöhen-/Zentrenabgleich **8,68e-7der Körperhöhe**; Geometrieabweichungen>0,005
+werden abgelehnt. glTF-generierter Icosphere als Knochen-Widget wird aus der
+Körpergeometrie ausgeschlossen. Unpassender erster Versuch in`walk-v1` brach
+kontrolliert ab; finale Ausgabe ist`walk-final`, frühere Arbeitsausgaben nicht benutzen.
+
+**Hauptdatei:** `walk-final/Simon_Pilot.blend`, gepackte Bilder, drei Actions
+**Walking, Running, Attack**,36Knochen. Shortcut`Simon-Pilot.lnk` im Pilotordner.
+Leeres vorbereitbares Studio separat`studio/Simon_Exportstudio.blend` mit eigenem
+Shortcut. Feste orthografische Seitenkamera, +Xrechts,960×960RGBA,10×,49native
+Körperhöhe, Ursprung48/48, Bodenziel77,35. Normalisierung nur aus Ruhepose, keine
+Neuskalierung je Bild. PNG-Sampling kompensiert horizontale Hips-Bewegung;
+unbearbeitete Blender-Actions bleiben in ihrer ursprünglichen Bewegung.
+
+**Anschaubares Ergebnis:** sechsWalking-Bilder und dreiAttack-Bilder.
+`walk-preview/Vorschau.html`, `attack-preview/Vorschau.html`: Einzelschritt,
+Abspielen, Vorschauzeit. Jeweils`Animation.webp` lossless mit gemeinsamem
+Ausschnitt (340×520bzw.340×550); echte gekürzte PNGs plus`placement.json`
+mit unverändertem Pixelmaß/Offset. `tools/blender/package_preview.py` rundet
+nur transparente Ränder nach außen auf10px. Alle Renderings bei10×, typische
+reine Renderzeit nach Initialisierung ca.0,5s/Bild lautLogs.
+
+**Grenzen:** echter, konsistenter3D-Look, sichtbar plastischer/glatter als die
+gemalten Bilder. Attack ist eine Überkopf-Bibliotheksbewegung, noch kein nativer
+Peitschenschlag. Sechs gleichmäßig gesampelteWalking-Bilder sind noch nicht
+mit nativen Laufphasen abgeglichen. Nicht ins aktive9-Posen-Paket eingebaut;
+Spiel-EXEs, ausgewählte Pakete, Einstellungen, Saves und Marker unverändert.
+Keine Gameplay-/Leistungs-Testmatrix. Gezielter tatsächlicher Import/Render,
+PNG-/Alpha-/Rand-/Metadatenprüfung und Sichtkontrolle durchgeführt. Die
+Browserrichtlinie blockiert`file:`-URLs; deshalb keine automatisierte HTML-UI-Prüfung
+oder Umgehung per lokalem Server. Nutzer kann die HTML-Dateien selbst öffnen.
+Meshy-Ergebnis im Browser als Nachweis gesichert und gezeigt.
+
+Reproduzierbare Befehle und technische Details:
+`docs/SPRITE_PIPELINE_NOTES.md`. Bedienung in leichter Sprache:`MERKHILFE.md`.
+Lokale Quellen/Ergebnisse extern unter
+`D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-10-21-blender-pilot` sichern;
+nur Werkzeuge/Dokumentation auf`dev` veröffentlichen. Nächster sinnvoller Schritt:
+Nutzer beurteilt den Look. Bei Zustimmung Laufphasen und native Peitschen-Handpunkte
+im Rig anpassen, danach getrenntes spielbares Probepaket erstellen. Kein weiterer
+Meshy-Rig oder Abo ohne konkrete Freigabe.
 
 ## Aktuell: anderen Produktionsweg für viele animierte HD-Figuren recherchiert
 

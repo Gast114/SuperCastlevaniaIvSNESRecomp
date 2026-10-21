@@ -2,6 +2,13 @@
 
 Recherche vom 21. Oktober 2026.
 
+**Nachtrag: Der erste Pilot ist jetzt erstellt.** Blender ist eingerichtet.
+Es gibt eine bewegliche Simon-Farbfigur, sechs Laufbilder und drei Angriffsbilder
+als Vorschau. Öffnen und Bedienung stehen in [MERKHILFE.md](MERKHILFE.md#blender-für-neue-bewegungen).
+Der Look ist plastischer als bei den bisherigen gemalten Bildern.
+Die Probe ist noch nicht als Figurenpaket im Spiel eingebaut.
+Die folgenden Einschätzungen beschreiben die vorausgehende Recherche.
+
 ## Meine Empfehlung
 
 Für den Umfang dieses Spiels würde ich zuerst **ein 3D-Modell mit wiederverwendbaren Bewegungen und einem Export nach 2D** ausprobieren. Der Hauptkandidat ist **Meshy für das Modell und die ersten Bewegungen, Blender für die fertigen Sprite-Bilder**. Mixamo kann zusätzliche Bewegungen für menschlich gebaute Figuren liefern.
