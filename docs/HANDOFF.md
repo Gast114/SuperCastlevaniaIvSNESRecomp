@@ -1,6 +1,17 @@
-# Arbeitsstand & Übergabe (2026-10-21, erster Blender-Sprite-Pilot)
+# Arbeitsstand & Übergabe (2026-10-21, 3D-Modell qualitativ abgelehnt)
 
 **Dauerhafte Nutzerpräferenz:** Vergessbare Bedienhinweise künftig immer in `MERKHILFE.md` im Projekt-Hauptordner ergänzen, in einfacher Sprache. Diese Datei ist die kurze Anleitung für den Nutzer; `HANDOFF.md` bleibt die technische Übergabe. Vorhandene Abschnitte aktualisieren, statt dieselben Hinweise auf viele neue Dateien zu verteilen.
+
+## Aktuelle Rückmeldung zum Pilot
+
+Nutzer: „das 3d Modell sieht zu schlecht aus, leider“. Der erzeugte Meshy-Körper
+ist damit qualitativ als Sprite-Ersatz abgelehnt. Nicht ins Spiel übernehmen
+oder weitere Animationen auf diesem Modell ausarbeiten. Dateien und Blender
+bleiben erhalten. Diese Rückmeldung widerlegt nicht grundsätzlich jeden
+3D-Produktionsweg; unser konkreter KI-Modellversuch hat den gewünschten Look
+nicht erreicht. Nächste Empfehlung: 2D-Rig aus den vorhandenen gemalten HD-Bildern,
+einmalige Zerlegung/Vervollständigung der Bildteile und kleiner Laufzyklus.
+Noch kein 2D-Rig erstellt oder neue Software dafür eingerichtet.
 
 ## Aktuell: Simon-Modell, Skelett, Bewegungen und PNG-Export erstellt
 

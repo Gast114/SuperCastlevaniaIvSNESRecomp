@@ -194,11 +194,18 @@ Der erste Skelett-Aufbau war kostenlos. Beim nächsten wollte Meshy ein Abo.
 Wir haben die Farbfigur deshalb lokal in Blender mit dem vorhandenen Skelett
 verbunden. Es wurde kein Abo gekauft.
 
-Die 3D-Probe sieht plastischer aus als deine gemalten Bilder. Sie hilft uns,
-den neuen Weg zu beurteilen. Sie ist noch kein fertiger Ersatz für alle Posen.
+**Deine Rückmeldung: Das 3D-Modell sieht zu schlecht aus.** Diese Probe ist
+deshalb als Ersatz abgelehnt. Die Dateien bleiben zum Nachsehen erhalten.
+
+Der nächste empfohlene Versuch ist eine bewegliche 2D-Figur aus deinen gemalten
+Bildern. Dafür werden Kopf, Körper, Arme und Beine einmal als einzelne Bildteile
+vorbereitet. Verdeckte Stellen müssen ergänzt werden. Danach bewegt ein Skelett
+die Teile und das Programm berechnet Bilder dazwischen. Starke Drehungen und
+neue Blickrichtungen brauchen weiterhin zusätzliche Zeichnungen.
+Eine solche 2D-Probe ist noch nicht erstellt.
 
 Das Ziel bleibt: Eine Figur einmal aufbauen. Danach können wir sie für viele
-Bewegungen verwenden. Blender macht daraus durchsichtige PNG-Bilder in 10×.
+Bewegungen verwenden. Das Animationsprogramm macht daraus durchsichtige PNGs in 10×.
 Die Bilder brauchen danach noch die passende Zuordnung zu den Originalposen.
 Das Tempo und die Bewegung im Spiel bestimmt weiter das Originalspiel.
 

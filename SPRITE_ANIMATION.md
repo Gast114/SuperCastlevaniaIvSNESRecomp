@@ -2,14 +2,20 @@
 
 Recherche vom 21. Oktober 2026.
 
-**Nachtrag: Der erste Pilot ist jetzt erstellt.** Blender ist eingerichtet.
+**Aktuelle Entscheidung: Die Qualität des ersten 3D-Modells wurde vom Nutzer abgelehnt.**
+Mit diesem Modell arbeiten wir nicht als Ersatz für die gemalten Sprites weiter.
+Mein nächster Vorschlag ist ein 2D-Skelett aus den vorhandenen HD-Bildern.
+Die Bildteile und verdeckten Stellen müssen einmal sauber vorbereitet werden.
+Eine passende Laufprobe mit diesem Aufbau steht noch aus.
+
+**Vorhandener 3D-Pilot:** Blender ist eingerichtet.
 Es gibt eine bewegliche Simon-Farbfigur, sechs Laufbilder und drei Angriffsbilder
 als Vorschau. Öffnen und Bedienung stehen in [MERKHILFE.md](MERKHILFE.md#blender-für-neue-bewegungen).
 Der Look ist plastischer als bei den bisherigen gemalten Bildern.
 Die Probe ist noch nicht als Figurenpaket im Spiel eingebaut.
 Die folgenden Einschätzungen beschreiben die vorausgehende Recherche.
 
-## Meine Empfehlung
+## Empfehlung vor dem Pilot
 
 Für den Umfang dieses Spiels würde ich zuerst **ein 3D-Modell mit wiederverwendbaren Bewegungen und einem Export nach 2D** ausprobieren. Der Hauptkandidat ist **Meshy für das Modell und die ersten Bewegungen, Blender für die fertigen Sprite-Bilder**. Mixamo kann zusätzliche Bewegungen für menschlich gebaute Figuren liefern.
 
