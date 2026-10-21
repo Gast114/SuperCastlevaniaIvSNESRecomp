@@ -1,6 +1,29 @@
-# Arbeitsstand & Übergabe (2026-10-21, aktualisierte HD-Simon-Posen)
+# Arbeitsstand & Übergabe (2026-10-21, sechs HD-Laufphasen ergänzt)
 
 **Dauerhafte Nutzerpräferenz:** Vergessbare Bedienhinweise künftig immer in `MERKHILFE.md` im Projekt-Hauptordner ergänzen, in einfacher Sprache. Diese Datei ist die kurze Anleitung für den Nutzer; `HANDOFF.md` bleibt die technische Übergabe. Vorhandene Abschnitte aktualisieren, statt dieselben Hinweise auf viele neue Dateien zu verteilen.
+
+## Aktuell: sechs HD-Laufphasen
+
+Die sechs Nutzerbilder `C:/Users/Gaming/Downloads/Walking-01_HD_10x.png` bis `Walking-06_HD_10x.png` sind bytegleich übernommen. Das vorhandene Paket `simon-user-hd-three-poses-v1` heißt im Manifest jetzt **Simon HD (9 poses)**; Ordnername und Auswahl bleiben erhalten. Installiert in `build-play/game/characters/`, `build/characters/` und im lokalen Quellpaket `artwork-local/characters/`. Die bisherigen drei PNGs und ihre Frame-Einträge sind unverändert. Kein EXE-Build nötig; Bilder und Manifest werden live neu geladen. Angriffe und weitere fehlende Posen bleiben nativ.
+
+Zuordnung folgt dem tatsächlich aufgenommenen normalen Laufzyklus, nicht einer bloßen Ähnlichkeit der ausgeschnittenen SD-Referenzen. Die vorhandenen SD-Dateien `Walking-02.png` und `Walking-06.png` sind identisch und die Vorlagen enthalten Treppenposen; sie ergeben allein keine eindeutige Laufzuordnung. Native Aufnahme: `build-lua/walk-import-uu2v_q25/walk.json` und dessen `characters/simon-template/`.
+
+| HD-Bild | Körper-Fingerprint | PNG-Maße | Zelloffset | display_size |
+| --- | --- | --- | --- | --- |
+| Walking-01 | `9bb9-65478f912fca6458` | 200×460 | [37,28] | [22,50] |
+| Walking-02 | `9bb9-c577013b20a5dd10` | 230×450 | [32,24] | [29,56] |
+| Walking-03 | `9bb9-d131e28d720d7423` | 200×460 | [36,29] | [22,51] |
+| Walking-04 | `9bb9-81bf240d752d172d` | 250×460 | [34,27] | [29,53] |
+| Walking-05 | `9bb9-e4c4686f3649c330` | 240×460 | [33,25] | [28,53] |
+| Walking-06 | `9e0c-1168be4736083938` | 230×450 | [34,28] | [26,51] |
+
+Native Vorschauzellen3…8 ergänzt; Anker und Handpunkt aus der Aufnahme übernommen. Unterschiedliche transparente Ränder werden über `hd.offset` und `hd.display_size` ausgeglichen, ohne die Nutzer-PNGs zu ändern. Optische Höhe an die vorhandene Standfigur angepasst; opaker Fußpunkt aller sechs Bilder innerhalb0,34 nativer Pixel um deren Fußpunkt. Native Animation, Spiegelung und Physik bleiben erhalten.
+
+**Gezielte Prüfung:** `build-lua/walk-hd-ofjkqusx`,120 Frames (60 rechts,60 links), alle sechs Phasen in beiden Richtungen aktiv; über98% der opaken HD-Pixel stimmen mit der erwarteten Darstellung überein. Sämtliche benannten Gameplay-Zustände identisch mit der nativen Aufnahme. Ein Prüfbild visuell angesehen. Die erste Aufnahme beim Richtungswechsel zeigt nativ noch nach rechts; der Prüfvergleich berücksichtigt diese OAM-Verzögerung. Keine Skalierungs- oder Regressionstestmatrix. `tools/test_character_hd.py` bleibt ein Test für eine Drei-Posen-Probe und erwartet fehlende Laufposen; nicht unverändert gegen dieses erweiterte Paket ausführen.
+
+**Ablage und Sicherung:** `artwork-local/simon-hd-walking-2026-10-21/` enthält Paket, Importplan/Checksummen, gezieltes Prüfskript, Prüfbilder und Installationsbericht. Vorherige Pakete unter `user-before/`. Externe Kopie: `D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-10-21-simon-hd-walking`. Artwork bleibt lokal; Dokumentation auf `dev` committen und pushen. Bedienhinweise und alle neun austauschbaren Dateinamen stehen in `MERKHILFE.md`.
+
+Die folgenden Abschnitte beschreiben frühere Arbeitsstände. Hinweise auf nur drei HD-Posen beziehungsweise native Laufposen gelten dort historisch.
 
 ## PNG-Austausch vom21.10.
 

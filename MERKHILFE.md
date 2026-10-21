@@ -24,7 +24,7 @@ Es gibt auch eine Spielversion im Ordner `build`.
 Die beiden Spielordner haben eigene Einstellungen und eigene Bilder.
 Änderungen werden nicht automatisch zwischen ihnen kopiert.
 
-## Die drei Simon-Bilder austauschen
+## Die Simon-Bilder austauschen
 
 Öffne im Projekt diesen Ordner:
 
@@ -39,6 +39,12 @@ Dort kannst du diese Bilder ersetzen:
 | Stehen | `Idle-01_HD_10x_240x460.png` | 240 × 460 |
 | Ducken | `Ducking-01_HD_10x_230x350.png` | 230 × 350 |
 | Springen | `Jumping-01_HD_10x_200x450.png` | 200 × 450 |
+| Laufen 1 | `Walking-01_HD_10x.png` | 200 × 460 |
+| Laufen 2 | `Walking-02_HD_10x.png` | 230 × 450 |
+| Laufen 3 | `Walking-03_HD_10x.png` | 200 × 460 |
+| Laufen 4 | `Walking-04_HD_10x.png` | 250 × 460 |
+| Laufen 5 | `Walking-05_HD_10x.png` | 240 × 460 |
+| Laufen 6 | `Walking-06_HD_10x.png` | 230 × 450 |
 
 1. Bewahre eine Kopie des alten Bildes auf.
 2. Speichere dein neues Bild als PNG mit durchsichtigem Hintergrund.
@@ -69,8 +75,11 @@ build\characters\simon-user-hd-three-poses-v1
 - Für HD verwenden wir **10×**. Kleinere Stufen werden im Menü nicht angeboten.
 - **Esc → Character workshop → Use character pack:** Nur die neue Simon-Figur ein- oder ausschalten.
 
-Bisher gibt es drei HD-Posen für Simon.
-Beim Laufen und bei anderen fehlenden Posen erscheint noch die Originalfigur.
+Bisher gibt es neun HD-Posen für Simon: Stehen, Ducken, Springen und sechs Laufbilder.
+Die Laufbilder funktionieren in beide Richtungen.
+Bei noch fehlenden Posen, zum Beispiel beim Angriff, erscheint die Originalfigur.
+Der Bilderordner heißt weiterhin `simon-user-hd-three-poses-v1`.
+Du musst deshalb keinen neuen Ordner auswählen.
 
 ## Ein Problem festhalten
 
