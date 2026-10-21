@@ -81,6 +81,24 @@ Bei noch fehlenden Posen, zum Beispiel beim Angriff, erscheint die Originalfigur
 Der Bilderordner heißt weiterhin `simon-user-hd-three-poses-v1`.
 Du musst deshalb keinen neuen Ordner auswählen.
 
+## Ein Bild nach dem anderen ansehen
+
+1. Gehe im Spiel zu der Stelle, die du genau ansehen möchtest.
+2. Drücke **Strg + P**. Das Spiel hält an. Das Bild bleibt hell.
+3. Drücke **Strg + N** für genau ein weiteres Bild.
+4. Halte dabei eine Richtung oder eine Aktion gedrückt, wenn Simon sich bewegen soll.
+5. Drücke wieder **Strg + P**, um normal weiterzuspielen.
+
+In einem kleinen Fenster siehst du die Bildnummer und zwei Knöpfe:
+**Next frame** zeigt das nächste Bild. **Resume** setzt das Spiel fort.
+Du kannst das Fenster am Titel verschieben. Der kleine Pfeil klappt es ein.
+Du kannst den Modus auch unter **Esc → Performance → Inspect frames** einschalten.
+Während du einzelne Bilder ansiehst, bleibt der Ton aus.
+
+Die beiden Tasten kannst du unter **Esc → Shortcuts** ändern.
+Suche dort nach **Frame by frame**.
+Du kannst auch in diesem Modus mit **Strg + D** einen Fehler festhalten.
+
 ## Ein Problem festhalten
 
 1. Gehe im Spiel zu der Stelle mit dem Problem.

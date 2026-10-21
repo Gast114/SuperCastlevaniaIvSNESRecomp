@@ -9,6 +9,7 @@
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
+#include "opengl.h"
 extern "C" {
 #include "config.h"
 }
@@ -23,6 +24,7 @@ void launcher_ini_kv_write(const char *, const char *, const char *, const char 
 }
 
 static bool s_initialized;
+static RecompRuntimeUi *s_runtime_ui;
 enum { kSettings, kCharacters, kHd, kShortcuts, kPerformance };
 static int s_tab=kSettings, s_capture=-1;
 static std::string s_bind_message;
@@ -98,6 +100,8 @@ static void ShortcutPanel() {
       struct Entry {int command;const char *label;};
       const Entry entries[]={{kKeys_OpenSettings,"Open menu"},{kKeys_ToggleHD,"Original / HD graphics"},{kKeys_DebugMarker,"Debug screenshot and problem note"},{kKeys_Screenshot,"Screenshot"},{kKeys_SaveStateMenu,"Save state browser"},{kKeys_Rewind,"Rewind"},{kKeys_PauseDimmed,"Pause with dimming"},{kKeys_Pause,"Pause"},{kKeys_Fullscreen,"Fullscreen"},{kKeys_Reset,"Reset game"},{kKeys_Turbo,"Turbo (hold)"},{kKeys_WindowBigger,"Larger window"},{kKeys_WindowSmaller,"Smaller window"},{kKeys_VolumeUp,"Volume up"},{kKeys_VolumeDown,"Volume down"},{kKeys_DisplayPerf,"Show performance"},{kKeys_ToggleRenderer,"PPU renderer (diagnostic)"}};
       for(const auto &e:entries)row(e.command,e.label);
+      row(kKeys_FrameInspection,"Frame by frame: pause / resume");
+      row(kKeys_FrameAdvance,"Frame by frame: next frame");
       row(kKeys_ToggleWidescreen,"Toggle widescreen");
       row(kKeys_OpenLauncher,"Open launcher (when available)");
       for(int i=0;i<20;++i) {std::string load="Load slot "+std::to_string(i+1),save="Save slot "+std::to_string(i+1);row(kKeys_Load+i,load.c_str());row(kKeys_Save+i,save.c_str());}
@@ -252,6 +256,16 @@ extern "C" void Cv4RuntimeSettingsImGuiShutdown(void) {
 extern "C" bool Cv4RuntimeSettingsImGuiProcessEvent(const void *event_ptr) {
   if (!s_initialized || !event_ptr) return false;
   const SDL_Event *event = static_cast<const SDL_Event *>(event_ptr);
+  if(SnesDesktopFrameInspection()&&!Cv4DebugMarkerIsOpen()&&
+      (!s_runtime_ui||!recomp_runtime_ui_is_open(s_runtime_ui))) {
+    // The floating inspection controls receive pointer input. Game keys and
+    // remappable inspection shortcuts still go through the host dispatcher.
+    if(event->type==SDL_EVENT_MOUSE_MOTION||event->type==SDL_EVENT_MOUSE_BUTTON_DOWN||event->type==SDL_EVENT_MOUSE_BUTTON_UP||event->type==SDL_EVENT_MOUSE_WHEEL) {
+      ImGui_ImplSDL3_ProcessEvent(event);
+      return ImGui::GetIO().WantCaptureMouse;
+    }
+    return false;
+  }
   if(s_capture>=0 && event->type==SDL_EVENT_KEY_DOWN) {
     SDL_Keycode key=event->key.key;
     if(key==SDLK_ESCAPE){s_capture=-1;s_bind_message="Capture cancelled.";}
@@ -283,6 +297,7 @@ extern "C" bool Cv4RuntimeSettingsImGuiProcessEvent(const void *event_ptr) {
 extern "C" void Cv4RuntimeSettingsImGuiRender(void *ui_ptr, int width,
                                                 int height) {
   if (!s_initialized) return;
+  s_runtime_ui=static_cast<RecompRuntimeUi *>(ui_ptr);
   if (Cv4DebugMarkerIsOpen()) {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
@@ -292,8 +307,43 @@ extern "C" void Cv4RuntimeSettingsImGuiRender(void *ui_ptr, int width,
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     return;
   }
-  if (!ui_ptr) return;
-  if (!recomp_runtime_ui_is_open(static_cast<RecompRuntimeUi *>(ui_ptr))) return;
+  bool menu=ui_ptr&&recomp_runtime_ui_is_open(static_cast<RecompRuntimeUi *>(ui_ptr));
+  if(!menu) {
+    if(!SnesDesktopFrameInspection())return;
+    ImGui_ImplOpenGL3_NewFrame();ImGui_ImplSDL3_NewFrame();ImGui::NewFrame();
+    static unsigned inspect_test_tick,inspect_test_start;
+    bool inspect_test=std::getenv("SNESRECOMP_FRAME_INSPECTION_UI_SELFTEST")!=nullptr;
+    if(inspect_test&&++inspect_test_tick==1)inspect_test_start=SnesDesktopInspectionFrame();
+    auto test_click=[&](unsigned tick) {
+      if(inspect_test&&(inspect_test_tick==tick||inspect_test_tick==tick+1)) {
+        ImVec2 pos=ImGui::GetItemRectMin();ImGui::GetIO().AddMousePosEvent(pos.x+15,pos.y+15);
+        ImGui::GetIO().AddMouseButtonEvent(0,inspect_test_tick==tick);
+      }
+    };
+    ImGui::SetNextWindowPos({width-12.f,80.f},ImGuiCond_Once,{1,0});
+    ImGui::SetNextWindowBgAlpha(.90f);
+    if(ImGui::Begin("Frame by frame",nullptr,ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoResize)) {
+    char toggle[256],step[256];
+    ConfigGetCommandBinding(kKeys_FrameInspection,toggle,sizeof(toggle));ConfigGetCommandBinding(kKeys_FrameAdvance,step,sizeof(step));
+    ImGui::Text("Frame %u",SnesDesktopInspectionFrame());
+    if(ImGui::Button("Next frame",{130,34}))SnesDesktopAdvanceFrame();
+    test_click(2);
+    ImGui::SameLine();if(ImGui::Button("Resume",{100,34})) {
+      SnesDesktopSetFrameInspection(false);
+      if(inspect_test){std::fprintf(stderr,"inspection ui resumed=1\n");std::fflush(stderr);}
+    }
+    test_click(8);
+    if(inspect_test&&inspect_test_tick==7) {
+      std::fprintf(stderr,"inspection ui one step=%d\n",SnesDesktopInspectionFrame()==inspect_test_start+1);
+      std::fflush(stderr);
+      OpenGLRenderer_RequestScreenshot();
+    }
+    ImGui::Text("%s: next | %s: resume",step,toggle);
+    ImGui::TextUnformatted("Hold a direction or action while stepping.");
+    }
+    ImGui::End();ImGui::Render();ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    return;
+  }
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL3_NewFrame();
   ImGui::NewFrame();
@@ -330,6 +380,12 @@ extern "C" void Cv4RuntimeSettingsImGuiRender(void *ui_ptr, int width,
       if(test && frame==10)std::fprintf(stderr,"performance selected=%d\n",Cv4CpuTimingMode());
       ImGui::TextWrapped("FastROM accelerates ROM access. CPU boost adds headroom for busy scenes. Video remains at its original NTSC rate; gameplay outside overload keeps its normal speed.");
       ImGui::TextWrapped("HD graphics keep their full selected resolution. Unchanged HD cells are reused automatically.");
+      ImGui::SeparatorText("Frame by frame");
+      ImGui::TextWrapped("Freeze the picture without dimming. Hold a direction or action and advance one frame at a time. Shortcuts can be changed under Shortcuts.");
+      if(ImGui::Button("Inspect frames",{180,36})) {
+        SnesDesktopSetFrameInspection(true);
+        recomp_runtime_ui_close(static_cast<RecompRuntimeUi *>(ui_ptr));
+      }
     }
     ImGui::End();
   }

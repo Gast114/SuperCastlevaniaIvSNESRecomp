@@ -40,6 +40,14 @@ static int Cv4LuaSlot(const char *args, int *slot)
 static int Cv4LuaCommand(const char *name, const char *args, char *result, size_t capacity)
 {
     int slot;
+    if(!strcmp(name,"frameinspect")) {
+        if(!strcmp(args,"on"))SnesDesktopSetFrameInspection(true);
+        else if(!strcmp(args,"off"))SnesDesktopSetFrameInspection(false);
+        else if(!strcmp(args,"step"))SnesDesktopAdvanceFrame();
+        else if(args[0]) {snprintf(result,capacity,"frameinspect: on|off|step");return 0;}
+        snprintf(result,capacity,"{\"enabled\":%d,\"frame\":%u}",SnesDesktopFrameInspection(),SnesDesktopInspectionFrame());
+        return 1;
+    }
     if(!strcmp(name,"characterhd")) {
         const Cv4CharacterHdFrame *f=Cv4CharacterHd();
         snprintf(result,capacity,"{\"active\":%d,\"pose\":\"%s\",\"x\":%d,\"y\":%d,\"width\":%d,\"height\":%d}",

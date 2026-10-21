@@ -72,6 +72,21 @@ unsigned pixel(const Ppu*p,const Part&part,int x,int y){
 }
 fs::path path(const Pack&p,const char*name){return fs::path("characters")/p.directory/name;}
 int find(const Pack&p,const std::string&id){for(size_t i=0;i<p.frames.size();++i)if(p.frames[i].id==id)return (int)i;return -1;}
+int findBodyFrame(const Pack&p,const std::string&id){
+  int exact=find(p,id);if(exact>=0)return exact;
+  // DMA and the metasprite pointer can change on different fields. Several
+  // pointers describe the very same normalized body. Reuse its artwork only
+  // for an unambiguous full-body hash, never a similar/previous pose.
+  if(id.size()!=21||id[4]!='-')return -1;
+  int match=-1;
+  for(size_t i=0;i<p.frames.size();++i){const auto&key=p.frames[i].id;
+    if(key.size()==id.size()&&key.compare(4,17,id,4,17)==0){
+      if(match>=0)return -1;
+      match=(int)i;
+    }
+  }
+  return match;
+}
 void stamp(Pack&p){p.imageTime=fs::last_write_time(path(p,"body.png"));p.manifestTime=fs::last_write_time(path(p,"character.json"));}
 void save(Pack&p,bool image){
   fs::create_directories(path(p,""));
@@ -245,7 +260,7 @@ void captureFrame(const uint8_t*r){
   fprintf(stderr,"[characters] captured %s (%zu body frames)\n",f.id.c_str(),reference.frames.size());
 }
 void publish(Ppu*p,const uint8_t*r){
-  currentIndex=find(active,currentId);if(!enabled||currentIndex<0||!(p->renderFlags&kPpuRenderFlags_NewRenderer))return;
+  currentIndex=findBodyFrame(active,currentId);if(!enabled||currentIndex<0||!(p->renderFlags&kPpuRenderFlags_NewRenderer))return;
   const Frame&f=active.frames[currentIndex];int bx=f.cell%Columns*Cell,by=f.cell/Columns*Cell;
   if(!f.hdImage.empty()&&(!Cv4HdEnabled()||!(Cv4HdLayerMask()&16)))return;
   unsigned flip=matchedFlip;bool fx=(flip&0x4000)!=0,fy=(flip&0x8000)!=0;
