@@ -1,4 +1,10 @@
-# Arbeitsstand & Übergabe (2026-10-20, HD-Simon-Probe mit drei Nutzerposen)
+# Arbeitsstand & Übergabe (2026-10-21, aktualisierte HD-Simon-Posen)
+
+## PNG-Austausch vom21.10.
+
+Die drei vom Nutzer verbesserten `Idle-01_HD_10x_240x460.png`, `Ducking-01_HD_10x_230x350.png`, `Jumping-01_HD_10x_200x450.png` sind bytegleich aus `../Assets (ausgeschnitten)/Simon Belmont/` in beide aktiven `characters/simon-user-hd-three-poses-v1/`-Ordner und das lokale Quellpaket unter `artwork-local/characters/` übernommen. `character.json` bleibt unverändert: letzte Vergrößerung/Fußpunktkorrektur erhalten. Import-Checksummen aktualisiert. Alte Dateien und Manifeste unter `artwork-local/simon-hd-refresh-2026-10-21/`, extern `D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-21-simon-hd-refresh`. Nur Maße und Kopierergebnis geprüft; kein Build, kein Gameplay-/Skalierungstest.
+
+**Selbst austauschen:** Nutzer startet normalerweise `build-play/game/SuperCastlevaniaIvSNESRecomp.exe`; seine aktiven PNGs liegen in `build-play/game/characters/simon-user-hd-three-poses-v1/`. Dieselben drei Dateinamen, PNG mit Transparenz und dieselben Pixelmaße verwenden. Laufendes Spiel lädt Änderungen ungefähr alle30 Frames neu; bei Bedarf Escape → Character workshop → Reload. `body.png`/`character.json` für einen reinen Bildaustausch unverändert lassen. `build/characters/simon-user-hd-three-poses-v1/` gehört zur alternativen EXE unter `build/`; die Ordner synchronisieren sich nicht automatisch. Neue Posen brauchen zusätzlich eine Zuordnung im Manifest.
 
 ## Aktuell: Idle / Ducking / Jumping in echtem10×
 
