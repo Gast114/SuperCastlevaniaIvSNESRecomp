@@ -1,6 +1,14 @@
-# Arbeitsstand & Übergabe (2026-10-21, Lauf-Flackern und Einzelbildmodus)
+# Arbeitsstand & Übergabe (2026-10-21, Recherche zur Sprite-Produktion)
 
 **Dauerhafte Nutzerpräferenz:** Vergessbare Bedienhinweise künftig immer in `MERKHILFE.md` im Projekt-Hauptordner ergänzen, in einfacher Sprache. Diese Datei ist die kurze Anleitung für den Nutzer; `HANDOFF.md` bleibt die technische Übergabe. Vorhandene Abschnitte aktualisieren, statt dieselben Hinweise auf viele neue Dateien zu verteilen.
+
+## Aktuell: anderen Produktionsweg für viele animierte HD-Figuren recherchiert
+
+Nutzer möchte keine Einzelbild-Prompts mit Anweisungen für jedes Körperteil mehr. Auftrag war eine eigenständige Software-/KI-Recherche während seiner Abwesenheit, keine neue Bildgenerierung. Hauptempfehlung als noch zu bestätigender Pilot: Meshy → wiederverwendbare 3D-Bewegungen → Blender → transparente2D-PNGs. Für den bisherigen gemalten Look Alternative Spine Professional mit einmalig vorbereiteten Bildteilen. Weitere bewertete Kandidaten: Cartoon Animator5, Wan Animate2 als Bewegungsübertragung aus Video, PixelLab mit256×256-Grenze, Mixamo, Cascadeur und Synfig. Herstellerquellen, Export-/Tarifgrenzen und die Trennung von gesicherten Funktionen und eigener Einschätzung stehen in `SPRITE_ANIMATION.md` in einfacher Sprache. Technischer Anschlussplan in `docs/SPRITE_PIPELINE_NOTES.md`; Merkhilfe verlinkt die Empfehlung.
+
+**Noch kein Qualitätsnachweis an unseren Figuren:** keine Bild-/Video-KI gestartet, keine Modelle oder Programme installiert, keine Käufe/Uploads. Radeon890M/24GB RAM lokal erkannt; keine belastbare Aussage zur lokalen Inferenzgeschwindigkeit. Vorgeschlagener nächster Schritt: kleiner Simon-Pilot mit Laufzyklus und wenigen Peitschenposen, danach Wiederverwendung auf einer zweiten Figur bewerten. Ein fertiger 3D-Clip darf die native Spielbewegung nicht doppeln; Hand-/Peitschenabgleich und Pose-Sampling bleiben nötig. Gegner-Rendering ist durch diese Recherche nicht bereits erweitert.
+
+**Vorbereiteter Bedarf:** `tools/character_pose_inventory.py` liest nur Manifeste und schreibtCSV/JSON in einen neuen Ordner. Auf dem aktuellen nativen Simon-Template83 Einträge →77 volle Körper-Hashes,6 weitere Alias-IDs,9 Gruppen mit HD,68 erfasste Gruppen ohne HD. Kein vollständiger Spielkatalog und keine Animationsreihenfolge. Ausgabe `artwork-local/animation-research-2026-10-21/simon-inventory/`. Keine Gameplay-Tests/Builds für die Recherche. Externe Sicherung unter `D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-10-21-animation-research`; Dokumentation und Werkzeug auf `dev` pushen.
 
 ## Aktuell: Lauf-Flackern behoben, Einzelbildmodus
 

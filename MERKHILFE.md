@@ -130,7 +130,14 @@ build-play\game\saves
 
 ## Weitere HD-Posen vorbereiten
 
-- Gib mir für jede Pose die kleine Originalvorlage und das passende HD-PNG.
+Bei vielen Figuren wollen wir künftig eine bewegliche Figur aufbauen.
+Aus ihr können die Bilder für mehrere Bewegungen entstehen.
+Du musst dann nicht jedes Bild einzeln von einer Bild-KI erstellen lassen.
+Die recherchierten Wege und meine Empfehlung stehen in [SPRITE_ANIMATION.md](SPRITE_ANIMATION.md).
+
+Wenn du fertige Einzelbilder lieferst, gilt weiter:
+
+- Gib mir die kleinen Originalvorlagen und die passenden HD-PNGs.
 - Das HD-Bild hat die zehnfache Breite und Höhe der Vorlage.
   Beispiel: 24 × 46 Pixel werden zu 240 × 460 Pixeln.
 - Behalte den durchsichtigen Hintergrund bei.
