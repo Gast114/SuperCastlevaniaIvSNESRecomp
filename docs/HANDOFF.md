@@ -1,5 +1,7 @@
 # Arbeitsstand & Übergabe (2026-10-21, aktualisierte HD-Simon-Posen)
 
+**Dauerhafte Nutzerpräferenz:** Vergessbare Bedienhinweise künftig immer in `MERKHILFE.md` im Projekt-Hauptordner ergänzen, in einfacher Sprache. Diese Datei ist die kurze Anleitung für den Nutzer; `HANDOFF.md` bleibt die technische Übergabe. Vorhandene Abschnitte aktualisieren, statt dieselben Hinweise auf viele neue Dateien zu verteilen.
+
 ## PNG-Austausch vom21.10.
 
 Die drei vom Nutzer verbesserten `Idle-01_HD_10x_240x460.png`, `Ducking-01_HD_10x_230x350.png`, `Jumping-01_HD_10x_200x450.png` sind bytegleich aus `../Assets (ausgeschnitten)/Simon Belmont/` in beide aktiven `characters/simon-user-hd-three-poses-v1/`-Ordner und das lokale Quellpaket unter `artwork-local/characters/` übernommen. `character.json` bleibt unverändert: letzte Vergrößerung/Fußpunktkorrektur erhalten. Import-Checksummen aktualisiert. Alte Dateien und Manifeste unter `artwork-local/simon-hd-refresh-2026-10-21/`, extern `D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-21-simon-hd-refresh`. Nur Maße und Kopierergebnis geprüft; kein Build, kein Gameplay-/Skalierungstest.
