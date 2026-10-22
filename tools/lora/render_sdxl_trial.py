@@ -93,11 +93,13 @@ def main():
         progress.update(status='rendering', pose=pose['name'], step=0)
         report()
         prompt = ('scivsimonv1, painted 2D game character, full body, three-quarter side view facing right, '
-                  'muscular male warrior with long brown hair, charcoal black armor with gold edges and rivets, '
-                  'short segmented battle skirt, armored bracers and tall armored boots, '
+                  'muscular male warrior with shoulder-length brown hair ending at the shoulders, '
+                  'charcoal black armor with gold edges and rivets, short segmented battle skirt, '
+                  'armored bracers, matching smooth fitted greaves on both legs and tall armored boots, '
                   + pose['description'] + ', plain solid gray background, detailed painted illustration')
         negative = ('3d render, sculpture, plastic, photograph, blurry, text, logo, scenery, '
-                    'extra limbs, duplicate body, cropped head, cropped feet')
+                    'extra limbs, duplicate body, cropped head, cropped feet, '
+                    'hair below shoulders, very long hair, knee pads, protruding knee guards, asymmetrical knee armor')
 
         def on_step(pipeline, index, timestep, kwargs):
             progress['step'] = index + 1

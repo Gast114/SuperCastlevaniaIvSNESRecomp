@@ -6,6 +6,15 @@ unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
 ## Aktuell: lokaler SDXL-LoRA-Pilot und GPU-Beschleunigung
 
+**Neueste Designkorrektur vom 22.10.:** Nutzer möchte schulterlange Haare und den
+einzelnen hervorstehenden Knieschoner entfernen. Die sichtbare GPU-Armprobe
+wurde gezielt mit dem eingebauten Imagegen bearbeitet, als separate Vorlage
+unter `design-corrections-2026-10-22/Simon_Schulterhaare_ohne_einzelnen_Knieschoner_v1.png`
+im Pilotordner gespeichert. Kein neues lokales LoRA-Ergebnis und kein Nachtraining
+behaupten. Lokaler Render-Prompt nennt nun Schulterhaare und passende glatte
+Beinschienen, Negative schließen lange Haare und separate Knieschoner aus.
+Die bisherigen Trainingsbilder, Prüfsummen und Gewichte bleiben unverändert.
+
 Nutzer wollte nach dem abgelehnten 3D-Modell LoRA ausprobieren und ausdrücklich
 lokal arbeiten: Dauer zunächst egal. Danach Auftrag, die Leistung des BosgameM6
 mit Radeon890M und KI-Chip zu verwenden. Keine Cloud-Uploads oder bezahlten Calls;

@@ -305,6 +305,17 @@ Hier kannst du die Bilder öffnen:
 - [Erste Probe mit Arm nach vorn](artwork-local/lora-pilot-2026-10-21/review-local/arm-forward.png)
 - [Erste Probe mit Arm nach oben](artwork-local/lora-pilot-2026-10-21/review-local/arm-up.png)
 
+## Simons gewünschtes Aussehen
+
+- Die braunen Haare sollen nur bis zu den Schultern reichen.
+- Der einzelne hervorstehende Knieschoner soll weg.
+- Die schwarze Rüstung mit Gold und die Schienbeinrüstung bleiben erhalten.
+
+Die [korrigierte Bildvorlage](artwork-local/lora-pilot-2026-10-21/design-corrections-2026-10-22/Simon_Schulterhaare_ohne_einzelnen_Knieschoner_v1.png)
+ist separat gespeichert. Das ist eine gezielte Bildbearbeitung mit Imagegen.
+Die LoRA wurde dadurch noch nicht neu trainiert. Die Beschreibung für neue
+lokale Bilder enthält jetzt ebenfalls Schulterhaare und keine Knieschoner.
+
 ## Unsere Arbeitsweise
 
 - Nur notwendige, gezielte Prüfungen. Keine unnötigen Testreihen.
