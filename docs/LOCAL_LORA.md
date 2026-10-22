@@ -111,6 +111,35 @@ Kontrollstärke verändern und bei wenig GPU-Speicher Offloading verwenden.
 
 ## Bedienung und Dateien
 
+### Identität und Kleidungsdetails nach der akzeptierten Bewegung
+
+Die native Gehbewegung ist vom Nutzer positiv bewertet. Aktuelle Korrektur
+unter `walking-identity-2026-10-22/review`: Keine neue Generierung, sondern
+deterministische lokale Bildarbeit mit `refine_walk_identity.py`. Das JSON-
+Rezept `assets/character/simon_walk_identity_patches.json` führt alle Änderungen
+je Phase auf und enthält die tatsächlich verwendeten Bildkoordinaten.
+
+Kopf/Haar aus01 werden als eigenes Teil wiederverwendet. Der Schnitt endet am
+Kragen, nicht am Bauch wie beim verworfenen ganzen Oberkörper. Bewegliche
+Arme/Schultern bleiben erhalten. Körperteile und Materialien werden nur in
+expliziten Masken bearbeitet; Premultiplied-Alpha-Transformationen verhindern
+schwarze Farbsäume. Eine lokale Konturverengung korrigiert die Oberschenkelbreite05.
+Haut statt Hosenpanzer03/05/06 kommt aus vorhandenen plausiblen Hautpartien;
+keine neuen nackten Körper-/Gesichtsdetails pro Prompt erzeugt. Kopf-Hals-
+Anschluss06 separat gesetzt, alte Kinn-/Haarreste gelöscht.
+
+Ausgangsdateien bleiben unter walking-native-2026-10-22 erhalten. Freigestellte
+Bearbeitung unter walking-identity-2026-10-22/edited, Änderungsmasken und
+refinement.json daneben. `package_walk.py --prematted --before <altes Paket>`
+exportiert PNG/ZIP und synchronen Vergleich ohne erneute Matting-KI.
+Altes und neues Paket werden am gemeinsamen Root ausgerichtet, nicht anhand
+einzelner Körperbegrenzungen. Damit bleiben tatsächliche Formänderungen sichtbar.
+
+Dieser Durchlauf nutzt nur CPU/Pillow/OpenCV. Kein LoRA-Training, keine
+Diffusion, kein Cloud-Upload, keine Änderung der Python-Umgebungen oder Modelle.
+Die890M ist für den parallel vorbereiteten ComfyUI-Landschaftstest freigegeben;
+beide Arten von GPU-Aufträgen sollen nacheinander laufen.
+
 ### Sechs Gehposen mit Bildreferenz (22.10.)
 
 **Diese erste Serie wurde vom Nutzer abgelehnt.** Schulter-, Arm- und

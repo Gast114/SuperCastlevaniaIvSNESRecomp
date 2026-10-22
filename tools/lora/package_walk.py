@@ -18,9 +18,12 @@ from PIL import Image, ImageDraw, ImageFilter
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, required=True)
-    parser.add_argument('--model', type=Path, required=True)
+    parser.add_argument('--model', type=Path)
+    parser.add_argument('--prematted', action='store_true',
+                        help='Reuse edited RGBA alpha directly without another matting pass')
     parser.add_argument('--poses', type=Path, required=True)
     parser.add_argument('--native-pack', type=Path)
+    parser.add_argument('--before', type=Path, help='Previous package for a synchronized before/after review')
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
     if args.out.exists():
@@ -28,11 +31,14 @@ def main():
     sources = sorted(args.source.glob('Walking-[0-9][0-9].png'))
     if len(sources) != 6:
         raise ValueError('Expected exactly six rendered walking phases')
-    import onnxruntime as ort
-    settings = ort.SessionOptions()
-    settings.intra_op_num_threads = os.cpu_count() or 1
-    session = ort.InferenceSession(str(args.model), sess_options=settings,
-                                   providers=['CPUExecutionProvider'])
+    if not args.prematted:
+        if not args.model:
+            raise ValueError('--model is required unless --prematted is used')
+        import onnxruntime as ort
+        settings = ort.SessionOptions()
+        settings.intra_op_num_threads = os.cpu_count() or 1
+        session = ort.InferenceSession(str(args.model), sess_options=settings,
+                                       providers=['CPUExecutionProvider'])
     poses = json.loads(args.poses.read_text(encoding='utf-8'))
     work_scale = poses.get('transform', {}).get('scale', 10)
     output_ratio = 10 / work_scale
@@ -43,8 +49,26 @@ def main():
     args.out.mkdir(parents=True)
     (args.out / 'rgba-full').mkdir()
     (args.out / 'frames').mkdir()
+    previous = None
+    if args.before:
+        previous = json.loads((args.before / 'placement.json').read_text(encoding='utf-8'))
+        if previous['scale'] != 10:
+            raise ValueError('Before/after packages must both use 10x assets')
+        (args.out / 'before').mkdir()
     images, boxes = [], []
     for path in sources:
+        if args.prematted:
+            rgba = Image.open(path).convert('RGBA')
+            if list(rgba.size) != poses['canvas']:
+                raise ValueError('All source frames must share the pose canvas')
+            box = rgba.getchannel('A').point(lambda value: 255 if value > 8 else 0).getbbox()
+            if not box:
+                raise ValueError('Empty edited frame: ' + path.name)
+            rgba.save(args.out / 'rgba-full' / path.name)
+            images.append(rgba)
+            boxes.append(box)
+            print('Preserved RGBA:', path.name, flush=True)
+            continue
         image = Image.open(path).convert('RGB')
         if list(image.size) != poses['canvas']:
             raise ValueError('All source frames must share the pose canvas')
@@ -93,6 +117,7 @@ def main():
             math.ceil((max(b[3] for b in boxes) + work_scale) / work_scale) * work_scale]
     frames, records = [], []
     comparison = []
+    before_after = []
     sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
     for path, image in zip(sources, images):
         frame = image.crop(crop)
@@ -102,6 +127,21 @@ def main():
         target = args.out / 'frames' / name
         frame.save(target)
         frames.append(frame)
+        if previous:
+            old = Image.open(args.before / 'frames' / name).convert('RGBA')
+            new_root = [(poses['root'][0] - crop[0]) * output_ratio,
+                        (poses['root'][1] - crop[1]) * output_ratio]
+            shift = tuple(round(a - b) for a, b in zip(new_root, previous['root_in_png']))
+            aligned = Image.new('RGBA', frame.size)
+            aligned.alpha_composite(old, shift)
+            aligned.save(args.out / 'before' / name)
+            panel = Image.new('RGB', (frame.width * 2 + 30, frame.height + 36), '#808080')
+            panel.paste(aligned, (0, 30), aligned)
+            panel.paste(frame, (frame.width + 30, 30), frame)
+            d = ImageDraw.Draw(panel)
+            d.text((8, 8), path.stem + ' Vorher', fill='white')
+            d.text((frame.width + 38, 8), 'Korrigiert', fill='white')
+            before_after.append(panel)
         native_image = args.poses.parent / 'color' / path.name
         if native_image.exists():
             original = Image.open(native_image).convert('RGB').crop(crop).resize(frame.size, Image.Resampling.LANCZOS)
@@ -124,6 +164,13 @@ def main():
         for i, panel in enumerate(comparison):
             comparison_sheet.paste(panel, (i % 3 * panel.width, i // 3 * panel.height))
         comparison_sheet.save(args.out / 'Originalvergleich.png')
+    if before_after:
+        before_after[0].save(args.out / 'Vorher_Nachher.webp', save_all=True,
+            append_images=before_after[1:], duration=110, loop=0, lossless=True)
+        before_sheet = Image.new('RGB', (before_after[0].width * 3, before_after[0].height * 2))
+        for i, panel in enumerate(before_after):
+            before_sheet.paste(panel, (i % 3 * panel.width, i // 3 * panel.height))
+        before_sheet.save(args.out / 'Vorher_Nachher.png')
     sheet = Image.new('RGB', (1080, 1080), '#dadada')
     draw = ImageDraw.Draw(sheet)
     for i, frame in enumerate(frames):
@@ -134,7 +181,8 @@ def main():
         sheet.paste(thumb, (x, y), thumb)
         draw.text(((i % 3) * 360 + 18, (i // 3) * 540 + 520), f'Walking-{i+1:02d}', fill='black')
     sheet.save(args.out / 'Alle_Gehposen.png')
-    manifest = {'method': 'local SDXL LoRA + IP-Adapter + guide control + ISNet-Anime',
+    manifest = {'method': ('local masked artwork reuse with shared head and transformed body parts'
+        if args.prematted else 'local SDXL LoRA + IP-Adapter + guide control + ISNet-Anime'),
         'guide_origin': poses.get('origin'), 'working_native_scale': work_scale,
         'common_output_resize': output_ratio,
         'scale': 10, 'source_canvas': poses['canvas'], 'shared_crop': crop,
@@ -144,7 +192,8 @@ def main():
         'preview_frame_ms': 110, 'preview_timing_is_not_native_game_timing': True,
         'upper_body_reference': None,
         'per_frame_rescaling': False, 'game_pack_installed': False,
-        'native_offsets_still_need_review': True, 'matting_model_sha256': sha(args.model),
+        'native_offsets_still_need_review': True, 'pre_matted_rgba': args.prematted,
+        'matting_model_sha256': None if args.prematted else sha(args.model),
         'images': records}
     (args.out / 'placement.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
     filenames = json.dumps([row['image'] for row in records])
@@ -158,6 +207,15 @@ def main():
 <script>const frames=FILES;let index=0,timer=null;const img=document.querySelector('#bild');function show(){img.src=frames[index];document.querySelector('#nummer').textContent=`Bild ${index+1} von ${frames.length}`}
 function stop(){clearInterval(timer);timer=null;document.querySelector('#play').textContent='Abspielen'}function start(){stop();timer=setInterval(()=>{index=(index+1)%frames.length;show()},1000/+document.querySelector('#fps').value);document.querySelector('#play').textContent='Anhalten'}
 document.querySelector('#next').onclick=()=>{stop();index=(index+1)%frames.length;show()};document.querySelector('#prev').onclick=()=>{stop();index=(index+frames.length-1)%frames.length;show()};document.querySelector('#play').onclick=()=>timer?stop():start();document.querySelector('#fps').oninput=()=>{if(timer)start()};show();</script>'''.replace('FILES', filenames)
+    if before_after:
+        page = page.replace('<img id="bild">',
+            '<div style="display:flex;justify-content:center;gap:24px"><div>Vorher<br><img id="vorher"></div>'
+            '<div>Korrigiert<br><img id="bild"></div></div>')
+        page = page.replace('function show(){img.src=frames[index];',
+            'function show(){img.src=frames[index];document.querySelector("#vorher").src=frames[index].replace("frames/","before/");')
+        page = page.replace('<p><a href="Alle_Gehposen.png">',
+            '<p><a href="Vorher_Nachher.webp">Bewegter Vorher/Nachher-Vergleich</a> · '
+            '<a href="Vorher_Nachher.png">Alle Korrekturen</a></p><p><a href="Alle_Gehposen.png">')
     (args.out / 'Vorschau.html').write_text(page, encoding='utf-8')
     with zipfile.ZipFile(args.out / 'Gehposen_10x.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
         paths = [args.out / row['image'] for row in records]
@@ -167,6 +225,11 @@ document.querySelector('#next').onclick=()=>{stop();index=(index+1)%frames.lengt
             archive.write(path, path.relative_to(args.out).as_posix())
         for name in ('Originalvergleich.webp', 'Originalvergleich.png'):
             if (args.out / name).exists():
+                archive.write(args.out / name, name)
+        if before_after:
+            for path in sorted((args.out / 'before').glob('*.png')):
+                archive.write(path, path.relative_to(args.out).as_posix())
+            for name in ('Vorher_Nachher.webp', 'Vorher_Nachher.png'):
                 archive.write(args.out / name, name)
     print(json.dumps({'frames': len(frames), 'size': list(frames[0].size), 'out': str(args.out.resolve())}), flush=True)
 

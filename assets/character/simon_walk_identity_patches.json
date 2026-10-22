@@ -1,0 +1,41 @@
+{
+  "canvas": [1024,1024],
+  "description": "Native walking draft: reference01 identity, closed abdomen01, exposed thighs, short rear skirt and removal of extra limb fragments. Full1024 canvas coordinates.",
+  "head_cut": [[0, 155], [500, 155], [545, 144], [580, 155], [610, 176], [660, 184], [1024, 184]],
+  "changes": {"Walking-01.png": ["Close abdomen armor; reference face/hair/body preserved."], "Walking-02.png": ["Use reference01 head and shoulder-length hair.", "Remove long rear skirt from the leg gap."], "Walking-03.png": ["Use reference01 head.", "Expose the image-right thigh.", "Remove extra inner-leg fragments and far-arm nub.", "Repaint the near upper arm from one coherent donor arm in its own pose."], "Walking-04.png": ["Use reference01 head.", "Shorten trailing skirt flap."], "Walking-05.png": ["Use reference01 head.", "Expose image-right thigh and narrow supporting thigh.", "Remove skirt tail between legs."], "Walking-06.png": ["Use reference01 head.", "Clear old chin remnant and long hair tail.", "Expose thigh and remove trailing skirt."]},
+  "frames": {
+    "Walking-01.png": [
+      {"kind":"patch","donor":"Walking-04.png","source_points":[[439,343],[509,360],[498,382],[431,364]],"target_points":[[444,299],[526,320],[518,346],[432,326]],"polygon":[[446,299],[525,321],[520,341],[504,335],[477,334],[445,332],[434,331],[438,315]],"feather":1.1}
+    ],
+    "Walking-02.png": [
+      {"kind":"head","donor":"Walking-01.png","translation":[11,0]},
+      {"kind":"erase","polygon":[[503,615],[526,621],[554,642],[574,670],[558,696],[513,704],[479,687],[487,665],[495,640]],"feather":0.8}
+    ],
+    "Walking-03.png": [
+      {"kind":"head","donor":"Walking-01.png","translation":[13,20]},
+      {"kind":"patch","donor":"Walking-02.png","source_points":[[551,608],[617,576],[656,615],[605,653]],"target_points":[[535,630],[620,575],[678,665],[574,704]],"polygon":[[556,603],[618,576],[650,594],[672,632],[676,661],[640,674],[620,684],[594,694],[575,699],[560,687],[546,667],[540,648]],"feather":2,"restore_alpha":true},
+      {"kind":"patch","donor":"Walking-02.png","source_points":[[581,293],[630,350],[559,314]],"target_points":[[600,292],[657,336],[579,314]],"polygon":[[590,291],[622,296],[645,312],[663,332],[659,345],[641,349],[615,333],[600,315]],"feather":3},
+      {"kind":"erase","polygon":[[510,621],[529,625],[550,649],[563,675],[573,704],[544,722],[493,720],[457,703],[470,684],[486,662],[500,638]],"feather":0.8},
+      {"kind":"erase","polygon":[[378,316],[390,310],[398,321],[390,339],[378,338]],"feather":0.8}
+    ],
+    "Walking-04.png": [
+      {"kind":"head","donor":"Walking-01.png","translation":[11,0]},
+      {"kind":"erase","polygon":[[385,589],[416,591],[421,611],[422,641],[403,651],[382,634]],"feather":0.7}
+    ],
+    "Walking-05.png": [
+      {"kind":"head","donor":"Walking-01.png","translation":[0,0]},
+      {"kind":"erase","polygon":[[504,614],[536,630],[570,662],[549,682],[529,676],[509,665],[496,647]],"feather":0.8},
+      {"kind":"patch","donor":"Walking-02.png","source_points":[[551,608],[617,576],[656,615],[605,653]],"target_points":[[510,575],[584,539],[662,645],[571,680]],"polygon":[[528,558],[555,550],[582,542],[608,558],[637,588],[659,613],[675,643],[655,665],[605,687],[574,680],[551,651],[532,608],[518,578]],"feather":2,"restore_alpha":true},
+      {"kind":"slim","box":[355,540,530,703],"pixels":20,"pivot_x":530,"y_knots":[540,560,600,650,680,703],"weights":[0,0.4,1,0.5,0.1,0]},
+      {"kind":"erase","polygon":[[508,616],[531,620],[551,647],[568,675],[553,702],[505,710],[471,696],[484,677],[495,651],[502,633]],"feather":0.8}
+    ],
+    "Walking-06.png": [
+      {"kind":"head","donor":"Walking-01.png","translation":[-12,30]},
+      {"kind":"erase","polygon":[[497,619],[522,618],[551,635],[548,658],[530,669],[511,654],[495,643]],"feather":0.8},
+      {"kind":"patch","donor":"Walking-02.png","source_points":[[551,608],[617,576],[656,615],[605,653]],"target_points":[[535,630],[620,575],[660,657],[581,701]],"polygon":[[553,607],[615,579],[639,591],[648,616],[643,637],[657,659],[641,669],[616,682],[586,697],[563,680],[551,656],[539,640]],"feather":2,"restore_alpha":true},
+      {"kind":"patch","donor":"Walking-01.png","source_points":[[439,164],[567,164],[567,188]],"target_points":[[427,184],[555,184],[555,208]],"polygon":[[434,189],[465,183],[500,188],[530,194],[555,207],[514,210],[476,204],[449,205]],"feather":3},
+      {"kind":"erase","polygon":[[508,620],[530,624],[548,642],[560,666],[578,704],[547,724],[494,718],[460,703],[474,682],[487,659],[499,638]],"feather":0.8},
+      {"kind":"erase","polygon":[[574,185],[591,190],[591,199],[577,199],[573,194]],"feather":0.8}
+    ]
+  }
+}

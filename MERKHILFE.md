@@ -386,6 +386,42 @@ die Größe für einen späteren Einbau.
 Eine geprüfte Sicherheitskopie liegt auch im Backup-Ordner:
 `D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-21-local-lora\2026-10-22-walking-native-shapes`.
 
+## Korrigierte Kleidung und gemeinsames Gesicht
+
+Die Bewegung der letzten Serie hast du als sehr gut bewertet. Dafür nehmen
+wir weiterhin die Original-Bewegungen. Die neue Korrektur liegt hier:
+
+```text
+artwork-local\lora-pilot-2026-10-21\walking-identity-2026-10-22\review
+```
+
+- Öffne **Vorschau.html**. Links siehst du den letzten Stand, rechts die Korrektur.
+- **Nächstes Bild** und **Zurück** schalten beide Seiten gleichzeitig weiter.
+- **Vorher_Nachher.webp** zeigt beide Fassungen in Bewegung.
+- **Alle_Gehposen.png** zeigt nur die sechs korrigierten Bilder.
+- Die sechs PNGs liegen unter **frames**. Alle sind wieder **320 × 510 Pixel**.
+- **Gehposen_10x.zip** enthält die Bilder und die ganze Vorschau zusammen.
+
+Das wurde bearbeitet:
+
+- **01:** Die offene Stelle am Bauch ist jetzt mit Rüstung geschlossen.
+- **02:** Gesicht und Haare aus 01. Das lange Rockstück zwischen den Beinen ist entfernt.
+- **03:** Gesicht aus 01. Der Oberschenkel ist offen. Zusätzliche Bein- und Armstücke sind entfernt oder überarbeitet.
+- **04:** Gesicht aus 01. Das hintere Rockstück ist kürzer.
+- **05:** Gesicht aus 01. Der dicke Oberschenkel ist schmaler. Die geschlossene Hose am anderen Oberschenkel und der lange Rockzipfel sind entfernt.
+- **06:** Gesicht aus 01. Die Stelle unter dem Kinn, die längeren Haare, der halbe Hosenpanzer und der Rockzipfel sind überarbeitet.
+
+Für Gesicht und Haare wird ein gemeinsames Bildteil aus 01 wiederverwendet.
+Es wird an die Kopfposition der jeweiligen Pose gesetzt. Der Körper bewegt
+sich weiterhin pro Bild. Diese Korrekturen entstanden durch lokale
+Bildbearbeitung auf der CPU. Dafür gab es keine neue KI-Berechnung und keinen
+Upload. Die Radeon bleibt für den Landschaftstest frei.
+
+Diese Fassung ist noch eine Vorschau. Im Spiel sind die bisherigen Sprites aktiv.
+
+Sicherheitskopie:
+`D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-21-local-lora\2026-10-22-walking-identity`.
+
 ## Unsere Arbeitsweise
 
 - Nur notwendige, gezielte Prüfungen. Keine unnötigen Testreihen.

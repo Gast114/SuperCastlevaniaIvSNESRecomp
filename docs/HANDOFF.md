@@ -6,6 +6,55 @@ unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
 ## Aktuell: lokaler SDXL-LoRA-Pilot und GPU-Beschleunigung
 
+### Neuester Stand: Bewegung akzeptiert, Identität/Kleidung gezielt korrigiert
+
+Nutzer bewertet die native-konturgesteuerte Gehbewegung ausdrücklich als
+"sehr gut". Diese Bewegung NICHT neu generieren oder durch festen Torso ersetzen.
+Neue Kritik betrifft Gesicht/Haarlänge, offene Bauchstelle01, lange hintere
+Rockzipfel02/04/05/06, doppelte Bein-/Armfragmente03, geschlossene Oberschenkel
+03/05/06 und zu dicken Oberschenkel05. Referenz01, Bauch soll wie übrige
+Phasen geschlossen sein. Genau diese Bereiche wurden lokal überarbeitet.
+
+Aktuelle Ausgabe: `artwork-local/lora-pilot-2026-10-21/walking-identity-2026-10-22/review`.
+SechsRGBA-PNGs320x510, Animation.webp, Vorher_Nachher.webp/png, synchroner
+HTML-Einzelschritt mit Vorher/Nachher, ZIP und placement.json. **Neue Korrektur
+noch nicht vom Nutzer beurteilt und nicht im Spiel installiert.** Kleine
+Nieten-/Plattenformen außerhalb der genannten Bereiche bleiben poseabhängig;
+keinen vollständig identischen 3D-Anzug behaupten.
+
+Werkzeug `tools/lora/refine_walk_identity.py`, editierbares Rezept
+`assets/character/simon_walk_identity_patches.json`. Ausgangspunkt die sechs
+1024erRGBA in walking-native-2026-10-22/packaged/rgba-full. Kopf/Haar aus01,
+nur Translation an individuelle Halsposition;06hat+10px zusätzlichen
+Halsanschluss gegenüber nativer Kopfoberkante. Schnitt nur am Kopf/Kragen,
+KEINE erneute ganze Schulter-/Arm-/Torso-Kopie. Bauch01 erhält geschlossenen
+Panzerbereich aus04. Offene Hautpartien/Arm03 lokal aus bestehenden Posen
+mit expliziten Drei-/Vierpunkttransformationen und Masken,05lokale
+Konturverengung mit unveränderten Hüft-/Knieanschlüssen. Hintere Stoff-/Limb-
+Fragmente explizit gelöscht, neue Schnittkanten mit schmaler Kontur versehen.
+Keine Diffusionsaufrufe, kein neues Training, kein Bild-Upload, kein Imagegen.
+Vorhandene Modelle und Python-Umgebungen in diesem Auftrag unverändert.
+
+`package_walk.py --prematted` übernimmt bearbeiteteAlpha ohne neue Segmentierung;
+`--before` erstellt gleichen Koordinatenvergleich und beide Seiten steuernde
+HTML-Vorschau. Gemeinsame20x→10x-Reduktion unverändert. Validierter neuer
+RGBA-Stand unter `edited`, Arbeitsvarianten edited-v1..v4/packaged-v4 und
+der erste packaged-Export sind Zwischenstände; nur `review` an Nutzer verlinken.
+
+Backup dieses Stands unter `D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-10-21-local-lora/2026-10-22-walking-identity`,
+mit SHA256-Manifest für bearbeiteteRGBA, Ausgabe, Rezept, Werkzeuge und Hinweise.
+Gezielt geprüft: sechsRGBA-PNGs320x510, drei6Frame-WebPs, vollständiges ZIP mit
+Vorher/Nachher-Bildern; deckende Gesichts-Innenbereiche aller sechs Posen sind
+nach Translation identisch zur Referenz01 (max. Kanalabweichung0 im Prüffeld).
+
+**GPU-Abstimmung:** Parallel wird lokal ComfyUI/Landschaft vorbereitet. Mensch
+bittet, keine vorhandenen Python-Umgebungen/Modelle zu verändern und GPU-Jobs
+nacheinander auszuführen. In diesem Chat laufen nur CPU-Bildedits/Exporte;
+GPU für Landschaft freigemeldet. Keine neuen GPU-Jobs ohne Abstimmung starten.
+Die untracked ComfyUI-/Landschaft-Dateien und der entsprechende neue Abschnitt
+ganz oben in MERKHILFE.md gehören zur Parallelaufgabe; nicht in diesen Commit
+übernehmen oder entfernen.
+
 **Korrektur zum bisherigen Walking-Abschluss:** Nutzer hat die Serie wegen
 falscher Schulter-, Arm- und Beinbewegungen abgelehnt. `packaged-final` ist
 historischer Dateiname, KEINE akzeptierte Endfassung. `--lock-upper-body`
@@ -24,7 +73,8 @@ geladen, Revision1271357eda52d54b857c650cacb5b51144643ccb. Keine Uploads.
 Phase04 zuerst wirklich geprüft, danach übrige fünf berechnet. Neue komplette
 Ausgabe jetzt `walking-native-2026-10-22/packaged`: sechsRGBA-PNGs320x510,
 Originalvergleich.webp/png, Animation.webp, HTML-Einzelschritt, ZIP und
-placement.json. **Entwurf, nicht vom Nutzer akzeptiert oder im Spiel installiert.**
+placement.json. **Bewegung vom Nutzer akzeptiert; damalige Kleidungs-/Gesichts-
+abweichungen werden durch den neueren Identity-Stand oben korrigiert.**
 Konturen/Schulter-/Arm-/Beinpositionen deutlich näher am Original. Rüstungsdetails
 variieren weiterhin zwischen Phasen; nicht als fertige konsistente Spielfigur
 verkaufen. Keine erneute Oberkörperkopie als vermeintliche Lösung einführen.
