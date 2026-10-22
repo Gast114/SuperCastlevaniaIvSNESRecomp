@@ -113,6 +113,11 @@ Kontrollstärke verändern und bei wenig GPU-Speicher Offloading verwenden.
 
 ### Sechs Gehposen mit Bildreferenz (22.10.)
 
+**Diese erste Serie wurde vom Nutzer abgelehnt.** Schulter-, Arm- und
+Beinbewegungen passen nicht. Die folgenden Angaben beschreiben den Versuch,
+keine akzeptierte Animation. Vor allem `--lock-upper-body` nicht für neue
+Gehposen benutzen: Es unterdrückt benötigte Schulter- und Armbewegungen.
+
 `walking-2026-10-22` ergänzt den Pilot um sechs manuell gesetzte Gehphasen in
 `assets/character/simon_walk_poses.json`. Sie orientieren sich an der beobachteten
 nativen Reihenfolge. Ihre Knochenpunkte sind Annäherungen, keine automatisch
@@ -142,7 +147,7 @@ gemeinsamer Ausschnitt für alle sechs Bilder, weder individuelle Skalierung
 noch Fußpunkt-Normalisierung. Quelle der Segmentierung:
 [rembg](https://github.com/danielgatis/rembg).
 
-Finale Vorschau unter `walking-2026-10-22/packaged-final`: transparente PNGs,
+Historische Vorschau unter `walking-2026-10-22/packaged-final`: transparente PNGs,
 WebP-Loop und HTML mit Einzelbild-Schaltung. Vorschautempo ist ausdrücklich
 kein neues Spieltiming. Für stabile Identität wird der Oberkörper aus Phase01
 übernommen, mit der kleinen vorgegebenen Gehbewegung in Y. Übergang bei Y270,
@@ -150,6 +155,63 @@ vormultiplizierte Alphamischung und direkte Auswahl unterschiedlich geformter
 Konturen verhindern graue, durchscheinende Ränder. Gesicht und obere Rüstung
 werden wiederverwendet; Beine/untere Rockbereiche behalten die Phasen.
 Aktive Spielbilder wurden nicht überschrieben.
+
+### Gehbewegung direkt aus den Original-Sprites
+
+`prepare_native_walk.py` liest sechs native Atlaszellen aus dem aktiven Paket.
+Ein gemeinsamer Koordinatenwechsel ersetzt die früheren geschätzten COCO-Punkte.
+Vollständige Alpha-Kontur plus geglättete interne Kanten steuern den lokalen
+[Xinsir-Canny-Controller](https://huggingface.co/xinsir/controlnet-canny-sdxl-1.0),
+Revision `1271357eda52d54b857c650cacb5b51144643ccb`. Öffentliches Modell, kein
+Upload. `download_shape_control.py` lädt ausschließlich Config, Safetensors
+und Quellenbeschreibung. CPU-Helfer benötigt OpenCV aus requirements-matting.
+
+Die Arbeitsfläche1024 verwendet20Bildpixel je Originalpixel. Eine spätere
+Ausgabe für das Spiel wird gemeinsam auf10x reduziert; keine zusätzlichen
+Spielauflösungen oder Skalen-Testmatrix. Koordinaten:
+`x'=(x-22.4)*20`, `y'=(y-27)*20`. Das lässt Kopf und Füße aller Phasen frei.
+Keine Zentrierung einzelner Posen und kein Kopieren des ganzen Oberkörpers.
+
+`render_sdxl_trial.py --ip-mode style` nutzt IP-Adapter nur in
+`up.block_0=[0,scale,0]`, nach
+[Diffusers-Stilsteuerung](https://huggingface.co/docs/diffusers/using-diffusers/ip_adapter#style-and-layout-control).
+Die Haltung der einzelnen Referenz soll die native Bewegung nicht ersetzen.
+Render-Prompt gekürzt: Die frühere lange Beschreibung überschritt77CLIP-Tokens
+und schnitt die eigentliche Pose ab. Die Kontur kommt dennoch aus dem Bild.
+
+Vor einer neuen Serie einzelne Phase04 gegen das Original vergleichen. Die
+512er Formprobe trifft die Haltung besser, war jedoch deutlich zu weich.
+Arbeitsordner `walking-native-2026-10-22`, Originale im Spiel bleiben aktiv.
+
+Die1024er Phase04 ist tatsächlich erzeugt und unter `probe-hd-04` mit dem
+Original verglichen. Sie folgt Schulterdrehung, zurückgeführter Hand und
+angehobenem Bein sichtbar besser. Das gibt noch keine automatische Freigabe
+aller anatomischen/Rüstungsdetails. `review_native_walk.py` zeigt RGB-Original,
+HD und Originalkontur über HD, ohne beide Bilder neu auszurichten.
+
+Für den restlichen Lauf werden Latents separat gespeichert (`--latents-only`).
+Danach gibt `decode_sdxl_latents.py` die Bilder mit allein geladenem FP32-VAE
+und512er Kacheln aus. So müssen UNet, ControlNet und CPU-Offload-Kopien nicht
+neben dem Decoder im gemeinsamen RAM bleiben. Der erste kombinierte Lauf mit
+Group-Offload brauchte für Phase04 insgesamt590s. Keine einmalige Warmup-Zeit
+als allgemeine Bildrate ausgeben. In künftigen Läufen synchronisiert der
+Schritt-Callback die GPU, damit "35/36" nicht nur noch wartende GPU-Aufträge
+beschreibt. Notwendiger ROCm-FP32-VAE-Matrix-Attention-Workaround bleibt erhalten.
+
+`package_walk.py` hat keine Oberkörper-Sperre mehr. Ein gemeinsamer Ausschnitt
+und eine gemeinsame Reduktion von20Arbeits- auf10Ausgabepixel je Originalpixel
+erhalten die Bewegung. `placement.json` speichert beide Koordinatensysteme.
+Wenn native Farbvorlagen neben poses.json liegen, entsteht auch ein synchroner
+Originalvergleich alsWebP und Kontaktbogen. Vorschautempo ersetzt keine native
+Spiel-Animation. Das Spielpaket wird von keinem dieser Werkzeuge installiert.
+
+Ergebnis dieses Durchlaufs: `walking-native-2026-10-22/packaged`, sechsRGBA-PNGs
+320×510,10x, synchroner Originalvergleich, HTML-Einzelbildvorschau und ZIP.
+Alle sechs mit vollständiger nativer Außenkontur und eigenem Oberkörper,
+kein erneuter Maskentausch an Knien. Die Haltungen sind deutlich näher am
+Original; Rüstungsdetails variieren weiterhin. Entwurf für Nutzerbeurteilung,
+keine als konsistent freigegebene/installierte Spielfigur. Merkhilfe verlinkt
+ausdrücklich den neuen Ordner und kennzeichnet die alte Serie als verworfen.
 
 Pilot: `artwork-local/lora-pilot-2026-10-21`.
 `Status.cmd` zeigt den ursprünglichen Auftrag; `Anhalten.cmd`/`Fortsetzen.cmd`

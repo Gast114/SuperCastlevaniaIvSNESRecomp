@@ -1,4 +1,4 @@
-"""Make local transparent walking PNGs and a six-frame review, without rescaling assets.
+"""Make transparent 10x walking PNGs with a shared transform and native comparison.
 
 Uses the public ISNet-Anime ONNX foreground model. All frames retain one shared
 crop and coordinate system. Does not install a game pack or change native timing.
@@ -21,8 +21,6 @@ def main():
     parser.add_argument('--model', type=Path, required=True)
     parser.add_argument('--poses', type=Path, required=True)
     parser.add_argument('--native-pack', type=Path)
-    parser.add_argument('--lock-upper-body', action='store_true',
-                        help='Reuse phase 1 face and upper armor to prevent appearance flicker')
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
     if args.out.exists():
@@ -36,6 +34,8 @@ def main():
     session = ort.InferenceSession(str(args.model), sess_options=settings,
                                    providers=['CPUExecutionProvider'])
     poses = json.loads(args.poses.read_text(encoding='utf-8'))
+    work_scale = poses.get('transform', {}).get('scale', 10)
+    output_ratio = 10 / work_scale
     native = {}
     if args.native_pack:
         data = json.loads((args.native_pack / 'character.json').read_text(encoding='utf-8-sig'))
@@ -87,52 +87,43 @@ def main():
         images.append(rgba)
         boxes.append(box)
         print('Transparent:', path.name, flush=True)
-    if args.lock_upper_body:
-        reference = images[0]
-        first_nose_y = poses['poses'][0]['points'][0][1]
-        boxes = []
-        for i, image in enumerate(images):
-            # Keep the small authored walking bob while reusing exactly the
-            # same face, shoulder armor, torso and guarded arm position.
-            dy = round(poses['poses'][i]['points'][0][1] - first_nose_y)
-            shifted = Image.new('RGBA', image.size)
-            shifted.alpha_composite(reference, (0, dy))
-            split = 270 + dy
-            weights = np.clip((split + 5 - np.arange(image.height)) / 10, 0, 1)
-            weight = weights[:, None, None]
-            upper = np.asarray(shifted, dtype=np.float32) / 255
-            lower = np.asarray(image, dtype=np.float32) / 255
-            opacity = upper[..., 3:] * weight + lower[..., 3:] * (1 - weight)
-            premultiplied = (upper[..., :3] * upper[..., 3:] * weight
-                             + lower[..., :3] * lower[..., 3:] * (1 - weight))
-            color = np.divide(premultiplied, opacity, out=np.zeros_like(premultiplied), where=opacity > 1e-8)
-            combined = np.concatenate([color, opacity], axis=2)
-            # Do not fade a silhouette into a differently shaped silhouette:
-            # that makes a translucent gray flap at the join. Pick one clean
-            # contour there, and blend only the overlapping body interior.
-            contour = np.abs(upper[..., 3] - lower[..., 3]) > .1
-            selected = np.where(weight >= .5, upper, lower)
-            combined[contour] = selected[contour]
-            images[i] = Image.fromarray(np.uint8(np.rint(np.clip(combined, 0, 1) * 255)))
-            images[i].save(args.out / 'rgba-full' / sources[i].name)
-            boxes.append(images[i].getchannel('A').point(lambda value: 255 if value > 8 else 0).getbbox())
-    crop = [math.floor((min(b[0] for b in boxes) - 10) / 10) * 10,
-            math.floor((min(b[1] for b in boxes) - 10) / 10) * 10,
-            math.ceil((max(b[2] for b in boxes) + 10) / 10) * 10,
-            math.ceil((max(b[3] for b in boxes) + 10) / 10) * 10]
+    crop = [math.floor((min(b[0] for b in boxes) - work_scale) / work_scale) * work_scale,
+            math.floor((min(b[1] for b in boxes) - work_scale) / work_scale) * work_scale,
+            math.ceil((max(b[2] for b in boxes) + work_scale) / work_scale) * work_scale,
+            math.ceil((max(b[3] for b in boxes) + work_scale) / work_scale) * work_scale]
     frames, records = [], []
+    comparison = []
     sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
     for path, image in zip(sources, images):
         frame = image.crop(crop)
+        if output_ratio != 1:
+            frame = frame.resize(tuple(round(n * output_ratio) for n in frame.size), Image.Resampling.LANCZOS)
         name = path.stem + '_HD_10x.png'
         target = args.out / 'frames' / name
         frame.save(target)
         frames.append(frame)
+        native_image = args.poses.parent / 'color' / path.name
+        if native_image.exists():
+            original = Image.open(native_image).convert('RGB').crop(crop).resize(frame.size, Image.Resampling.LANCZOS)
+            panel = Image.new('RGB', (frame.width * 2 + 30, frame.height + 36), '#808080')
+            panel.paste(original, (0, 30))
+            panel.paste(frame, (frame.width + 30, 30), frame)
+            draw = ImageDraw.Draw(panel)
+            draw.text((8, 8), path.stem + ' Original', fill='white')
+            draw.text((frame.width + 38, 8), 'HD: gleiche Position', fill='white')
+            comparison.append(panel)
         records.append({'image': 'frames/' + name, 'source': str(path.resolve()),
                         'source_sha256': sha(path), 'sha256': sha(target),
                         'native_pose_reference': native.get(path.stem)})
     frames[0].save(args.out / 'Animation.webp', save_all=True, append_images=frames[1:],
                    duration=110, loop=0, lossless=True, background=(0, 0, 0, 0))
+    if comparison:
+        comparison[0].save(args.out / 'Originalvergleich.webp', save_all=True,
+            append_images=comparison[1:], duration=110, loop=0, lossless=True)
+        comparison_sheet = Image.new('RGB', (comparison[0].width * 3, comparison[0].height * 2))
+        for i, panel in enumerate(comparison):
+            comparison_sheet.paste(panel, (i % 3 * panel.width, i // 3 * panel.height))
+        comparison_sheet.save(args.out / 'Originalvergleich.png')
     sheet = Image.new('RGB', (1080, 1080), '#dadada')
     draw = ImageDraw.Draw(sheet)
     for i, frame in enumerate(frames):
@@ -143,13 +134,15 @@ def main():
         sheet.paste(thumb, (x, y), thumb)
         draw.text(((i % 3) * 360 + 18, (i // 3) * 540 + 520), f'Walking-{i+1:02d}', fill='black')
     sheet.save(args.out / 'Alle_Gehposen.png')
-    manifest = {'method': 'local SDXL LoRA + IP-Adapter + OpenPose + ISNet-Anime',
+    manifest = {'method': 'local SDXL LoRA + IP-Adapter + guide control + ISNet-Anime',
+        'guide_origin': poses.get('origin'), 'working_native_scale': work_scale,
+        'common_output_resize': output_ratio,
         'scale': 10, 'source_canvas': poses['canvas'], 'shared_crop': crop,
-        'root_in_png': [poses['root'][0] - crop[0], poses['root'][1] - crop[1]],
-        'ground_y_in_png': poses['ground_y'] - crop[1], 'frame_size': list(frames[0].size),
+        'root_in_png': [(poses['root'][0] - crop[0]) * output_ratio,
+                        (poses['root'][1] - crop[1]) * output_ratio],
+        'ground_y_in_png': (poses['ground_y'] - crop[1]) * output_ratio, 'frame_size': list(frames[0].size),
         'preview_frame_ms': 110, 'preview_timing_is_not_native_game_timing': True,
-        'upper_body_reference': sources[0].name if args.lock_upper_body else None,
-        'upper_body_split_y': 270 if args.lock_upper_body else None,
+        'upper_body_reference': None,
         'per_frame_rescaling': False, 'game_pack_installed': False,
         'native_offsets_still_need_review': True, 'matting_model_sha256': sha(args.model),
         'images': records}
@@ -161,6 +154,7 @@ def main():
 <img id="bild"><p><button id="prev">Zurück</button><button id="play">Abspielen</button><button id="next">Nächstes Bild</button></p>
 <label>Tempo: <input id="fps" type="range" min="1" max="20" value="9"></label><p id="nummer"></p>
 <p><a href="Alle_Gehposen.png">Alle sechs Bilder ansehen</a> · <a href="placement.json">Größe und Position</a></p>
+<p><a href="Originalvergleich.webp">Bewegter Vergleich mit dem Original</a> · <a href="Originalvergleich.png">Alle Originalvergleiche</a></p>
 <script>const frames=FILES;let index=0,timer=null;const img=document.querySelector('#bild');function show(){img.src=frames[index];document.querySelector('#nummer').textContent=`Bild ${index+1} von ${frames.length}`}
 function stop(){clearInterval(timer);timer=null;document.querySelector('#play').textContent='Abspielen'}function start(){stop();timer=setInterval(()=>{index=(index+1)%frames.length;show()},1000/+document.querySelector('#fps').value);document.querySelector('#play').textContent='Anhalten'}
 document.querySelector('#next').onclick=()=>{stop();index=(index+1)%frames.length;show()};document.querySelector('#prev').onclick=()=>{stop();index=(index+frames.length-1)%frames.length;show()};document.querySelector('#play').onclick=()=>timer?stop():start();document.querySelector('#fps').oninput=()=>{if(timer)start()};show();</script>'''.replace('FILES', filenames)
@@ -171,6 +165,9 @@ document.querySelector('#next').onclick=()=>{stop();index=(index+1)%frames.lengt
             'placement.json', 'Animation.webp', 'Alle_Gehposen.png', 'Vorschau.html')]
         for path in paths:
             archive.write(path, path.relative_to(args.out).as_posix())
+        for name in ('Originalvergleich.webp', 'Originalvergleich.png'):
+            if (args.out / name).exists():
+                archive.write(args.out / name, name)
     print(json.dumps({'frames': len(frames), 'size': list(frames[0].size), 'out': str(args.out.resolve())}), flush=True)
 
 

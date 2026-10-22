@@ -25,15 +25,21 @@ def main():
     parser.add_argument('--threads', type=int, default=0)
     parser.add_argument('--device', choices=('auto', 'cpu', 'cuda'), default='auto')
     parser.add_argument('--pose', help='Render only this named pose from poses.json')
+    parser.add_argument('--skip-pose', action='append', default=[],
+                        help='Skip a completed calibration phase instead of generating it twice')
     parser.add_argument('--lora-scale', type=float, default=.85)
     parser.add_argument('--control-scale', type=float, default=.8)
     parser.add_argument('--control-end', type=float, default=.85)
     parser.add_argument('--steps', type=int, default=28)
+    parser.add_argument('--latents-only', action='store_true',
+                        help='Decode separately after releasing the large generation models')
     parser.add_argument('--offload', choices=('auto', 'none', 'model', 'group'), default='auto')
     parser.add_argument('--max-poses', type=int, default=3)
     parser.add_argument('--reference-image', type=Path)
     parser.add_argument('--ip-adapter', type=Path)
     parser.add_argument('--ip-scale', type=float, default=.6)
+    parser.add_argument('--ip-mode', choices=('all', 'style'), default='all',
+                        help='Style mode avoids copying the reference body posture')
     args = parser.parse_args()
     if not 1 <= args.steps <= 100 or not 0 < args.control_end <= 1:
         raise ValueError('Invalid inference settings')
@@ -72,10 +78,12 @@ def main():
         pipe.load_ip_adapter(str(args.ip_adapter.resolve()), subfolder='sdxl_models',
             weight_name='ip-adapter-plus_sdxl_vit-h.safetensors',
             image_encoder_folder='models/image_encoder', local_files_only=True)
-        pipe.set_ip_adapter_scale(args.ip_scale)
+        ip_scale = ({'up': {'block_0': [0., args.ip_scale, 0.]}}
+                    if args.ip_mode == 'style' else args.ip_scale)
+        pipe.set_ip_adapter_scale(ip_scale)
         progress.update(reference_image=str(args.reference_image.resolve()),
             reference_sha256=hashlib.sha256(args.reference_image.read_bytes()).hexdigest(),
-            ip_adapter_scale=args.ip_scale)
+            ip_adapter_scale=ip_scale, ip_adapter_mode=args.ip_mode)
     offload = args.offload
     if offload == 'auto':
         offload = 'group' if device.type == 'cuda' and compute['accelerator_memory'] < 12 * 1024**3 else 'none'
@@ -99,7 +107,9 @@ def main():
         raise ValueError('GPU offloading requires --device cuda')
     progress['offload'] = offload
     pose_data = json.loads((args.guides / 'poses.json').read_text(encoding='utf-8'))
-    poses = [pose for pose in pose_data['poses'] if not args.pose or pose['name'] == args.pose]
+    width, height = pose_data.get('canvas', [512, 512])
+    poses = [pose for pose in pose_data['poses']
+             if (not args.pose or pose['name'] == args.pose) and pose['name'] not in args.skip_pose]
     if not poses:
         raise ValueError('Unknown pose: ' + str(args.pose))
     conditioning = {}
@@ -117,19 +127,27 @@ def main():
         if device.type == 'cuda':
             torch.cuda.empty_cache()
     frames = []
+    if args.latents_only:
+        pipe.vae.to('cpu')
+        if device.type == 'cuda':
+            torch.cuda.empty_cache()
     for pose in poses[:args.max_poses]:
         progress.update(status='rendering', pose=pose['name'], step=0)
         report()
-        prompt = ('scivsimonv1, painted 2D game character, full body, three-quarter side view facing right, '
-                  'muscular male warrior with shoulder-length brown hair ending at the shoulders, '
-                  'charcoal black armor with gold edges and rivets, short segmented battle skirt, '
-                  'armored bracers, matching smooth fitted greaves on both legs and tall armored boots, '
-                  + pose['description'] + ', plain solid gray background, detailed painted illustration')
+        prompt = ('scivsimonv1, full body detailed painted game character, walking right in profile, '
+                  'tall athletic man, shoulder-length brown hair, black and gold armor, '
+                  'short battle skirt, matching smooth greaves, fitted boots, gray background. '
+                  + pose['description'])
         negative = ('3d render, sculpture, plastic, photograph, blurry, text, logo, scenery, '
-                    'extra limbs, duplicate body, cropped head, cropped feet, '
+                    'pixel art, low resolution, soft focus, thick outlines, '
+                    'extra limbs, duplicate body, cropped head, cropped feet, chibi, giant boots, '
                     'hair below shoulders, very long hair, knee pads, protruding knee guards, asymmetrical knee armor')
 
         def on_step(pipeline, index, timestep, kwargs):
+            if device.type == 'cuda':
+                # HIP launches asynchronously; otherwise progress can say
+                # "35/36" while most GPU work is still queued.
+                torch.cuda.synchronize(device)
             progress['step'] = index + 1
             if index + 1 == args.steps:
                 save_file({'latents': kwargs['latents'].detach().cpu().contiguous()},
@@ -141,23 +159,27 @@ def main():
         try:
             image = pipe(prompt=prompt, negative_prompt=negative,
                 image=Image.open(args.guides / (pose['name'] + '.png')).convert('RGB'),
-                width=512, height=512, num_inference_steps=args.steps, guidance_scale=5.,
+                width=width, height=height, num_inference_steps=args.steps, guidance_scale=5.,
                 controlnet_conditioning_scale=args.control_scale, control_guidance_end=args.control_end,
                 generator=torch.Generator('cpu').manual_seed(20261021),
+                output_type='latent' if args.latents_only else 'pil',
                 callback_on_step_end=on_step, **conditioning).images[0]
         except Exception as exc:
             progress.update(status='failed', error=str(exc), traceback=traceback.format_exc())
             report()
             raise
         filename = pose['name'] + '.png'
-        image.save(args.out / filename)
+        if not args.latents_only:
+            image.save(args.out / filename)
         frames.append({'image': filename, 'prompt': prompt, 'negative_prompt': negative,
+                       'rgb_pending': args.latents_only,
                        'seconds': time.monotonic() - tick})
         progress['images'] = frames
         report()
-    progress.update(status='complete', images=frames,
+    progress.update(status='latents_complete' if args.latents_only else 'complete', images=frames,
         lora_sha256=hashlib.sha256((args.lora / 'pytorch_lora_weights.safetensors').read_bytes()).hexdigest(),
-        note='RGB review only. Pose points approximate; native mapping and alpha cleanup pending.')
+        guide_origin=pose_data.get('origin'),
+        note='RGB review only; native placement and alpha cleanup pending.')
     if device.type == 'cuda':
         progress['peak_gpu_allocated_bytes'] = torch.cuda.max_memory_allocated(device)
     report()

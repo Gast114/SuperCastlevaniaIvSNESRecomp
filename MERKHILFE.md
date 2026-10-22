@@ -316,7 +316,18 @@ ist separat gespeichert. Das ist eine gezielte Bildbearbeitung mit Imagegen.
 Die LoRA wurde dadurch noch nicht neu trainiert. Die Beschreibung für neue
 lokale Bilder enthält jetzt ebenfalls Schulterhaare und keine Knieschoner.
 
-## Die sechs neuen Gehposen ansehen
+## Die erste Gehserie ist noch nicht passend
+
+Die erste Serie wurde wegen falscher Schulter-, Arm- und Beinbewegungen
+abgelehnt. Sie ist nur zum Vergleichen aufgehoben. Nicht als fertige Animation
+ins Spiel einbauen. Der feste Oberkörper war ein Fehler: Auch Schultern und
+Arme müssen sich in jeder Gehphase ändern.
+
+Die neue Arbeit liegt unter `walking-native-2026-10-22` im LoRA-Pilotordner.
+Hier kommen die Formen direkt aus den kleinen Original-Sprites. Alle Bilder
+behalten denselben Standpunkt. Die HD-Vorlage gibt nur das Aussehen vor.
+
+### Die verworfene erste Serie ansehen
 
 Die neue Serie liegt hier:
 
@@ -336,8 +347,9 @@ Die Bilder wurden lokal mit der Radeon erstellt. Für das Aussehen wurde deine
 korrigierte Bildvorlage mit Schulterhaaren verwendet. Die Körperhaltungen kamen
 aus sechs festen Posenvorlagen. Unerwünschte zusätzliche Knieschoner wurden an
 den betreffenden Bildern lokal nachbearbeitet.
-Gesicht und obere Rüstung werden aus derselben Phase übernommen. So wechseln
-sie beim Laufen nicht ständig. Die Beine zeigen die sechs Gehphasen.
+Gesicht und obere Rüstung wurden aus derselben Phase übernommen. Dadurch
+fehlte die richtige Bewegung im Oberkörper. Diesen Aufbau verwenden wir nicht
+für die neue Serie.
 
 Alle sechs PNGs haben dieselbe Bildfläche. Die Datei **placement.json** merkt
 sich den gemeinsamen Ausschnitt und die Position. Hebe diese Datei mit auf.
@@ -345,9 +357,38 @@ Die Serie ist noch eine Vorschau. Im Spiel sind weiterhin deine bisherigen
 Bilder aktiv. Vor einem Einbau müssen Größe, Standpunkt und Übergänge zu den
 anderen Posen geprüft werden.
 
+## Neue Gehserie mit den Original-Bewegungen
+
+Die neue Vorschau liegt hier:
+
+```text
+artwork-local\lora-pilot-2026-10-21\walking-native-2026-10-22\packaged
+```
+
+- **Originalvergleich.webp** zeigt Original und HD gleichzeitig in Bewegung.
+- **Originalvergleich.png** zeigt alle sechs Vergleiche als ein großes Bild.
+- Öffne **Vorschau.html** per Doppelklick im Datei-Ordner. Mit **Nächstes Bild**
+  oder **Zurück** kannst du jeden Schritt einzeln ansehen.
+- Unter **frames** liegen sechs durchsichtige PNGs. Alle sind **320 × 510 Pixel**.
+- **Gehposen_10x.zip** enthält die Bilder und die Vorschau zusammen.
+
+Diesmal geben die kleinen Original-Sprites die Formen vor. Das betrifft auch
+die Schultern, die Arme und die beiden Beine. Der Oberkörper wird nicht mehr
+aus einem einzigen Bild kopiert. Das Aussehen kommt aus der HD-Vorlage und
+der lokal gelernten Figur. Es wurden keine Bilder hochgeladen.
+
+Die Bewegung passt so deutlich besser. Bei der Rüstung ändern sich noch kleine
+Details zwischen den Bildern. Die Serie bleibt deshalb ein **Entwurf**.
+Sie ist noch nicht im Spiel eingebaut. Deine bisherigen Spielbilder sind aktiv.
+Hebe **placement.json** mit auf. Darin stehen der gemeinsame Standpunkt und
+die Größe für einen späteren Einbau.
+
+Eine geprüfte Sicherheitskopie liegt auch im Backup-Ordner:
+`D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-21-local-lora\2026-10-22-walking-native-shapes`.
+
 ## Unsere Arbeitsweise
 
 - Nur notwendige, gezielte Prüfungen. Keine unnötigen Testreihen.
-- Du erstellst die Bilder. Ich baue sie ins Spiel ein.
+- Neue Figuren und Bewegungen entstehen zuerst als Vorschau. Danach folgt der Einbau ins Spiel.
 - Neue Alltagshinweise ergänze ich hier in einfacher Sprache.
 - Technische Einzelheiten für die Weiterarbeit stehen in `docs/HANDOFF.md`.

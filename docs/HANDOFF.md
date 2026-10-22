@@ -6,6 +6,50 @@ unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
 ## Aktuell: lokaler SDXL-LoRA-Pilot und GPU-Beschleunigung
 
+**Korrektur zum bisherigen Walking-Abschluss:** Nutzer hat die Serie wegen
+falscher Schulter-, Arm- und Beinbewegungen abgelehnt. `packaged-final` ist
+historischer Dateiname, KEINE akzeptierte Endfassung. `--lock-upper-body`
+friert die benötigte Schulter-/Armdrehung ein und darf für die Korrektur nicht
+benutzt werden. Vorlagen im alten simon_walk_poses.json nur manuell angenähert;
+Phasen 1/4 und 2/5 im Ergebnis viel zu ähnlich. Keine weiteren freien
+Posebeschreibungen als Nachweis für exakte native Bewegung behandeln.
+
+Neuer Ansatz unter `walking-native-2026-10-22`: prepare_native_walk.py liest
+die sechs Originalzellen aus body.png, mit gemeinsamem 10x-Transform und ohne
+Einzelbildzentrierung. Smoothed Canny plus vollständige Alpha-Kontur erhalten
+Schulter-, Hand- und Beinpositionen. render_sdxl_trial.py unterstützt jetzt
+IP-Adapter nur im Stilblock (`--ip-mode style`), damit Referenzhaltung nicht
+erneut alle Phasen überschreibt. Öffentlicher Xinsir-Canny-Controller lokal
+geladen, Revision1271357eda52d54b857c650cacb5b51144643ccb. Keine Uploads.
+Phase04 zuerst wirklich geprüft, danach übrige fünf berechnet. Neue komplette
+Ausgabe jetzt `walking-native-2026-10-22/packaged`: sechsRGBA-PNGs320x510,
+Originalvergleich.webp/png, Animation.webp, HTML-Einzelschritt, ZIP und
+placement.json. **Entwurf, nicht vom Nutzer akzeptiert oder im Spiel installiert.**
+Konturen/Schulter-/Arm-/Beinpositionen deutlich näher am Original. Rüstungsdetails
+variieren weiterhin zwischen Phasen; nicht als fertige konsistente Spielfigur
+verkaufen. Keine erneute Oberkörperkopie als vermeintliche Lösung einführen.
+
+Tatsächliche Einstellungen:1024²Arbeitsfläche20x, Xinsir-Canny1,1bis90%,
+LoRA0,65, IP-Adapter nurStilblock0,8,36Schritte, Seed20261021. Ursprünglicher
+600er-Adapter unverändert. Restliche fünf mit `--offload none --latents-only`,
+je161–168s, Peak11846851584Bytes. Phase04 aus geprüftem ersten Lauf wiederverwendet.
+`decode_sdxl_latents.py` hat alle sechs danach gemeinsam mit allein geladenem
+FP32-VAE/GPU-Matrix-Attention und512erKacheln ausgegeben. Erste Ausgabe146s
+inklusive MIOpen-Vorbereitung, danach5,0–5,2s/Bild, alle vollständig erfolgreich.
+MIOpen meldete dabei einmal "Invalid elapsed time"; kein Abbruch, PNGs geprüft.
+Keine Warmup-Zahl als allgemeine Benchmark behaupten.
+
+`package_walk.py` hat die Oberkörper-Sperre jetzt vollständig entfernt.
+Originalformen/Phasen behalten gemeinsame Koordinaten, gemeinsame20x→10x-
+Reduktion, kein individuelles Zentrieren oder Normalisieren der Füße.
+`review_native_walk.py` zeigt die native Kontur grün auf dem HD-Bild.
+Quellen: guides-hd, rendered(Safetensors + Phase04-Provenienz), decoded.
+Die Zwischenordner guides/guides-v2 enthalten unvollständige frühere Konturen,
+probe-04 war zu weich/falsch und ist keine Ausgabe. Nur packaged verlinken.
+Backup: `D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-10-21-local-lora/2026-10-22-walking-native-shapes`,
+80Dateien mit SHA256 geprüft, inkl. gültiger Bilder/Latents/Guides/Werkzeuge/Docs,
+ohne erneut kopierte Basismodelle oder Python-Venvs.
+
 **Neuester Auftrag: sechs Gehposen erstellen.** Arbeit unter
 `artwork-local/lora-pilot-2026-10-21/walking-2026-10-22/`. Sechs native Phasen
 anhand des lokalen Atlas angesehen und manuell angenähert: assets/character/
