@@ -1,0 +1,10 @@
+{
+  "format": "COCO18",
+  "canvas": [512,512],
+  "origin": "Manually placed approximate 2D control points; not automatic detection or final SNES pose mapping.",
+  "poses": [
+    {"name":"walk-holdout", "description":"walking in a broad stride with arms swinging", "points":[[309,106],[269,130],[293,142],[304,196],[350,180],[228,137],[194,196],[210,226],[265,281],[310,349],[327,445],[239,276],[205,353],[170,444],[309,98],null,[291,104],null]},
+    {"name":"arm-forward", "description":"standing with the near arm extended straight horizontally forward", "points":[[309,106],[269,130],[293,142],[350,145],[420,145],[228,137],[205,192],[235,215],[265,281],[285,370],[301,465],[239,276],[219,366],[193,467],[309,98],null,[291,104],null]},
+    {"name":"arm-up", "description":"standing with the near arm reaching upward overhead", "points":[[309,106],[269,130],[293,142],[334,100],[320,35],[228,137],[205,192],[235,215],[265,281],[285,370],[301,465],[239,276],[219,366],[193,467],[309,98],null,[291,104],null]}
+  ]
+}

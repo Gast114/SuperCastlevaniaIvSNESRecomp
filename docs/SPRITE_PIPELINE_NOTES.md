@@ -4,6 +4,12 @@ Stand: 21.10.2026. Recherche, Pose-Inventar und vorbereitetes Blender-Exportstud
 
 Die Empfehlung und Herstellerquellen stehen in [SPRITE_ANIMATION.md](../SPRITE_ANIMATION.md). Diese Datei hält unsere projektspezifischen Vorgaben fest.
 
+Der erste 3D-Körper wurde qualitativ abgelehnt. Ein lokaler
+SDXL-LoRA-Pilot aus den gemalten Nutzerbildern ist fertig; CPU- und GPU-Ausführung
+sind nachgewiesen, die Pose-Genauigkeit ist noch unzureichend; siehe [LOCAL_LORA.md](LOCAL_LORA.md).
+Die folgenden Vorgaben für PNG-Ausgabe und native Zuordnung gelten auch für
+später ausgewählte LoRA-Ergebnisse. Noch keine LoRA-Frames im Spiel installiert.
+
 ## Ausgabe aus dem Animationsprogramm
 
 - Fertige RGBA-PNGs in gewünschter HD-Auflösung, mit erhaltenen weichen Alphakanten. Kein Video als Endformat für das Spiel.

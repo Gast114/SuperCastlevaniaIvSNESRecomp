@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "trigger_word": "scivsimonv1",
+  "canvas": [512, 512],
+  "background": [128, 128, 128],
+  "images": [
+    {"name":"simon-01-idle","split":"train","source":"D:/Super Castlevania IV Recomp/Assets (ausgeschnitten)/Simon Belmont/Idle-01_HD_10x_240x460.png","caption":"painted 2D game character, full body, three-quarter side view facing right, standing with feet apart and one fist raised near the chest, plain gray background"},
+    {"name":"simon-02-duck","split":"train","source":"D:/Super Castlevania IV Recomp/Assets (ausgeschnitten)/Simon Belmont/Ducking-01_HD_10x_230x350.png","caption":"painted 2D game character, full body, three-quarter side view facing right, crouching low with one knee on the ground and one knee raised, elbows bent, plain gray background"},
+    {"name":"simon-03-jump","split":"train","source":"D:/Super Castlevania IV Recomp/Assets (ausgeschnitten)/Simon Belmont/Jumping-01_HD_10x_200x450.png","caption":"painted 2D game character, full body, three-quarter side view facing right, airborne with one knee raised and the opposite leg extended down behind, elbows bent, plain gray background"},
+    {"name":"simon-04-walk","split":"train","source":"C:/Users/Gaming/Downloads/Walking-01_HD_10x.png","caption":"painted 2D game character, full body, three-quarter side view facing right, walking with one knee raised forward and the opposite foot planted, bent arms, plain gray background"},
+    {"name":"simon-05-walk","split":"train","source":"C:/Users/Gaming/Downloads/Walking-02_HD_10x.png","caption":"painted 2D game character, full body, three-quarter side view facing right, walking in a long stride with one leg reaching forward and the opposite foot trailing behind, arms swinging, plain gray background"},
+    {"name":"simon-06-walk","split":"train","source":"C:/Users/Gaming/Downloads/Walking-03_HD_10x.png","caption":"painted 2D game character, full body, three-quarter side view facing right, walking with the rear knee bent and rear heel raised while the forward leg supports the body, arms swinging, plain gray background"},
+    {"name":"simon-07-walk","split":"train","source":"C:/Users/Gaming/Downloads/Walking-04_HD_10x.png","caption":"painted 2D game character, full body, three-quarter side view facing right, walking with the forward thigh raised horizontally and the opposite leg straight, arms swinging, plain gray background"},
+    {"name":"simon-08-walk","split":"train","source":"C:/Users/Gaming/Downloads/Walking-05_HD_10x.png","caption":"painted 2D game character, full body, three-quarter side view facing right, walking in a broad stride with both knees slightly bent and the rear heel raised, plain gray background"},
+    {"name":"simon-09-holdout","split":"holdout","source":"C:/Users/Gaming/Downloads/Walking-06_HD_10x.png","caption":"painted 2D game character, full body, three-quarter side view facing right, walking with feet spread and arms swinging, plain gray background"}
+  ]
+}

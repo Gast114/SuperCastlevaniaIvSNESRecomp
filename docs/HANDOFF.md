@@ -1,19 +1,88 @@
-# Arbeitsstand & Übergabe (2026-10-21, 3D-Modell qualitativ abgelehnt)
+# Arbeitsstand & Übergabe (2026-10-22, LoRA-Pilot fertig und AMD-GPU aktiv)
 
-**Dauerhafte Nutzerpräferenz:** Vergessbare Bedienhinweise künftig immer in `MERKHILFE.md` im Projekt-Hauptordner ergänzen, in einfacher Sprache. Diese Datei ist die kurze Anleitung für den Nutzer; `HANDOFF.md` bleibt die technische Übergabe. Vorhandene Abschnitte aktualisieren, statt dieselben Hinweise auf viele neue Dateien zu verteilen.
+**Dauerhafte Nutzerpräferenz:** Vergessbare Bedienhinweise immer in MERKHILFE.md
+in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
+unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
-## Aktuelle Rückmeldung zum Pilot
+## Aktuell: lokaler SDXL-LoRA-Pilot und GPU-Beschleunigung
+
+Nutzer wollte nach dem abgelehnten 3D-Modell LoRA ausprobieren und ausdrücklich
+lokal arbeiten: Dauer zunächst egal. Danach Auftrag, die Leistung des BosgameM6
+mit Radeon890M und KI-Chip zu verwenden. Keine Cloud-Uploads oder bezahlten Calls;
+fal-Tab ohne Upload geschlossen. Kein API-Schlüssel erforderlich.
+
+**Alle Prozesse dieses Piloten sind fertig**, keinen alten Job neu starten:
+`artwork-local/lora-pilot-2026-10-21`. CPU600Updates mit acht HD-Nutzerbildern,
+Walking06 als Holdout, ca.93min; drei Review-Bilder danach ca.14min. Finale
+LoRA-SHA256: `3d014d02897b05bada80f2b72c7f3574bb26faa14b8dbc08f70284f7d1d8b282`.
+Originale/Alpha/Captions/Quellhashes im Dataset, Rezepte in assets/character.
+Aktuelle Walking-Downloads unterscheiden sich vom installierten Spielpaket;
+kein stiller Austausch. Abgelehntes Meshy-Modell/A-Pose nicht mittrainiert.
+
+**Hardware tatsächlich erfasst:** RyzenAI9HX370,12Kerne/24Threads, Radeon890M
+(gfx1150),32GiB installiert,8GiB Grafikreservierung. ROCm meldet ca.16,9GiB
+nutzbaren GPU-Speicher; GPU-Renderpeak10,53GiB. Dynamische Speichernutzung klappt;
+keine BIOS-, Windows-Energieplan- oder Treiberänderung vorgenommen. NPU wird vom
+PyTorch-LoRA-Ablauf nicht genutzt, kein bloßes Addieren von CPU/GPU/NPU-TOPS.
+
+**CPU-Umgebung:** artwork-local/lora-runtime, Torch2.14.1+cpu.
+**Neue GPU-Umgebung:** artwork-local/lora-rocm-runtime, Torch2.14.0+rocm10.1.0,
+AMD-gfx1150/115x-Gerätepakete, Diffusers0.41.0/Transformers5.20.2/PEFT0.21.2.
+Offizieller AMD-Paketindex, Python3.13.16. Das frühere Argument fehlender
+Windows-Unterstützung galt für den damals geprüften7.2.1-Pfad; aktuelles10.1
+führt890M/gfx1150. Native GPU-Ausführung funktioniert mit installiertem Treiber.
+
+**Echte Nachweise:** GPU-Conv/SDPA-BF16-Gradienten gültig, danach zwei volle
+SDXL-LoRA-Updates aus CPU-Checkpoint600 in `gpu-training-check-2026-10-22`.
+Schritt60170,96s (Aufwärmen),6021,34s, beide endliche Gradienten und Loss,
+Checkpoint602 gespeichert. CPU zuvor6–11s/Update. Keine Langzeit- oder
+bitgleiche A/B-Benchmarkbehauptung aus nur einem warmen GPU-Schritt ableiten.
+
+Einzelner GPU-Poseversuch mit stärkerem ControlNet1,25 bis zum Schluss.
+Erster Versuch scheiterte nach28Denoise-Schritten bei FP32-VAE-SDPA mit
+hipErrorProfilerNotInitialized. `render_sdxl_trial.py` verwendet nur im ROCm-VAE
+nun gewöhnliche GPU-Matrix-Attention; BF16-UNet/ControlNet bleiben optimiert.
+Korrigierter Lauf vollständig fertig: `review-gpu-2026-10-22-fixed/arm-forward.png`,
+109,32s inklusive erster VAE-Vorbereitung, derselbe600er-Adapter. Gescheiterter
+Ordner ohne fertiges Bild bleibt als Diagnose; nicht als Ergebnis verwenden.
+
+**Bilder wirklich angesehen:** Gemalter Schwarz-Gold-Look erkennbar, klar näher
+an Nutzerbildern als abgelehntes Meshy-Modell. Details/Proportionen nicht völlig
+stabil. Ursprünglicher waagerechter Arm hing herunter; verstärkte GPU-Probe zeigt
+Arm nach vorn, aber Ellenbogen noch gebeugt. Kein perfektes Pose-Following oder
+fertige Spielanimation behaupten. Alpha/Ursprung/Handpunkt/native Zuordnung
+weiter offen. Aktive9HD-Posen und Spiel-/Save-Dateien unverändert.
+
+**Werkzeuge:** tools/prepare_character_lora.py sowie tools/lora. Trainer heißt
+jetzt `train_sdxl.py` (CPU/ROCm), `compute.py` wählt auto/cpu/cuda und standardmäßig
+alle24CPU-Threads; cuda bedeutet hier AMD-HIP. RDNA3.5-Attention-Flag
+TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1 pro Prozess, mit0 übersteuerbar.
+Vollständige Installations-Freezes im Pilotordner, direkte CPU-/GPU-Pins unter
+requirements.txt/requirements-rocm.txt. Fortsetzen verwendet normale Priorität.
+Eigene Adapter/Optimizer/RNG-Checkpoints, keine fremden Pickles laden.
+
+Bedienung/Dateien/Quellen und Beispiele: [LOCAL_LORA.md](LOCAL_LORA.md),
+Alltagshinweise MERKHILFE.md. `Status.cmd` zeigt ursprünglichen fertigen Auftrag.
+Nicht nochmals600Schritte starten, nur weil eine alte Statusaufnahme training
+sagt. Neuere Statusdateien lesen. Kein GPU-Neutraining zur bloßen Wiederholung.
+
+Backup unter `D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-10-21-local-lora`:
+Originale/Dataset, Werkzeuge, Modelquellen, fertiger600er-Checkpoint und Review-
+Bilder werden gesichert, mit SHA256-Manifest. Basismodelle/Venv nicht duplizieren.
+Nur notwendige Syntax-/Abhängigkeits-/Kernel- und echte Integrationsprüfungen;
+keine Game-Neubuilds oder breiten Testreihen für diese Werkzeug-Ergänzung.
+
+## Vorherige Rückmeldung zum 3D-Pilot
 
 Nutzer: „das 3d Modell sieht zu schlecht aus, leider“. Der erzeugte Meshy-Körper
 ist damit qualitativ als Sprite-Ersatz abgelehnt. Nicht ins Spiel übernehmen
 oder weitere Animationen auf diesem Modell ausarbeiten. Dateien und Blender
 bleiben erhalten. Diese Rückmeldung widerlegt nicht grundsätzlich jeden
 3D-Produktionsweg; unser konkreter KI-Modellversuch hat den gewünschten Look
-nicht erreicht. Nächste Empfehlung: 2D-Rig aus den vorhandenen gemalten HD-Bildern,
-einmalige Zerlegung/Vervollständigung der Bildteile und kleiner Laufzyklus.
-Noch kein 2D-Rig erstellt oder neue Software dafür eingerichtet.
+nicht erreicht. Ein 2D-Rig war danach vorgeschlagen, aber noch nicht erstellt.
+Der Nutzer hat stattdessen den oben beschriebenen LoRA-Versuch gewählt.
 
-## Aktuell: Simon-Modell, Skelett, Bewegungen und PNG-Export erstellt
+## Historisch: abgelehnter Simon-Modellversuch mit Skelett und PNG-Export
 
 Nutzer hat den Meshy/Blender-Piloten und gegebenenfalls die Blender-Installation
 beauftragt, Meshy selbst angemeldet und den Browser-Dateizugriff aktiviert.

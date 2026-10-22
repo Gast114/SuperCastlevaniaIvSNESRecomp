@@ -4,9 +4,15 @@ Recherche vom 21. Oktober 2026.
 
 **Aktuelle Entscheidung: Die Qualität des ersten 3D-Modells wurde vom Nutzer abgelehnt.**
 Mit diesem Modell arbeiten wir nicht als Ersatz für die gemalten Sprites weiter.
-Mein nächster Vorschlag ist ein 2D-Skelett aus den vorhandenen HD-Bildern.
-Die Bildteile und verdeckten Stellen müssen einmal sauber vorbereitet werden.
-Eine passende Laufprobe mit diesem Aufbau steht noch aus.
+**Neuer Auftrag:** Der Nutzer möchte LoRA mit seinen guten HD-Bildern ausprobieren.
+Das Training soll lokal laufen; längere Rechenzeit ist für ihn in Ordnung.
+Der lokale SDXL-LoRA-Pilot mit acht Trainingsbildern, einem zurückgehaltenen
+Vergleichsbild und drei Pose-Proben ist fertig. GPU-Training und Bilderzeugung
+funktionieren inzwischen auf der Radeon 890M. Der gemalte Look ist erkennbar,
+aber Rüstungsdetails und exakte Körperhaltung sind noch nicht stabil genug für
+eine fertige Animationsreihe. Eine zusätzliche GPU-Probe verstärkt die Pose-Steuerung.
+Status und Bedienung stehen in [MERKHILFE.md](MERKHILFE.md#simon-mit-lora-gleich-aussehen-lassen).
+Technische Details stehen in [LOCAL_LORA.md](docs/LOCAL_LORA.md).
 
 **Vorhandener 3D-Pilot:** Blender ist eingerichtet.
 Es gibt eine bewegliche Simon-Farbfigur, sechs Laufbilder und drei Angriffsbilder
