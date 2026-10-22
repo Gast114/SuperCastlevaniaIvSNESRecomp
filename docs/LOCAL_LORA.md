@@ -111,6 +111,46 @@ Kontrollstärke verändern und bei wenig GPU-Speicher Offloading verwenden.
 
 ## Bedienung und Dateien
 
+### Sechs Gehposen mit Bildreferenz (22.10.)
+
+`walking-2026-10-22` ergänzt den Pilot um sechs manuell gesetzte Gehphasen in
+`assets/character/simon_walk_poses.json`. Sie orientieren sich an der beobachteten
+nativen Reihenfolge. Ihre Knochenpunkte sind Annäherungen, keine automatisch
+erkannte oder bereits installierte native Zuordnung.
+
+Zur LoRA kommt eine echte lokale Bildreferenz mit
+[IP-Adapter Plus](https://huggingface.co/h94/IP-Adapter), Revision
+`018e402774aeeddd60609b4ecdb7e298259dc729`. Nur ViT-H-Encoder und notwendige
+SDXL-Adapter-Safetensors, ohne Auth-Token heruntergeladen. Embedding einmal aus
+der korrigierten Bildvorlage, wiederverwendet für alle sechs. Encoder anschließend
+auf CPU, GPU für Diffusion freigegeben. Umsetzung nach
+[Diffusers-IP-Adapter](https://huggingface.co/docs/diffusers/using-diffusers/ip_adapter).
+
+Parameter:32Schritte, LoRA0,65, IP0,6, ControlNet1,4 bis Ende, gleicher Seed.
+Echte GPU-Zeiten37–39s je Bild, alle sechs vollständig ausgeführt. Kein erneutes
+LoRA-Training oder Cloud-Imagegen für diese Gehserie. Knie-Detailkorrektur
+bei02/05 am Ende deterministisch: glatte Knie-/Schienbeinbereiche aus Walking03
+mit expliziten Polygonmasken und ganzzahliger Translation übernommen. Lokale
+Diffusions-Inpaint-Versuche erzeugten erneut unpassende Platten und sind nicht final.
+Das endgültige Werkzeug benötigt dafür weder Modell noch neue Generierung.
+
+`download_reference_tools.py` lädt zusätzlich den öffentlichen ISNet-Anime-
+ONNX-Stand aus dem rembg-Release, prüft dessen upstream-MD5 und protokolliert
+SHA256. `package_walk.py` nutzt ONNXRuntime1.31.0 auf CPU zum Freistellen,
+behält weiche Alphakanten und entfernt abgetrennte Maskenreste. Fester
+gemeinsamer Ausschnitt für alle sechs Bilder, weder individuelle Skalierung
+noch Fußpunkt-Normalisierung. Quelle der Segmentierung:
+[rembg](https://github.com/danielgatis/rembg).
+
+Finale Vorschau unter `walking-2026-10-22/packaged-final`: transparente PNGs,
+WebP-Loop und HTML mit Einzelbild-Schaltung. Vorschautempo ist ausdrücklich
+kein neues Spieltiming. Für stabile Identität wird der Oberkörper aus Phase01
+übernommen, mit der kleinen vorgegebenen Gehbewegung in Y. Übergang bei Y270,
+vormultiplizierte Alphamischung und direkte Auswahl unterschiedlich geformter
+Konturen verhindern graue, durchscheinende Ränder. Gesicht und obere Rüstung
+werden wiederverwendet; Beine/untere Rockbereiche behalten die Phasen.
+Aktive Spielbilder wurden nicht überschrieben.
+
 Pilot: `artwork-local/lora-pilot-2026-10-21`.
 `Status.cmd` zeigt den ursprünglichen Auftrag; `Anhalten.cmd`/`Fortsetzen.cmd`
 sind für unterbrochenes Training. Der erste Lauf ist bereits fertig, nicht

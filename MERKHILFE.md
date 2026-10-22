@@ -316,6 +316,35 @@ ist separat gespeichert. Das ist eine gezielte Bildbearbeitung mit Imagegen.
 Die LoRA wurde dadurch noch nicht neu trainiert. Die Beschreibung für neue
 lokale Bilder enthält jetzt ebenfalls Schulterhaare und keine Knieschoner.
 
+## Die sechs neuen Gehposen ansehen
+
+Die neue Serie liegt hier:
+
+```text
+artwork-local\lora-pilot-2026-10-21\walking-2026-10-22\packaged-final
+```
+
+- Öffne [Vorschau.html](artwork-local/lora-pilot-2026-10-21/walking-2026-10-22/packaged-final/Vorschau.html).
+- **Abspielen** zeigt die Bewegung. **Nächstes Bild** zeigt einen einzelnen Schritt.
+- Mit dem Regler änderst du nur das Tempo der Vorschau.
+- [Alle_Gehposen.png](artwork-local/lora-pilot-2026-10-21/walking-2026-10-22/packaged-final/Alle_Gehposen.png) zeigt alle sechs Bilder nebeneinander.
+- **Animation.webp** ist die bewegte Vorschau als Datei.
+- Im Unterordner **frames** liegen die sechs PNGs mit durchsichtigem Hintergrund.
+- **Gehposen_10x.zip** enthält die sechs PNGs und die Vorschau zusammen.
+
+Die Bilder wurden lokal mit der Radeon erstellt. Für das Aussehen wurde deine
+korrigierte Bildvorlage mit Schulterhaaren verwendet. Die Körperhaltungen kamen
+aus sechs festen Posenvorlagen. Unerwünschte zusätzliche Knieschoner wurden an
+den betreffenden Bildern lokal nachbearbeitet.
+Gesicht und obere Rüstung werden aus derselben Phase übernommen. So wechseln
+sie beim Laufen nicht ständig. Die Beine zeigen die sechs Gehphasen.
+
+Alle sechs PNGs haben dieselbe Bildfläche. Die Datei **placement.json** merkt
+sich den gemeinsamen Ausschnitt und die Position. Hebe diese Datei mit auf.
+Die Serie ist noch eine Vorschau. Im Spiel sind weiterhin deine bisherigen
+Bilder aktiv. Vor einem Einbau müssen Größe, Standpunkt und Übergänge zu den
+anderen Posen geprüft werden.
+
 ## Unsere Arbeitsweise
 
 - Nur notwendige, gezielte Prüfungen. Keine unnötigen Testreihen.

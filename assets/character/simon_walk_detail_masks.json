@@ -1,0 +1,153 @@
+{
+  "purpose": "Remove separate knee guards by reusing smooth shin/knee artwork from Walking-03. Explicit image-coordinate patches, not automatic detection.",
+  "images": [
+    {
+      "image": "Walking-02.png",
+      "donor": "Walking-03.png",
+      "patches": [
+        {
+          "polygon": [
+            [
+              298,
+              305
+            ],
+            [
+              337,
+              304
+            ],
+            [
+              347,
+              325
+            ],
+            [
+              345,
+              376
+            ],
+            [
+              323,
+              383
+            ],
+            [
+              289,
+              360
+            ],
+            [
+              291,
+              333
+            ]
+          ],
+          "translation": [
+            0,
+            -15
+          ]
+        },
+        {
+          "polygon": [
+            [
+              211,
+              342
+            ],
+            [
+              273,
+              341
+            ],
+            [
+              280,
+              358
+            ],
+            [
+              280,
+              408
+            ],
+            [
+              251,
+              414
+            ],
+            [
+              207,
+              390
+            ]
+          ],
+          "translation": [
+            17,
+            -10
+          ]
+        }
+      ]
+    },
+    {
+      "image": "Walking-05.png",
+      "donor": "Walking-03.png",
+      "patches": [
+        {
+          "polygon": [
+            [
+              295,
+              304
+            ],
+            [
+              336,
+              303
+            ],
+            [
+              347,
+              326
+            ],
+            [
+              345,
+              376
+            ],
+            [
+              322,
+              382
+            ],
+            [
+              288,
+              359
+            ],
+            [
+              289,
+              330
+            ]
+          ],
+          "translation": [
+            0,
+            -15
+          ]
+        },
+        {
+          "polygon": [
+            [
+              211,
+              342
+            ],
+            [
+              274,
+              341
+            ],
+            [
+              281,
+              360
+            ],
+            [
+              280,
+              409
+            ],
+            [
+              250,
+              415
+            ],
+            [
+              207,
+              390
+            ]
+          ],
+          "translation": [
+            17,
+            -10
+          ]
+        }
+      ]
+    }
+  ]
+}

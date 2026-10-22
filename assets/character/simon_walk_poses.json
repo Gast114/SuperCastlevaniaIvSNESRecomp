@@ -1,0 +1,15 @@
+{
+  "format": "COCO18",
+  "canvas": [512, 512],
+  "origin": "Six manually annotated walking phases following the observed native pose order. Fixed body coordinate system; not automatic native pose detection.",
+  "root": [264, 286],
+  "ground_y": 488,
+  "poses": [
+    {"name":"Walking-01", "description":"walking to the right, near leg supporting the body with its foot planted, far leg bent backward with the heel raised, elbows bent and front fist held near the chest", "points":[[306,102],[267,134],[290,146],[297,207],[329,181],[238,144],[216,204],[246,229],[271,283],[269,373],[271,466],[248,282],[228,355],[207,416],[306,95],null,[290,101],null]},
+    {"name":"Walking-02", "description":"walking to the right, near knee lifted forward and its foot lifted off the ground, far leg supporting the body, elbows bent with the front fist held near the chest", "points":[[306,98],[267,130],[290,142],[305,201],[334,176],[238,140],[218,204],[249,231],[271,279],[315,343],[297,420],[248,278],[244,374],[228,466],[306,91],null,[290,97],null]},
+    {"name":"Walking-03", "description":"walking to the right in a broad natural stride, near foot reaching forward and far foot trailing behind, both feet close to the ground, elbows bent and front fist held near the chest", "points":[[306,104],[267,136],[290,148],[310,207],[340,183],[238,146],[217,209],[243,232],[271,285],[308,374],[345,466],[248,284],[224,368],[196,466],[306,97],null,[290,103],null]},
+    {"name":"Walking-04", "description":"walking to the right, far leg supporting the body with its foot planted, near leg bent backward with the heel raised, elbows bent and front fist held near the chest", "points":[[306,102],[267,134],[290,146],[305,205],[337,179],[238,144],[215,207],[240,235],[271,283],[232,355],[210,416],[248,282],[269,373],[271,466],[306,95],null,[290,101],null]},
+    {"name":"Walking-05", "description":"walking to the right, far knee lifted forward and its foot lifted off the ground, near leg supporting the body, elbows bent with the front fist held near the chest", "points":[[306,98],[267,130],[290,142],[300,205],[328,180],[238,140],[219,200],[250,221],[271,279],[245,374],[228,466],[248,278],[314,343],[297,420],[306,91],null,[290,97],null]},
+    {"name":"Walking-06", "description":"walking to the right in a broad natural stride, far foot reaching forward and near foot trailing behind, both feet close to the ground, elbows bent and front fist held near the chest", "points":[[306,104],[267,136],[290,148],[299,212],[329,187],[238,146],[219,204],[251,224],[271,285],[225,368],[196,466],[248,284],[308,374],[345,466],[306,97],null,[290,103],null]}
+  ]
+}

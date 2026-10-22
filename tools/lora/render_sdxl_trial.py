@@ -1,4 +1,4 @@
-"""Render up to three local pose-controlled character LoRA examples, offline.
+"""Render local pose-controlled character LoRA examples, offline.
 
 Creates RGB review pictures, not a transparent or installed game character pack.
 """
@@ -30,9 +30,15 @@ def main():
     parser.add_argument('--control-end', type=float, default=.85)
     parser.add_argument('--steps', type=int, default=28)
     parser.add_argument('--offload', choices=('auto', 'none', 'model', 'group'), default='auto')
+    parser.add_argument('--max-poses', type=int, default=3)
+    parser.add_argument('--reference-image', type=Path)
+    parser.add_argument('--ip-adapter', type=Path)
+    parser.add_argument('--ip-scale', type=float, default=.6)
     args = parser.parse_args()
     if not 1 <= args.steps <= 100 or not 0 < args.control_end <= 1:
         raise ValueError('Invalid inference settings')
+    if not 1 <= args.max_poses <= 24 or bool(args.reference_image) != bool(args.ip_adapter):
+        raise ValueError('Expected a bounded pose count and both reference image and IP-Adapter together')
     if args.out.exists():
         raise FileExistsError('Use a new review output folder')
     args.out.mkdir(parents=True)
@@ -62,6 +68,14 @@ def main():
                            weight_name='pytorch_lora_weights.safetensors',
                            use_safetensors=True, local_files_only=True)
     pipe.fuse_lora(lora_scale=args.lora_scale)
+    if args.reference_image:
+        pipe.load_ip_adapter(str(args.ip_adapter.resolve()), subfolder='sdxl_models',
+            weight_name='ip-adapter-plus_sdxl_vit-h.safetensors',
+            image_encoder_folder='models/image_encoder', local_files_only=True)
+        pipe.set_ip_adapter_scale(args.ip_scale)
+        progress.update(reference_image=str(args.reference_image.resolve()),
+            reference_sha256=hashlib.sha256(args.reference_image.read_bytes()).hexdigest(),
+            ip_adapter_scale=args.ip_scale)
     offload = args.offload
     if offload == 'auto':
         offload = 'group' if device.type == 'cuda' and compute['accelerator_memory'] < 12 * 1024**3 else 'none'
@@ -88,8 +102,22 @@ def main():
     poses = [pose for pose in pose_data['poses'] if not args.pose or pose['name'] == args.pose]
     if not poses:
         raise ValueError('Unknown pose: ' + str(args.pose))
+    conditioning = {}
+    if args.reference_image:
+        progress.update(status='encoding_reference')
+        report()
+        with torch.no_grad():
+            conditioning['ip_adapter_image_embeds'] = pipe.prepare_ip_adapter_image_embeds(
+                ip_adapter_image=Image.open(args.reference_image).convert('RGB'),
+                ip_adapter_image_embeds=None, device=device, num_images_per_prompt=1,
+                do_classifier_free_guidance=True)
+        # Embeddings are reused for all poses; the large encoder is no longer
+        # needed on the GPU while UNet and ControlNet generate the frames.
+        pipe.image_encoder.to('cpu')
+        if device.type == 'cuda':
+            torch.cuda.empty_cache()
     frames = []
-    for pose in poses[:3]:
+    for pose in poses[:args.max_poses]:
         progress.update(status='rendering', pose=pose['name'], step=0)
         report()
         prompt = ('scivsimonv1, painted 2D game character, full body, three-quarter side view facing right, '
@@ -116,7 +144,7 @@ def main():
                 width=512, height=512, num_inference_steps=args.steps, guidance_scale=5.,
                 controlnet_conditioning_scale=args.control_scale, control_guidance_end=args.control_end,
                 generator=torch.Generator('cpu').manual_seed(20261021),
-                callback_on_step_end=on_step).images[0]
+                callback_on_step_end=on_step, **conditioning).images[0]
         except Exception as exc:
             progress.update(status='failed', error=str(exc), traceback=traceback.format_exc())
             report()
@@ -125,6 +153,8 @@ def main():
         image.save(args.out / filename)
         frames.append({'image': filename, 'prompt': prompt, 'negative_prompt': negative,
                        'seconds': time.monotonic() - tick})
+        progress['images'] = frames
+        report()
     progress.update(status='complete', images=frames,
         lora_sha256=hashlib.sha256((args.lora / 'pytorch_lora_weights.safetensors').read_bytes()).hexdigest(),
         note='RGB review only. Pose points approximate; native mapping and alpha cleanup pending.')

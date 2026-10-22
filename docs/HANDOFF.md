@@ -6,6 +6,40 @@ unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
 ## Aktuell: lokaler SDXL-LoRA-Pilot und GPU-Beschleunigung
 
+**Neuester Auftrag: sechs Gehposen erstellen.** Arbeit unter
+`artwork-local/lora-pilot-2026-10-21/walking-2026-10-22/`. Sechs native Phasen
+anhand des lokalen Atlas angesehen und manuell angenähert: assets/character/
+simon_walk_poses.json. Kein automatischer Pose-Detektor oder exakte neue native
+Körperzuordnung. Der Nutzerauftrag umfasst hier Erzeugung, keinen stillen Tausch
+des laufenden Figurenpakets.
+
+Die sechs Bilder wurden tatsächlich lokal auf890M erzeugt: SDXL-LoRA0,65 plus
+OpenPose1,4 bis Ende,32Schritte, fester Seed20261021, IP-Adapter-Plus0,6 mit der
+korrigierten Schulterhaar-/Knieschoner-Vorlage. Original600er-LoRA nicht neu
+trainiert. Öffentliche IP-Adapter-Gewichte Revision018e402774aeeddd60609b4ecdb7e298259dc729
+lokal heruntergeladen; CLIP-ViT-H-Bildembedding einmal berechnet, Encoder danach
+von GPU genommen, dieselbe Referenz für alle sechs. Renderzeiten37–39s/Bild,
+Peak11846851584Bytes GPU. Kein Cloud-Aufruf.
+
+Bei Walking02/05 tauchten unerwünschte separate Knieplatten wieder auf. Die endgültige
+Korrektur verwendet tools/lora/correct_walk_details.py mit expliziten Polygonen
+und ganzzahlig verschobenen glatten Knie-/Schienbeinbereichen aus Walking03.
+Pixel außerhalb weicher Masken bleiben erhalten. Diffusions-Inpaint-Versuche
+(corrected/corrected-v2) waren unbrauchbar und gehören nicht zur Ausgabe.
+Originale unter rendered, gültige Korrekturen unter corrected-final. tools/lora/package_walk.py
+stellt mit lokalem ISNet-Anime frei und entfernt abgetrennte Maskenartefakte.
+Phase01 liefert zusätzlich Gesicht, Schulterpanzer, Torso und gehaltene Arme
+für alle sechs Frames: feste Position mit der kleinen vorgegebenen Vertikalbewegung,
+Übergang bei Quell-Y270, vormultiplizierte Alpha-Mischung mit klarer Silhouette.
+So wechseln Gesicht und Oberkörperrüstung nicht pro Bild; unterer Rock/Beine
+bleiben aus den Gehphasen. Das ist bewusst wiederverwendete 2D-Bildarbeit, kein
+Nachweis, dass LoRA allein alle Details gleich hält.
+Ein gemeinsamer Ausschnitt, keine Neuskalierung pro Bild. Finale Ausgabe
+packaged-final: sechsRGBA-PNGs, Animation.webp, Kontaktbogen, HTML-Einzelschritt,
+placement.json. Die erste packaged-Ausgabe vor Detailkorrektur ist nicht final.
+Native Fingerprints nur als Referenz notiert, Offset/Handpunkt/Übergänge vor
+einem Spieleinbau weiterhin prüfen. Merkhilfe enthält Bedienung und Pfade.
+
 **Neueste Designkorrektur vom 22.10.:** Nutzer möchte schulterlange Haare und den
 einzelnen hervorstehenden Knieschoner entfernen. Die sichtbare GPU-Armprobe
 wurde gezielt mit dem eingebauten Imagegen bearbeitet, als separate Vorlage
