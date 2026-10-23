@@ -1,0 +1,600 @@
+{
+  "baseline": "artwork-local/lora-pilot-2026-10-21/walking-native-2026-10-22",
+  "edits": {
+    "04-hem-guided": {
+      "frame": "Walking-04.png",
+      "crop": [224,384,736,896],
+      "references": [],
+      "guide_erase": [[[377,577],[411,576],[437,606],[433,653],[399,671],[371,645]]],
+      "guide_background_sample": [256,640,288,672],
+      "prompt": "Finish the natural short rear skirt hem on the left edge of this painted character. The long trailing fabric below that hem has been removed. Keep the exposed gray background, and finish one clean curved gold-edged black hem aligned with the other short skirt panels, at the top of the thighs. No hanging tail, no spike pointing sideways, no detached gold fragment. Preserve the exact remaining skirt panels, waist, both bare thighs, pose, muscle shading, boots, shin armor, painting style and lighting. Only finish the small rear hem and its adjacent gray background. Do not add clothing or limbs.",
+      "selections": [[[352,520],[403,514],[444,539],[460,582],[453,632],[437,679],[384,686],[346,651]]]
+    },
+    "05-gap": {
+      "frame": "Walking-05.png",
+      "source": "artwork-local/lora-pilot-2026-10-21/walking-neural-edit-2026-10-22/repair-05-lower/edited-full.png",
+      "crop": [272,448,784,960],
+      "references": [],
+      "guide_erase": [[[506,594],[532,600],[553,619],[573,650],[578,674],[551,688],[513,684],[491,656]]],
+      "guide_background_sample": [736,736,768,768],
+      "prompt": "Finish the natural painted edges around the clean gray gap between the two thighs. The long rear skirt tail has been removed: keep that central gap empty, showing the same gray background. The rear black and gold skirt ends with a short natural gold hem at the height of the other skirt panels, well above the knees. There is no hanging fabric in the gap. Preserve the two existing bare thighs, their exact pose, warm bronze skin, subtle muscle shading, boots, shin armor, front skirt and all other details. Exactly two legs, no extra body parts, no new pants or armor. Only repair the small central gap and the short skirt hem.",
+      "selections": [[[494,580],[545,591],[574,620],[595,658],[590,698],[551,709],[497,700],[474,676],[482,643]]]
+    },
+    "03-gap": {
+      "frame": "Walking-03.png",
+      "source": "artwork-local/lora-pilot-2026-10-21/walking-neural-edit-2026-10-22/03-thigh-style-bf16/edited-full.png",
+      "crop": [272, 448, 784, 960],
+      "guide_erase": [[[510,621],[529,625],[550,649],[563,675],[573,704],[544,722],[493,720],[457,703],[470,684],[486,662],[500,638]]],
+      "guide_background_sample": [736,736,768,768],
+      "references": [],
+      "prompt": "Remove the extra small skin and gold limb fragment hanging inside the gap between the two real legs of this character. Restore the same plain gray background in the gap, with naturally painted clean inner silhouettes of exactly two legs. Preserve the existing warm tan bare thighs, their exact positions, natural muscles, black gold skirt, shin armor, boots and every other detail. The large thigh on the right and the bent leg on the left are the two real legs and remain unchanged. No third limb, no little extra knee or foot between them, no added cloth. Only clean the central gap.",
+      "selections": [[[473,604],[520,603],[551,632],[566,668],[575,710],[550,736],[482,736],[452,707],[462,677],[478,650]]]
+    },
+    "03-thigh-style": {
+      "frame": "Walking-03.png",
+      "source": "artwork-local/lora-pilot-2026-10-21/walking-neural-edit-2026-10-22/03-thigh-crop-bf16/edited-full.png",
+      "crop": [
+        320,
+        448,
+        832,
+        960
+      ],
+      "references": [
+        "artwork-local/lora-pilot-2026-10-21/walking-native-2026-10-22/decoded/Walking-01.png"
+      ],
+      "reference_crops": [
+        [
+          320,
+          448,
+          832,
+          960
+        ]
+      ],
+      "prompt": "Edit only the pale bare thigh on the right side of image 1. Match its skin color and painted shading to the warm bronze tan skin shown in image 2. Give it the same warm orange brown shadows and restrained golden skin highlights as the other thigh in image 1. Keep the natural anatomical shape, exact leg position, hip and knee connection unchanged. Use coherent subtle quadriceps muscle shading in the same outlined painted style as the existing character. Preserve the short black gold skirt, boots, shin armor, background, and every other detail of image 1. Keep both upper thighs bare, do not add armor or fabric, do not add extra body parts.",
+      "selections": [
+        [
+          [
+            548,
+            612
+          ],
+          [
+            594,
+            589
+          ],
+          [
+            615,
+            578
+          ],
+          [
+            643,
+            599
+          ],
+          [
+            665,
+            629
+          ],
+          [
+            679,
+            662
+          ],
+          [
+            652,
+            680
+          ],
+          [
+            621,
+            694
+          ],
+          [
+            576,
+            707
+          ],
+          [
+            554,
+            685
+          ],
+          [
+            538,
+            647
+          ]
+        ]
+      ]
+    },
+    "03-thigh-crop": {
+      "frame": "Walking-03.png",
+      "crop": [
+        320,
+        448,
+        832,
+        960
+      ],
+      "references": [],
+      "prompt": "Remove the black shorts and metal armor covering the upper thigh of the leg on the right side of this image. Replace that covering with naturally painted bare human skin, with subtle realistic quadriceps matching the other visible bare thigh. Preserve the exact pose, positions and proportions of both legs, the black and gold short skirt, shin armor, boots and gray background. The bare thigh joins the existing hip and knee in their original positions. Keep the other thigh and all surrounding details unchanged. No extra body parts, no knee pad, no swollen muscles, no exaggerated tendon stripes.",
+      "selections": [
+        [
+          [
+            548,
+            612
+          ],
+          [
+            594,
+            589
+          ],
+          [
+            615,
+            578
+          ],
+          [
+            643,
+            599
+          ],
+          [
+            665,
+            629
+          ],
+          [
+            679,
+            662
+          ],
+          [
+            652,
+            680
+          ],
+          [
+            621,
+            694
+          ],
+          [
+            576,
+            707
+          ],
+          [
+            554,
+            685
+          ],
+          [
+            538,
+            647
+          ]
+        ]
+      ]
+    },
+    "01-master": {
+      "frame": "Walking-01.png",
+      "crop": [
+        256,
+        64,
+        768,
+        576
+      ],
+      "references": [
+        "artwork-local/lora-pilot-2026-10-21/walking-native-2026-10-22/decoded/Walking-02.png"
+      ],
+      "prompt": "Edit image 1 only. Keep the same man, exact face and shoulder-length hair, walking pose, arms, legs, short skirt, proportions and painting style. Close the exposed patch of abdomen with continuous black and gold armor. Add the small round gold emblem on the middle of his back, with the narrow vertical gold strap, matching the back armor design shown in image 2. Integrate the emblem naturally with the curved armor, lighting and gold edging. Change only the back and abdominal armor of image 1; preserve all other details and the plain gray background.",
+      "selections": [
+        [
+          [
+            400,
+            185
+          ],
+          [
+            474,
+            174
+          ],
+          [
+            518,
+            192
+          ],
+          [
+            518,
+            264
+          ],
+          [
+            475,
+            290
+          ],
+          [
+            415,
+            276
+          ]
+        ],
+        [
+          [
+            433,
+            293
+          ],
+          [
+            479,
+            299
+          ],
+          [
+            530,
+            315
+          ],
+          [
+            529,
+            353
+          ],
+          [
+            482,
+            350
+          ],
+          [
+            433,
+            337
+          ]
+        ]
+      ],
+      "reference_crops": [
+        [
+          256,
+          96,
+          768,
+          608
+        ]
+      ]
+    },
+    "03-anatomy": {
+      "frame": "Walking-03.png",
+      "references": [],
+      "prompt": "Edit this painted game character while preserving his exact walking pose, face, hair, black and gold armor, skirt, arms, hands, boots, proportions and gray background. Remove the black armor or shorts covering the upper thigh of the leg on the right side of the picture. Draw a naturally shaped bare human upper thigh there, with healthy warm skin, subtle realistic quadriceps and coherent anatomy matching his other bare thigh. The leg remains in exactly its current position, joining the same hip and knee. Keep his existing short skirt and shin armor. There must be exactly two legs, with a clean gap between them and no extra limb fragment. Do not add knee pads, extra armor, bulging veins or exaggerated tendon stripes.",
+      "selections": [
+        [
+          [
+            548,
+            612
+          ],
+          [
+            594,
+            589
+          ],
+          [
+            615,
+            578
+          ],
+          [
+            643,
+            599
+          ],
+          [
+            665,
+            629
+          ],
+          [
+            679,
+            662
+          ],
+          [
+            652,
+            680
+          ],
+          [
+            621,
+            694
+          ],
+          [
+            576,
+            707
+          ],
+          [
+            554,
+            685
+          ],
+          [
+            538,
+            647
+          ]
+        ]
+      ]
+    },
+    "06-emblem": {
+      "frame": "Walking-06.png",
+      "crop": [
+        256,
+        96,
+        768,
+        608
+      ],
+      "references": [
+        "artwork-local/lora-pilot-2026-10-21/walking-native-2026-10-22/decoded/Walking-02.png"
+      ],
+      "reference_crops": [
+        [
+          256,
+          96,
+          768,
+          608
+        ]
+      ],
+      "prompt": "Edit only the black back armor of the man in image 1. Add the same small round gold medallion with the narrow vertical gold strap that is on the middle of the back armor in image 2. Match the circular shape, size, metal color and painted design, integrated naturally into the curved armor and lighting of image 1. Preserve the exact pose, shoulders, arms, head, face, hair, belt, clothing and background. No extra emblem or large ornament.",
+      "selections": [
+        [
+          [
+            405,
+            211
+          ],
+          [
+            474,
+            201
+          ],
+          [
+            524,
+            211
+          ],
+          [
+            530,
+            281
+          ],
+          [
+            488,
+            315
+          ],
+          [
+            431,
+            303
+          ],
+          [
+            401,
+            270
+          ]
+        ]
+      ]
+    },
+    "02-hem": {
+      "frame": "Walking-02.png",
+      "crop": [
+        288,
+        384,
+        800,
+        896
+      ],
+      "references": [
+        "artwork-local/lora-pilot-2026-10-21/walking-native-2026-10-22/decoded/Walking-01.png"
+      ],
+      "reference_crops": [
+        [
+          288,
+          384,
+          800,
+          896
+        ]
+      ],
+      "prompt": "Shorten the trailing rear skirt flap in image 1 to match the short black and gold skirt in image 2. Its back hem ends at the same upper-thigh height as the other skirt panels. Draw a natural gold-edged hem and coherent fabric folds. Remove only the long hanging tail, showing the existing gray background where it used to hang. Keep the exact pose, both legs, natural muscle anatomy, boots, armor, skin colors and all other skirt panels unchanged. No new body parts or different costume.",
+      "selections": [
+        [
+          [
+            484,
+            580
+          ],
+          [
+            539,
+            593
+          ],
+          [
+            576,
+            626
+          ],
+          [
+            598,
+            670
+          ],
+          [
+            576,
+            717
+          ],
+          [
+            511,
+            729
+          ],
+          [
+            462,
+            705
+          ],
+          [
+            468,
+            655
+          ]
+        ]
+      ]
+    },
+    "04-hem": {
+      "frame": "Walking-04.png",
+      "crop": [
+        224,
+        384,
+        736,
+        896
+      ],
+      "references": [
+        "artwork-local/lora-pilot-2026-10-21/walking-native-2026-10-22/decoded/Walking-01.png"
+      ],
+      "reference_crops": [
+        [
+          288,
+          384,
+          800,
+          896
+        ]
+      ],
+      "prompt": "Shorten the trailing rear skirt flap in image 1 to match the short black and gold skirt in image 2. Its back hem ends at the same upper-thigh height as the other skirt panels. Draw a natural gold-edged hem and coherent fabric folds. Remove only the long hanging tail, showing the existing gray background where it used to hang. Keep the exact pose, both legs, natural muscle anatomy, boots, armor, skin colors and all other skirt panels unchanged. No new body parts or different costume.",
+      "selections": [
+        [
+          [
+            361,
+            553
+          ],
+          [
+            415,
+            566
+          ],
+          [
+            442,
+            599
+          ],
+          [
+            442,
+            653
+          ],
+          [
+            405,
+            676
+          ],
+          [
+            358,
+            651
+          ]
+        ]
+      ]
+    },
+    "05-lower": {
+      "frame": "Walking-05.png",
+      "crop": [
+        272,
+        400,
+        784,
+        912
+      ],
+      "references": [
+        "artwork-local/lora-pilot-2026-10-21/walking-native-2026-10-22/decoded/Walking-01.png"
+      ],
+      "reference_crops": [
+        [
+          288,
+          384,
+          800,
+          896
+        ]
+      ],
+      "prompt": "Edit only the thighs and rear skirt of the character in image 1. Replace the black shorts covering the upper thigh on the right side of the image with bare natural human skin. Both thighs have coherent subtle quadriceps, the same athletic build, warm bronze tan skin and outlined painted shading as image 2. Make the supporting thigh on the left slightly slimmer, preserving its hip and knee positions. The short black gold skirt has a natural rounded gold-edged hem at upper-thigh height and no long tail hanging between the legs. Exactly two legs with a clean gap. Preserve the exact walking pose, feet, shin armor, boots, waist, front skirt panels, lighting and gray background. No extra armor, no bulging tendon stripes.",
+      "selections": [
+        [
+          [
+            348,
+            532
+          ],
+          [
+            442,
+            511
+          ],
+          [
+            511,
+            519
+          ],
+          [
+            606,
+            534
+          ],
+          [
+            679,
+            580
+          ],
+          [
+            699,
+            664
+          ],
+          [
+            657,
+            707
+          ],
+          [
+            597,
+            723
+          ],
+          [
+            550,
+            728
+          ],
+          [
+            490,
+            727
+          ],
+          [
+            422,
+            720
+          ],
+          [
+            350,
+            710
+          ],
+          [
+            327,
+            653
+          ]
+        ]
+      ]
+    },
+    "06-lower": {
+      "frame": "Walking-06.png",
+      "crop": [
+        288,
+        400,
+        800,
+        912
+      ],
+      "references": [
+        "artwork-local/lora-pilot-2026-10-21/walking-native-2026-10-22/decoded/Walking-01.png"
+      ],
+      "reference_crops": [
+        [
+          288,
+          384,
+          800,
+          896
+        ]
+      ],
+      "prompt": "Edit only the upper thigh and rear skirt of the character in image 1. Remove the half-closed black shorts on the right-side upper thigh and replace them with a naturally shaped bare thigh matching the warm bronze tan skin, subtle realistic muscles and outlined painted style in image 2. Keep its exact hip, knee and leg position. Shorten the rear black gold skirt flap so its natural gold-edged hem ends at the same upper-thigh height as the other panels. No long fabric hanging between the two legs. Preserve the other thigh, the walking pose, shin armor, boots, waist, front skirt panels, lighting and gray background. No extra limbs or knee pads.",
+      "selections": [
+        [
+          [
+            464,
+            550
+          ],
+          [
+            530,
+            550
+          ],
+          [
+            591,
+            561
+          ],
+          [
+            637,
+            581
+          ],
+          [
+            681,
+            623
+          ],
+          [
+            691,
+            674
+          ],
+          [
+            641,
+            715
+          ],
+          [
+            578,
+            738
+          ],
+          [
+            495,
+            735
+          ],
+          [
+            449,
+            705
+          ],
+          [
+            465,
+            665
+          ],
+          [
+            479,
+            613
+          ]
+        ]
+      ]
+    }
+  }
+}

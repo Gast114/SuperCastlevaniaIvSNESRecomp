@@ -1,0 +1,66 @@
+{
+  "baseline": "artwork-local/lora-pilot-2026-10-21/walking-native-2026-10-22",
+  "settings": {
+    "lora_source": "artwork-local/lora-pilot-2026-10-21/training-local/final/pytorch_lora_weights.safetensors",
+    "lora_name": "Simon_local_600_rank16.safetensors",
+    "lora_sha256": "3d014d02897b05bada80f2b72c7f3574bb26faa14b8dbc08f70284f7d1d8b282",
+    "lora_scale": 0.65,
+    "reference_scale": 0.8,
+    "control_scale": 1.1,
+    "seed": 20261022,
+    "steps": 32
+  },
+  "parts": {
+    "03-thigh-material": {
+      "frame": "Walking-03.png",
+      "reference": "Walking-02.png",
+      "reference_crop": [256, 384, 768, 896],
+      "crop": [320, 448, 832, 960],
+      "initialization": "material_hints",
+      "settings": {"denoise": 0.65, "reference_scale": 0.65, "control_scale": 0.9},
+      "positive": "scivsimonv1, detailed painted bare male thigh, (natural human skin:1.4), athletic quadriceps, single bent knee, smooth realistic anatomy, short black gold skirt above bare leg, black gold shin armor below knee, gray background",
+      "negative": "thigh armor, metal thigh, trousers, shorts, knee pads, extra legs, duplicate limbs, swollen muscles, bulging veins, deformed anatomy, long skirt, torn skin, text, pixel art, plastic",
+      "material_hints": [
+        {"color": [185, 104, 62], "polygon": [[548, 614], [594, 592], [614, 581], [640, 600], [662, 628], [674, 660], [650, 675], [623, 687], [578, 701], [556, 681], [541, 648]]}
+      ],
+      "selections": [
+        [[548, 614], [594, 592], [614, 581], [640, 600], [662, 628], [674, 660], [650, 675], [623, 687], [578, 701], [556, 681], [541, 648]]
+      ]
+    },
+    "03-thighs-skirt": {
+      "review_status": "rejected_after_render: skirt longer, armored thigh, changed suit",
+      "frame": "Walking-03.png",
+      "reference": "Walking-02.png",
+      "reference_crop": [256, 384, 768, 896],
+      "crop": [288, 384, 800, 896],
+      "positive": "scivsimonv1, detailed painted game warrior, short black gold pleated battle skirt ending at upper thighs, two bare athletic thighs, natural quadriceps, bent right knee, black gold shin guards below knees, warm skin, gray background",
+      "negative": "extra legs, duplicate limbs, trousers, shorts, thigh armor, armored thighs, long skirt, skirt between legs, swollen muscles, deformed anatomy, torn skin, knee pads, text, pixel art, plastic, photograph",
+      "selections": [
+        [[351, 493], [417, 470], [506, 468], [559, 484], [601, 511], [648, 551], [687, 603], [692, 691], [653, 747], [545, 741], [491, 728], [429, 722], [349, 703], [326, 639]]
+      ]
+    },
+    "01-back-emblem": {
+      "frame": "Walking-01.png",
+      "reference": "Walking-02.png",
+      "reference_crop": [256, 96, 768, 608],
+      "crop": [256, 64, 768, 576],
+      "positive": "scivsimonv1, painted warrior back, black metal cuirass with gold edging, central round gold medallion on narrow vertical gold strap, continuous closed black abdominal armor, detailed matching gold rivets, preserve shoulder and arm positions",
+      "negative": "bare abdomen, exposed belly, open armor, different outfit, extra straps, oversized emblem, extra limbs, text, pixel art, plastic, photograph",
+      "selections": [
+        [[404, 190], [474, 178], [513, 197], [513, 262], [473, 291], [419, 271]],
+        [[435, 295], [475, 301], [529, 317], [525, 351], [486, 350], [435, 336]]
+      ]
+    },
+    "06-back-emblem": {
+      "frame": "Walking-06.png",
+      "reference": "Walking-02.png",
+      "reference_crop": [256, 96, 768, 608],
+      "crop": [256, 96, 768, 608],
+      "positive": "scivsimonv1, painted warrior back, black metal cuirass with gold edging, central round gold medallion on narrow vertical gold strap, detailed matching gold rivets, preserve shoulder and arm positions",
+      "negative": "different outfit, extra straps, oversized emblem, extra limbs, text, pixel art, plastic, photograph",
+      "selections": [
+        [[409, 218], [470, 204], [520, 214], [525, 281], [486, 309], [435, 297], [407, 269]]
+      ]
+    }
+  }
+}

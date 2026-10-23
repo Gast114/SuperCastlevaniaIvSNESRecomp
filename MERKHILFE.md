@@ -386,41 +386,52 @@ die Größe für einen späteren Einbau.
 Eine geprüfte Sicherheitskopie liegt auch im Backup-Ordner:
 `D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-21-local-lora\2026-10-22-walking-native-shapes`.
 
-## Korrigierte Kleidung und gemeinsames Gesicht
+## Gehposen: neue lokale KI-Korrektur
 
-Die Bewegung der letzten Serie hast du als sehr gut bewertet. Dafür nehmen
-wir weiterhin die Original-Bewegungen. Die neue Korrektur liegt hier:
+Die Bewegung der letzten Serie bleibt die Vorlage. Die alte Korrektur mit
+verzogenen Muskeln und ausgeschnittenen Rocksäumen ist verworfen.
+Sie liegt noch unter `walking-identity-2026-10-22`. Bitte nicht einbauen.
+
+Die lokale KI zeichnet die fehlerhaften Stellen neu. Bild 01 bleibt die
+Vorlage für das Gesicht. Das runde Rücken-Zeichen aus Bild 02 ist die Vorlage
+für die fehlenden Zeichen in 01 und 06. Hautteile werden nicht mehr verzogen.
+Fehlerhafte Teile werden für die KI markiert und teilweise in ihrer Vorlage
+ausgeblendet. Die KI zeichnet die sichtbaren Ränder und Muskeln neu.
+
+Die neue Vorschau liegt hier:
 
 ```text
-artwork-local\lora-pilot-2026-10-21\walking-identity-2026-10-22\review
+artwork-local\lora-pilot-2026-10-21\walking-neural-edit-2026-10-22\review-v1
 ```
 
-- Öffne **Vorschau.html**. Links siehst du den letzten Stand, rechts die Korrektur.
-- **Nächstes Bild** und **Zurück** schalten beide Seiten gleichzeitig weiter.
-- **Vorher_Nachher.webp** zeigt beide Fassungen in Bewegung.
-- **Alle_Gehposen.png** zeigt nur die sechs korrigierten Bilder.
-- Die sechs PNGs liegen unter **frames**. Alle sind wieder **320 × 510 Pixel**.
-- **Gehposen_10x.zip** enthält die Bilder und die ganze Vorschau zusammen.
+- **Vorschau.html:** Beide Fassungen einzeln oder in Bewegung vergleichen.
+- **Alle_Gehposen.png:** Alle sechs neuen Bilder nebeneinander sehen.
+- **Animation.webp:** Die neue Gehbewegung ansehen.
+- **frames:** Die sechs transparenten PNGs in 10x.
+- **Gehposen_10x.zip:** Bilder und Vorschau zusammen mitnehmen.
+- **placement.json:** Größe und gemeinsamen Standpunkt aufheben.
 
-Das wurde bearbeitet:
+Die Vorschau ist noch nicht im Spiel eingebaut. Deine bisherigen Spielbilder
+sind aktiv. Auch diese neue Fassung braucht deine Beurteilung. Kleine Details
+an der Rüstung können sich noch unterscheiden.
 
-- **01:** Die offene Stelle am Bauch ist jetzt mit Rüstung geschlossen.
-- **02:** Gesicht und Haare aus 01. Das lange Rockstück zwischen den Beinen ist entfernt.
-- **03:** Gesicht aus 01. Der Oberschenkel ist offen. Zusätzliche Bein- und Armstücke sind entfernt oder überarbeitet.
-- **04:** Gesicht aus 01. Das hintere Rockstück ist kürzer.
-- **05:** Gesicht aus 01. Der dicke Oberschenkel ist schmaler. Die geschlossene Hose am anderen Oberschenkel und der lange Rockzipfel sind entfernt.
-- **06:** Gesicht aus 01. Die Stelle unter dem Kinn, die längeren Haare, der halbe Hosenpanzer und der Rockzipfel sind überarbeitet.
+Für die Korrekturen gibt es zusätzlich **FLUX.2 Klein** auf deinem Rechner.
+Die bisherigen Modelle und Python-Umgebungen wurden nicht geändert.
+Es wurden keine Bilder hochgeladen und keine Cloud-Bilder bezahlt.
+Beim ersten Versuch gab es einen Fehler mit der AMD-Grafikkarte. Deshalb
+laufen diese Korrekturen auf der CPU. Das braucht viel Arbeitsspeicher.
 
-Für Gesicht und Haare wird ein gemeinsames Bildteil aus 01 wiederverwendet.
-Es wird an die Kopfposition der jeweiligen Pose gesetzt. Der Körper bewegt
-sich weiterhin pro Bild. Diese Korrekturen entstanden durch lokale
-Bildbearbeitung auf der CPU. Dafür gab es keine neue KI-Berechnung und keinen
-Upload. Die Radeon bleibt für den Landschaftstest frei.
+Sprites und Landschaften laufen nacheinander über dieselbe Warteschlange in
+ComfyUI. Während ein solcher Auftrag rechnet, soll die andere Aufgabe warten.
+Es gibt dafür keinen zweiten KI-Server. Die alten Versuche mit **-cpu** im
+Namen wurden abgebrochen. Diese Ordner enthalten keine fertigen Ergebnisse.
 
-Diese Fassung ist noch eine Vorschau. Im Spiel sind die bisherigen Sprites aktiv.
+Die Berechnung ist fertig. Die Modelle wurden aus dem Arbeitsspeicher entladen.
+Die Landschafts-Arbeit kann wieder rechnen.
 
-Sicherheitskopie:
-`D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-21-local-lora\2026-10-22-walking-identity`.
+Geprüfte Sicherheitskopie:
+`D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-21-local-lora\2026-10-23-walking-neural-repair`.
+Die großen Grundmodelle sind dort nicht noch einmal gespeichert.
 
 ## Unsere Arbeitsweise
 

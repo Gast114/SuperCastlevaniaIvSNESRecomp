@@ -24,6 +24,7 @@ def main():
     parser.add_argument('--poses', type=Path, required=True)
     parser.add_argument('--native-pack', type=Path)
     parser.add_argument('--before', type=Path, help='Previous package for a synchronized before/after review')
+    parser.add_argument('--method', help='Recorded artwork method for this particular export')
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
     if args.out.exists():
@@ -181,7 +182,7 @@ def main():
         sheet.paste(thumb, (x, y), thumb)
         draw.text(((i % 3) * 360 + 18, (i // 3) * 540 + 520), f'Walking-{i+1:02d}', fill='black')
     sheet.save(args.out / 'Alle_Gehposen.png')
-    manifest = {'method': ('local masked artwork reuse with shared head and transformed body parts'
+    manifest = {'method': args.method or ('pre-matted local artwork; see source provenance'
         if args.prematted else 'local SDXL LoRA + IP-Adapter + guide control + ISNet-Anime'),
         'guide_origin': poses.get('origin'), 'working_native_scale': work_scale,
         'common_output_resize': output_ratio,

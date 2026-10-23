@@ -1,10 +1,108 @@
 # Lokaler Charakter-LoRA-Pilot
 
-Stand: 22.10.2026. Lokal ausgeführt, keine Bild-Uploads, bezahlten Aufrufe oder
+Stand: 23.10.2026. Lokal ausgeführt, keine Bild-Uploads, bezahlten Aufrufe oder
 veröffentlichten Modellgewichte. Spielpakete, EXEs, Konfiguration und Saves
 wurden für diesen Pilot nicht geändert. Alltagshinweise stehen in MERKHILFE.md.
 
 ## Ergebnis und Grenzen
+
+**Neue lokale Vorschau fertig:** `walking-neural-edit-2026-10-22/review-v1`.
+Sechs transparente320x510-PNGs in10x mit gemeinsamen Koordinaten, Kontaktbogen,
+Animation, synchronem Vergleich, HTML und ZIP. Wirklich visuell geprüft;
+PNG-/Hash-/ZIP-Prüfung erfolgreich. Bewegung aus native-motion erhalten.
+Oberschenkel03/05/06 und Säume neu neuronell gezeichnet, Embleme01/06 ergänzt.
+Vorhandenes gemeinsames01-Gesicht und bereits geschlossene obere01-Rüstung
+bleiben erhalten. Finale Montage/Alpha unter assembled-v1, genaue Quellen und
+benutzte Auswahl-Teilmenge01 im dortigen series.json.
+Kleine Rüstungsdetails variieren weiterhin. Nutzerfreigabe steht aus, nicht im
+Spiel installiert. Alle Inferenzaufträge beendet, eigene Modelle freigegeben;
+Queue war0/0,13,2GiB RAM frei. Landschaft kann wieder rechnen.
+
+Die folgenden Abschnitte dokumentieren auch verworfene Zwischenstände.
+
+
+**Verworfener Zwischenstand: manuelle Korrektur der Gehserie.**
+`walking-identity-2026-10-22/review` zeigt unnatürlich verzogene Hautmuskeln und
+ausgeschnitten wirkende Rocksäume. Außerdem fehlen01/06 die Rückenembleme.
+Die akzeptierte Bewegung stammt weiterhin aus `walking-native-2026-10-22`.
+Keine dieser korrigierten Fassungen im aktiven Spielpaket installieren.
+
+Die folgenden zwei SDXL-Inpaint-Proben wurden ebenfalls visuell verworfen:
+`walking-repaint-2026-10-22/03-thighs-skirt` (längerer Rock, erneut Beinschutz),
+`03-thigh-material` (Haut, aber schlechte Muskel- und Rüstungsanschlüsse).
+Nicht weitere gleichartige Posen blind generieren.
+
+Für echte Referenz-Bildbearbeitung ist inzwischen ein separates lokales Modell
+vorhanden: FLUX.2 Klein4B Distilled. `download_edit_model.py` lädt nur die drei
+in `assets/character/simon_local_edit_models.json` festgeschriebenen öffentlichen
+Gewichte, prüft Größe und HF-LFS-SHA256, ersetzt keine vorhandenen Modelldateien
+und installiert keine Python-Pakete. Neue Unterordner heißen `simon-klein`.
+SDXL-LoRA bleibt erhalten, ist aber nicht auf diesen anderen Modelltyp anwendbar.
+
+`direct_edit_walk.py` bereitet Originalbild/Referenzen/Auswahl auf CPU vor und
+verwendet ausschließlich die bereits vorhandenen Core-Nodes des lokalen ComfyUI.
+Distilled4Schritte/Euler/CFG1 nach der
+[offiziellen ComfyUI-Anleitung](https://docs.comfy.org/tutorials/flux/flux-2-klein).
+Edits unter `walking-neural-edit-2026-10-22`.
+Comfy-History und Rohbild bleiben erhalten; maskiertes Ergebnis erhält außerhalb
+der Auswahl das originale RGB. Noch keine künstlerische Freigabe oder Spielfigur.
+
+Der erste GPU-Versuch mit FLUX ist tatsächlich gescheitert (HIP launch failure,
+kein Bild). Der dabei angehaltene Comfy-Arbeiter wurde bei leerer Queue mit
+dem bisherigen Launcher/Einstellungen wiederhergestellt. Ein vorübergehender
+CPU-only-Server8189 und zwei zu langsame FP32-Versuche wurden beendet. Keine
+fertigen Bilder daraus, diese Versuche nicht erneut starten.
+
+Der tatsächlich funktionierende Weg verwendet **denselben Server8188** und
+vorhandene Core-Nodes: SelectModelDevice(cpu), ModelComputeDtype(bf16),
+SelectCLIPDevice(cpu), VAE weiterhin CPU. --cpu-model wählt diesen Weg.
+Die CPU unterstützt AVX512_BF16. Ohne expliziten ComputeDtype-Node wählt Comfy
+auf CPU still FP32; die bloße Loader-Meldung beweist den Rechenmodus nicht.
+Keine neue Umgebung und keine Änderung an Serverflags nötig.
+03-thigh-crop-bf16 war ein echter Formversuch, Haut aber blass. Der fertige
+03-thigh-style-bf16 nutzt einen zusätzlichen echten Hautausschnitt aus01 und
+hat nach Sichtprüfung wärmere, passendere Haut. Vier Schritte je ca.64s dort,
+ohne Text-/VAE-Zeit; keine allgemeine Bildrate behaupten.
+
+Die sechs Stellen wurden als EIN serieller Batch gerechnet mit einmal
+geladenen Modellen: 01 Bauch/Emblem,06 Emblem,02/04 Säume,05/06 Oberschenkel/Saum.
+repairs-batch.json hält Prompt-ID und pro Teil Ausgabe-Node/-Präfix fest.
+direct_edit_walk.py batch speichert auch vor der Übermittlung den Auftrag,
+damit ein unbekannter HTTP-Ausgang nicht unbemerkt doppelt gerechnet wird.
+collect überprüft den ausgeführten Graphen und erhält außerhalb der Auswahl
+das Quell-RGB bytegleich. Keine neue Serie von Zufallsvarianten.
+
+Hoher RAM-Bedarf: auch diese CPU-Jobs und die Landschaftsgenerierung laufen
+nacheinander in derselben Queue. Eine freie GPU bedeutet währenddessen nicht
+genügend freien RAM. Nach leerer Queue eigene Modelle per /free freigeben,
+keinen inzwischen laufenden Fremdauftrag unterbrechen.
+
+assemble_neural_walk.py verwirft alle alten unteren Hautverformungen und
+Alpha-Saumschnitte. Grundlage unten ist wieder die native-motion-RGBA, darauf
+kommen echte neuronale Auswahlen mit lokalem ISNet-Alpha. Oberhalb y400 bleibt
+die vorhandene gemeinsame01-Gesichtskorrektur. Kein neues Verziehen von
+Körperteilen. package_walk.py --prematted --method exportiert nur10x mit einem
+gemeinsamen Koordinatensystem und ehrlicher Methodenangabe im Manifest.
+
+Bei verbliebenen Fragmenten03 bzw. dem langen Zipfel05 kann das Direct-Edit-
+Rezept eine `guide_erase`-Auswahl enthalten. Sie blendet das unerwünschte Teil
+nur im RGB-Konditionierungsbild aus, mit Hintergrundfarbe aus einem angegebenen
+Bildbereich. source.png bleibt unverändert. FLUX zeichnet danach die Kanten
+und den Saum neu; weder die Guide-Auswahl noch ein ausgeschnittener Alpha-Saum
+werden als fertige Grafik verwendet. Guide, Eingabehash und Prompt bleiben
+zur Nachprüfung im jeweiligen Edit-Ordner erhalten.
+
+Neuer gezielter Ansatz: `repaint_walk_parts.py prepare/submit/collect`, Rezept
+`assets/character/simon_walk_repaint.json`. Originalbilder als Ausgangspunkt,
+neuraler Inpaint einer zusammenhängenden Kleidungs-/Anatomieauswahl, native
+Kontur und gemeinsame Stilreferenz. Kein Verziehen von Hautteilen, kein Löschen
+von Rockpixeln als fertige Korrektur. Zuerst03, nicht sofort alle sechs.
+Ausführung ausschließlich im vorhandenen lokalen ComfyUI-Server nach dem
+Landschaftsjob. Busy-Queue wird abgewiesen; keine zweite Inferenzinstanz,
+keine Änderungen an Umgebungen oder ursprünglichen Modellen. Zusätzlicher
+Simon-LoRA-Export benennt nur Tensor-Schlüssel ins unterstützte ComfyUI-Format
+um; Werte, Rank und Alpha bleiben gleich. Quelle und Export haben eigene Hashes.
+Ein echter erfolgreicher Render ist noch keine künstlerische Freigabe.
 
 Der erste CPU-Lauf ist fertig: 600 Updates in ca.93 Minuten, anschließend drei
 512×512-Proben in zusammen ca.14 Minuten. Dateien unter

@@ -1,4 +1,4 @@
-# Arbeitsstand & Übergabe (2026-10-22, LoRA-Pilot fertig und AMD-GPU aktiv)
+# Arbeitsstand & Übergabe (2026-10-23, lokale KI-Spritekorrektur)
 
 **Dauerhafte Nutzerpräferenz:** Vergessbare Bedienhinweise immer in MERKHILFE.md
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
@@ -6,7 +6,89 @@ unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
 ## Aktuell: lokaler SDXL-LoRA-Pilot und GPU-Beschleunigung
 
-### Neuester Stand: Bewegung akzeptiert, Identität/Kleidung gezielt korrigiert
+### Neuester Stand: lokale neuronale Korrektur als neue Vorschau fertig
+
+Aktuelle Ausgabe:
+`artwork-local/lora-pilot-2026-10-21/walking-neural-edit-2026-10-22/review-v1`.
+Sechs transparente PNGs320x510/10x, Animation.webp, synchroner Vorher/Nachher-
+Vergleich, HTML-Einzelschritt, ZIP und placement.json. Kontaktbogen wirklich
+visuell geprüft; PNG-Modus/Größen/Manifesthashes/ZIP vollständig geprüft.
+Gemeinsamer Crop[180,0,820,1020], root[166,210], ground_y500; keine individuelle
+Skalierung/Zentrierung. **Nutzerbeurteilung ausstehend, NICHT im Spiel eingebaut.**
+Kleine Platten-/Nietendetails variieren weiterhin; keine perfekte Konsistenz
+behaupten. Aktive Spielbilder sind unverändert.
+
+Akzeptierte Bewegung aus walking-native-2026-10-22 bleibt Basis. Alte Fassung
+walking-identity-2026-10-22 wegen verzogener Oberschenkel, Alpha-Saumschnitten,
+fehlenden Emblemen01/06 verworfen. assembled-v1 setzt die UNTERE Körperhälfte
+auf die ursprüngliche native-motion-RGBA zurück und nutzt dort ausschließlich
+neuronale Korrekturen. Vorhandenes gemeinsames01-Gesicht/obere Korrekturen bis
+y400 bleiben erhalten; sichtbare Pixel am Übergang sind identisch. Keine neuen
+Donor-Hautverformungen. 01-Bauch bleibt die bereits geschlossene obere Rüstung:
+FLUX ignorierte diese Aufforderung, daher vom01-Edit nur Rücken-Auswahl0 verwenden.
+
+Verwendete fertige Edits (alle unter walking-neural-edit-2026-10-22):
+- 01 repair-01-master: Rückenemblem, NUR Auswahl0.
+- 02 repair-02-hem: neuer kurzer Saum.
+- 03 03-thigh-style-bf16 + repair-03-gap-guided: neuer warmer Oberschenkel und
+  zusätzliches inneres Beinfragment entfernt.
+- 04 repair-04-hem-guided: neuer Saum. Ersten repair-04-hem wegen seitlichem
+  spitzen Rest im vollen Komposit verworfen.
+- 05 repair-05-lower + repair-05-gap-guided: natürliche offene Oberschenkel,
+  schmalerer tragender Oberschenkel, langen inneren Stoffzipfel entfernt.
+- 06 repair-06-emblem + repair-06-lower: Rückenemblem, offene Haut, kurzer Saum.
+
+Fertige Prompt-IDs, NICHT erneut einreichen:
+03-Stil6f1ff8ed-9011-49da-8c09-c55829afa8b9;
+6erBatch e9d1e2ad-50ba-426e-85d7-cdfd55937d68 (repairs-batch.json);
+2erSpaltBatch d3c92463-2884-4360-9de2-74b1c07dad6d (gaps-batch.json);
+04-Saum de701a3b-c914-40c8-8eb9-149ab2fbc460.
+Rohbilder, tatsächliche API-Graphen, History, Quellen, Auswahlen und Hashes in
+jeweiligen Editordnern. assembled-v1/selections dokumentiert tatsächlich verwendete
+Auswahlen inklusive01-Teilmenge; series.json hält genaue Herkunft fest.
+
+Workflow: direct_edit_walk.py prepare/submit/batch/collect, Rezept
+assets/character/simon_walk_direct_edits.json. FLUX.2 Klein4B Distilled,
+4Schritte/Euler/CFG1, echte Referenzlatents,512erCrop ohne Skalierung in1024erCanvas.
+Bei03/04/05 nur im KI-Eingabebild einen störenden Rest mit Hintergrundfarbe
+überblendet. FLUX zeichnet finale Kanten; kein Alpha-Löschpolygon als Endgrafik.
+collect erhält RGB außerhalb Auswahl bytegleich. assemble_neural_walk.py
+verwendet vorhandenes CPU-ISNet für Alpha; RGBA außerhalb jeweiliger Auswahl
+bytegleich zur gemeinsamen Basis. package_walk.py --prematted --method gibt
+nur10x aus und dokumentiert die Methode ehrlich.
+
+Neue öffentliche Modelle separat unter externem ComfyUI/models/*/simon-klein:
+UNet7,75GB, Qwen8,04GB, VAE336MB. download_edit_model.py + Manifest
+assets/character/simon_local_edit_models.json pinnen Revisionen/LFS-SHA256/Größen;
+alle drei Downloads wirklich geprüft. Keine Venv-/Treiber-/Serverkonfigurations-
+oder vorhandenen Modelländerungen. SDXL-LoRA nicht mit FLUX kompatibel.
+Offizielle Anleitung: https://docs.comfy.org/tutorials/flux/flux-2-klein
+
+FLUX-GPU-Versuch scheiterte an HIP launch failure im Final-Layer/Weight-Cast.
+Kein Bild; History unter03-anatomy. Danach nur verifizierte Comfy-PIDs bei leerer
+Queue beendet und unveränderten Landschafts-Launcher neu gestartet. Keine
+identische GPU-Probe wiederholen. CPU-only-Server8189 und langsame FP32-Versuche
+vollständig beendet. start_cpu_edit.ps1 nur historischer Fallback, NICHT starten.
+Tatsächlich funktioniert --cpu-model auf DERSELBEN Queue8188 mit vorhandenen
+Core-Nodes SelectModelDevice(cpu), ModelComputeDtype(bf16), SelectCLIPDevice(cpu).
+AVX512_BF16 unterstützt. Ohne ComputeDtype-Node auf CPU still FP32! Kein zweiter
+Inferenzprozess, Landschaft/Sprites auch wegen gemeinsamem RAM seriell rechnen.
+
+Alle Aufträge fertig; nach letzter leerer Queue /free mit unload_models und
+free_memory gepostet. Queue0/0, zuletzt13,2GiB RAM und16,7GiB VRAM frei. Server
+bleibt unverändert für Landschaft verfügbar. Aktuelle PIDs/Logpfade nur aus
+externem logs/server-launch.json lesen. /free liefert leeren HTTP-Body; Helfer
+akzeptiert das. GPU-frei während laufender CPU-Jobs allein reicht nicht für RAM.
+
+Backup: D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-10-21-local-lora/
+2026-10-23-walking-neural-repair. Neue Ausgabe/Quellen/Rezepte/Werkzeuge/Docs mit
+SHA256 gesichert; große Grundmodelle und Venvs nicht dupliziert.
+Git: Fremde untracked Landschafts-/Krita-Dateien und Landschaftsabschnitt ganz
+oben in MERKHILFE.md gehören zur Parallelaufgabe. Nicht stage/commit/entfernen.
+Eigene Merkhilfe-Hunks separat binär per git apply --cached stage; keine
+Textstdin-CRLF-Umwandlung. Fertige eigene Code/Docs nachdev pushen.
+
+### Historischer Stand der inzwischen abgelehnten manuellen Korrektur
 
 Nutzer bewertet die native-konturgesteuerte Gehbewegung ausdrücklich als
 "sehr gut". Diese Bewegung NICHT neu generieren oder durch festen Torso ersetzen.
@@ -18,7 +100,7 @@ Phasen geschlossen sein. Genau diese Bereiche wurden lokal überarbeitet.
 Aktuelle Ausgabe: `artwork-local/lora-pilot-2026-10-21/walking-identity-2026-10-22/review`.
 SechsRGBA-PNGs320x510, Animation.webp, Vorher_Nachher.webp/png, synchroner
 HTML-Einzelschritt mit Vorher/Nachher, ZIP und placement.json. **Neue Korrektur
-noch nicht vom Nutzer beurteilt und nicht im Spiel installiert.** Kleine
+vom Nutzer abgelehnt und nicht im Spiel installiert.** Kleine
 Nieten-/Plattenformen außerhalb der genannten Bereiche bleiben poseabhängig;
 keinen vollständig identischen 3D-Anzug behaupten.
 
@@ -74,7 +156,7 @@ Phase04 zuerst wirklich geprüft, danach übrige fünf berechnet. Neue komplette
 Ausgabe jetzt `walking-native-2026-10-22/packaged`: sechsRGBA-PNGs320x510,
 Originalvergleich.webp/png, Animation.webp, HTML-Einzelschritt, ZIP und
 placement.json. **Bewegung vom Nutzer akzeptiert; damalige Kleidungs-/Gesichts-
-abweichungen werden durch den neueren Identity-Stand oben korrigiert.**
+abweichungen sind noch offen; der manuelle Identity-Stand wurde abgelehnt.**
 Konturen/Schulter-/Arm-/Beinpositionen deutlich näher am Original. Rüstungsdetails
 variieren weiterhin zwischen Phasen; nicht als fertige konsistente Spielfigur
 verkaufen. Keine erneute Oberkörperkopie als vermeintliche Lösung einführen.
