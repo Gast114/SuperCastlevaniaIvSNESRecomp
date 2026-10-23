@@ -46,6 +46,9 @@ struct Region {
     int priority=-1;
     std::vector<uint64_t> maskKeys;
     int framePeriod=0,frameCount=1,framePhase=0;
+    bool overlay=false;
+    int a02Kind=0, phase=-1;
+    int phaseProbeX=-1,phaseProbeY=-1;
 };
 struct Pack {
     int scale = 0, size = 0;
@@ -56,14 +59,18 @@ struct Pack {
     int block = -1;
     std::array<int,2> nativeMaps{{-1,-1}};
     int objectMaskPalette = -1;
+    bool a02=false;
 };
 Pack pack;
+std::vector<Pack> scenePacks;
+int activeScene=-1;
 bool initialized = false, enabled = false;
 int scale = 10;
 unsigned layers = 31, replaced = 0;
 std::string directory = "hd_pack", status = "No HD pack loaded";
 std::vector<uint32_t> surface;
 int frameWidth = 0, frameScale = 0;
+int frameFenceOffset=0;
 uint64_t characterRevision=0;
 uint32_t vramRevision = 0;
 std::array<uint16_t, 256> palette;
@@ -160,18 +167,18 @@ uint64_t Key(const Ppu *p, const PpuTileSource &s) {
     }
     return h;
 }
-int Load(const char *path) {
-    try {
-        fs::path root(path), manifest = root / "pack.json";
+Pack ReadPack(const fs::path &root) {
+        fs::path manifest = root / "pack.json";
         if (fs::file_size(manifest) > 16 * 1024 * 1024) throw std::runtime_error("Manifest too large");
         std::ifstream f(manifest);
         std::string text((std::istreambuf_iterator<char>(f)), {});
         auto j = character_json::Reader(text).read();
         if (auto required = j.object.find("requires"); required != j.object.end())
             for (const auto &feature : required->second.items())
-                if (feature.string() != "tile-context-v1" && feature.string() != "scene-regions-v1" && feature.string() != "shared-objects-v1")
+                if (feature.string() != "tile-context-v1" && feature.string() != "scene-regions-v1" && feature.string() != "shared-objects-v1" && feature.string() != "scene-overlays-v1")
                     throw std::runtime_error("Unsupported pack feature");
         Pack next;
+        if(auto a=j.object.find("sciv_a02");a!=j.object.end())next.a02=a->second.number()!=0;
         next.scale = j.at("scale").number(); next.size = j.at("tile_size").number();
         int atlasSize = j.at("atlas_size").number();
         if (j.at("version").number() != 1 || next.scale < 1 || next.scale > 10 ||
@@ -268,6 +275,19 @@ int Load(const char *path) {
             size_t bytesTotal = entries.object.size() * size_t(next.size) * next.size * 4;
             for (const auto &item : regions->second.items()) {
                 Region r{};
+                if(auto v=item.object.find("overlay");v!=item.object.end())r.overlay=v->second.number()!=0;
+                if(auto v=item.object.find("a02_kind");v!=item.object.end()) {
+                    r.a02Kind=v->second.number();
+                    if(!next.a02||r.a02Kind<1||r.a02Kind>3)throw std::runtime_error("Invalid A02 region role");
+                }
+                if(auto v=item.object.find("phase");v!=item.object.end())r.phase=v->second.number();
+                if(auto v=item.object.find("phase_probe");v!=item.object.end()) {
+                    const auto &probe=v->second.items();
+                    if(probe.size()!=2)throw std::runtime_error("Invalid phase probe");
+                    r.phaseProbeX=probe[0].number();r.phaseProbeY=probe[1].number();
+                    if(r.phaseProbeX<0||r.phaseProbeX>65536||r.phaseProbeY<0||r.phaseProbeY>65536)
+                        throw std::runtime_error("Invalid phase probe bounds");
+                }
                 r.layer = item.at("layer").number(); r.x = item.at("x").number(); r.y = item.at("y").number();
                 if (r.layer == 4) r.priority = 0xa300;
                 r.wrapX = item.at("wrap_x").number(); r.wrapY = item.at("wrap_y").number();
@@ -302,7 +322,7 @@ int Load(const char *path) {
                         throw std::runtime_error("Invalid animation clock");
                 }
                 fs::path relative(item.at("image").string());
-                if (next.regions.size() >= 16 || (r.layer != 0 && r.layer != 1 && r.layer != 4) ||
+                if (next.regions.size() >= 64 || (r.layer != 0 && r.layer != 1 && r.layer != 4) ||
                     std::abs(r.x) > 65536 || std::abs(r.y) > 65536 ||
                     r.wrapX < 0 || r.wrapX > 2048 || r.wrapY < 0 || r.wrapY > 2048 ||
                     relative.is_absolute() || relative.has_parent_path()) throw std::runtime_error("Invalid region bounds or filename");
@@ -327,7 +347,7 @@ int Load(const char *path) {
         // plane. Affine samples can then cross a file boundary without seams.
         for (size_t i = 0; i+1 < next.regions.size();) {
             auto &a = next.regions[i]; const auto &b = next.regions[i+1];
-            if (a.screen==b.screen && a.maskKeys==b.maskKeys && a.priority==b.priority && a.stationary==b.stationary && a.modes==b.modes && a.sourcePalette<0 && b.sourcePalette<0 && a.layer == b.layer && a.world == b.world && a.wrapX == b.wrapX && a.wrapY == b.wrapY &&
+            if (a.overlay==b.overlay && a.a02Kind==b.a02Kind && a.phase==b.phase && a.phaseProbeX==b.phaseProbeX && a.phaseProbeY==b.phaseProbeY && a.screen==b.screen && a.maskKeys==b.maskKeys && a.priority==b.priority && a.stationary==b.stationary && a.modes==b.modes && a.sourcePalette<0 && b.sourcePalette<0 && a.layer == b.layer && a.world == b.world && a.wrapX == b.wrapX && a.wrapY == b.wrapY &&
                 a.y == b.y && a.h == b.h && a.x+a.w == b.x && (a.w+b.w)*next.scale <= 8192) {
                 int stride = a.stride+b.stride;
                 std::vector<uint32_t> joined(size_t(stride)*a.h*next.scale);
@@ -352,9 +372,37 @@ int Load(const char *path) {
         }
         if(!next.regions.empty()&&!next.contexts.empty())throw std::runtime_error("Scene regions cannot contain context tiles");
         if (next.tiles.empty() && next.regions.empty()) throw std::runtime_error("Pack has no artwork");
-        pack = std::move(next); cache.clear(); contextCache.clear(); surface.clear(); frameScale = 0; replaced = 0;
+        return next;
+}
+void InvalidatePack() {
+    cache.clear();contextCache.clear();surface.clear();frameScale=0;replaced=0;
+}
+int Load(const char *path) {
+    try {
+        fs::path root(path),manifest=root/"pack.json";
+        if(fs::file_size(manifest)>16*1024*1024)throw std::runtime_error("Manifest too large");
+        std::ifstream f(manifest);
+        std::string text((std::istreambuf_iterator<char>(f)),{});
+        auto j=character_json::Reader(text).read();
+        std::vector<Pack> collection;
+        Pack next;
+        if(auto scenes=j.object.find("scenes");scenes!=j.object.end()) {
+            if(j.at("version").number()!=1||scenes->second.items().empty()||scenes->second.items().size()>32)
+                throw std::runtime_error("Invalid scene collection");
+            for(const auto &child:scenes->second.items()) {
+                fs::path relative(child.string());
+                if(relative.empty()||relative.is_absolute()||relative.has_parent_path())throw std::runtime_error("Invalid scene directory");
+                collection.push_back(ReadPack(root/relative));
+                if(collection.back().block<0||collection.back().nativeMaps[0]<0)throw std::runtime_error("Collection scenes need block and map guards");
+            }
+            next=std::move(collection[0]);
+        } else next=ReadPack(root);
+        pack=std::move(next);scenePacks=std::move(collection);activeScene=scenePacks.empty()?-1:0;
+        InvalidatePack();
         directory = path;
-        status = "Loaded " + std::to_string(pack.tiles.size()) + " tiles, " + std::to_string(pack.regions.size()) + " regions at " + std::to_string(pack.scale) + "x";
+        status = scenePacks.empty()
+            ? "Loaded " + std::to_string(pack.tiles.size()) + " tiles, " + std::to_string(pack.regions.size()) + " regions at " + std::to_string(pack.scale) + "x"
+            : "Loaded " + std::to_string(scenePacks.size()) + " scenes (automatic room selection)";
         std::fprintf(stderr, "[HD] %s: %s\n", directory.c_str(), status.c_str());
         return 1;
     } catch (const std::exception &e) {
@@ -362,6 +410,18 @@ int Load(const char *path) {
         std::fprintf(stderr, "[HD] %s\n", status.c_str());
         return 0; // A failed reload preserves the previous valid pack.
     }
+}
+void SelectScene(Ppu *p) {
+    if(scenePacks.empty())return;
+    int selected=0;
+    if(LevelPictureActive())for(size_t i=0;i<scenePacks.size();++i) {
+        const auto &candidate=int(i)==activeScene?pack:scenePacks[i];
+        if(PPU_bgTilemapAdr(p,0)==candidate.nativeMaps[0]&&PPU_bgTilemapAdr(p,1)==candidate.nativeMaps[1]&&
+           (g_ram[0x86]==candidate.block||g_ram[0x70]==6)){selected=int(i);break;}
+    }
+    if(selected==activeScene)return;
+    std::swap(pack,scenePacks[activeScene]);std::swap(pack,scenePacks[selected]);activeScene=selected;
+    InvalidatePack();
 }
 void Init() {
     if (initialized) return;
@@ -504,8 +564,8 @@ struct Candidate {
     uint8_t screens = 0, layer = 0;
 };
 struct ScenePixel {
-    std::array<Candidate, 6> candidates;
-    std::array<uint8_t,6> order{};
+    std::array<Candidate, 12> candidates;
+    std::array<uint8_t,12> order{};
     uint8_t count=0;
     PixelColour colour;
     uint32_t backdrop = 0, fixed = 0;
@@ -514,7 +574,7 @@ struct ScenePixel {
     int8_t fast = -1;
 };
 std::vector<ScenePixel> scenePixels;
-struct SceneLine { Ppu ppu; int cameraX=0,cameraY=0,clock=0; bool valid=false,regionsActive=false,tileOnly=false; };
+struct SceneLine { Ppu ppu; int cameraX=0,cameraY=0,clock=0,fenceOffset=0; bool valid=false,regionsActive=false,tileOnly=false; };
 std::vector<SceneLine> sceneLines;
 std::array<const uint32_t *,224> sceneNativeRows{};
 std::array<unsigned,224> sceneMatches{};
@@ -539,7 +599,7 @@ void StoreScenePixel(size_t index,const ScenePixel &out) {
     scenePixelDirty[index]=!same;
     if(!same)scenePixels[index]=out;
 }
-thread_local int sceneCameraX=0,sceneCameraY=0,sceneClock=0;
+thread_local int sceneCameraX=0,sceneCameraY=0,sceneClock=0,sceneFenceOffset=0;
 thread_local bool sceneRegionsActive=true;
 thread_local bool sceneSharedOnly=false;
 bool sceneFrame = false;
@@ -548,10 +608,61 @@ double gatherSeconds=0, composeSeconds=0;
 unsigned timingFrames=0;
 using HdClock=std::chrono::steady_clock;
 int Wrap(int n, int width) { return (n % width + width) % width; }
-Sample RegionAt(Ppu *p, int x, int line, unsigned layer, const PpuTileSource *native=nullptr, bool stationary=false) {
+uint16_t MapEntry(const Ppu *p,int layer,int x,int y) {
+    const uint16_t *vram=PpuRenderVram(p);
+    int col=Wrap(x,PPU_bgTilemapWider(p,layer)?512:256)/8;
+    int row=Wrap(y,PPU_bgTilemapHigher(p,layer)?512:256)/8;
+    int address=PPU_bgTilemapAdr(p,layer)+(col&31)+(row&31)*32;
+    if(col&32)address+=0x400;
+    if(row&32)address+=PPU_bgTilemapWider(p,layer)?0x800:0x400;
+    return vram[address&0x7fff];
+}
+int A02FenceOffset(Ppu *p) {
+    if(!pack.a02)return 0;
+    if(!LevelPictureActive()||g_ram[0x70]<4)return 160;
+    const uint16_t *vram=PpuRenderVram(p);
+    int first=197;
+    // Read the original rising fence from its palette and actual tile pixels.
+    // No frame timer: loading F2, rewinding and pausing restore the same height.
+    int hs=p->hScroll[0];
+    for(int y=32;y<193&&y<first;++y)for(int x=40;x<224;x+=8) {
+        uint16_t entry=MapEntry(p,0,x+hs,y);
+        if(((entry>>10)&7)!=4||(entry&0x3ff)>=0xe0)continue;
+        int row=(entry&0x8000)?7-(y&7):(y&7);
+        int address=(PPU_bgTileAdr(p,0)+(entry&0x3ff)*16+row)&0x7fff;
+        if(vram[address]||vram[(address+8)&0x7fff]){first=y;break;}
+    }
+    return std::clamp(first-37,0,160);
+}
+int A02DoorPhase(Ppu *p,const Region &r) {
+    int tile=MapEntry(p,0,r.x+24,r.y+8)&0x3ff;
+    if(tile>=0xfb&&tile<=0xfd)return 3;
+    if(tile>=0xf4&&tile<=0xfa)return 2;
+    if(tile>=0xf1&&tile<=0xf3)return 1;
+    return 0;
+}
+int A02GargoylePhase(Ppu *p,const Region &r) {
+    int x=(r.phaseProbeX>=0?r.phaseProbeX:r.x)+13,y=(r.phaseProbeY>=0?r.phaseProbeY:r.y)+3;
+    uint16_t entry=MapEntry(p,1,x,y);
+    int row=(entry&0x8000)?7-(y&7):(y&7),bit=(entry&0x4000)?(x&7):7-(x&7);
+    const uint16_t *vram=PpuRenderVram(p);
+    int address=(PPU_bgTileAdr(p,1)+(entry&0x3ff)*16+row)&0x7fff;
+    unsigned a=vram[address],b=vram[(address+8)&0x7fff];
+    unsigned pixel=(a>>bit&1)|(a>>(bit+8)&1)<<1|(b>>bit&1)<<2|(b>>(bit+8)&1)<<3;
+    uint16_t colour=p->cgram[((entry>>10&7)*16+pixel)&255];
+    int red=colour&31,green=colour>>5&31,blue=colour>>10&31;
+    if(green>red+8||blue>red+8)return 2;
+    if(red>green+8&&red>blue+8)return 1;
+    return 0;
+}
+Sample RegionAt(Ppu *p, int x, int line, unsigned layer, const PpuTileSource *native=nullptr, bool stationary=false,const Region *only=nullptr) {
     if(!sceneRegionsActive)return {};
     if (!(layers & (1u << layer))) return {};
-    for (const auto &r : pack.regions) {
+    size_t first=only?size_t(only-pack.regions.data()):0;
+    size_t last=only?first+1:pack.regions.size();
+    for(size_t index=first;index<last;++index) {
+        const auto &r=pack.regions[index];
+        if(!only&&r.overlay)continue;
         if (r.layer != int(layer)) continue;
         if(r.stationary!=stationary)continue;
         if(!(r.modes&(1u<<PPU_mode(p))))continue;
@@ -600,6 +711,7 @@ Sample RegionAt(Ppu *p, int x, int line, unsigned layer, const PpuTileSource *na
             int cx = sceneCameraX, cy = sceneCameraY;
             wx = x + cx + Wrap(int(p->hScroll[layer]) - cx + 512, 1024) - 512;
             wy = line + cy + Wrap(int(p->vScroll[layer]) - cy + 512, 1024) - 512;
+            if(pack.a02&&wx<0){wx=-wx-1;flip=1;}
         } else {
             wx = x + p->hScroll[layer]; wy = line + p->vScroll[layer];
             int band = PpuWidescreenLayerWorldBandAt(p, layer, line);
@@ -611,8 +723,14 @@ Sample RegionAt(Ppu *p, int x, int line, unsigned layer, const PpuTileSource *na
             if (r.wrapX && !(r.x < 0 && wx < 0 && wx >= r.x)) wx = Wrap(wx, r.wrapX);
             if (r.wrapY) wy = Wrap(wy, r.wrapY);
         }
+        if(r.a02Kind==1||r.a02Kind==2) {
+            if(wy>=193)continue;
+            wy-=sceneFenceOffset;
+        }
         int px = wx - r.x, py = wy - r.y;
         if (px < 0 || py < 0 || px >= r.w || py >= r.h) continue;
+        if(r.a02Kind==2 && r.phase!=A02DoorPhase(p,r))continue;
+        if(r.a02Kind==3 && r.phase!=A02GargoylePhase(p,r))continue;
         Sample sample; sample.region = r.rgba.data() + size_t(py * pack.scale) * r.stride + px * pack.scale;
         sample.stride = r.stride; sample.source.flip = flip;
         sample.coverage = r.coverage[size_t(py)*r.w+px];
@@ -648,7 +766,7 @@ uint32_t Over(uint32_t foreground, uint32_t background) {
 }
 struct ScreenColour { uint32_t rgb; unsigned layer; bool opaque; };
 ScreenColour SceneScreen(const ScenePixel &p, unsigned screen, int dx, int dy) {
-    uint32_t translucent[6]; unsigned count = 0;
+    uint32_t translucent[12]; unsigned count = 0;
     ScreenColour result{p.backdrop, 5, false};
     // Front to back: an opaque sample avoids fetching all hidden images.
     for (int n = p.count-1; n >= 0; --n) {
@@ -696,6 +814,19 @@ bool GatherSceneLine(Ppu *p, int line) {
         backgroundsReady=true;return true;
     };
     if(!sceneSharedOnly && !backgrounds())return false;
+    std::array<const Region*,64> activeOverlays{};
+    size_t overlayCount=0;
+    if(sceneRegionsActive)for(const auto &r:pack.regions)if(r.overlay) {
+        if(pack.a02&&r.world&&!r.screen) {
+            int cx=sceneCameraX+Wrap(int(p->hScroll[r.layer])-sceneCameraX+512,1024)-512;
+            int cy=line+sceneCameraY+Wrap(int(p->vScroll[r.layer])-sceneCameraY+512,1024)-512;
+            if(r.a02Kind==1||r.a02Kind==2){if(cy>=193)continue;cy-=sceneFenceOffset;}
+            if(cy<r.y||cy>=r.y+r.h||cx+256+int(p->extraLeftRight)<=r.x||cx-int(p->extraLeftRight)>=r.x+r.w)continue;
+            if(r.a02Kind==2&&r.phase!=A02DoorPhase(p,r))continue;
+            if(r.a02Kind==3&&r.phase!=A02GargoylePhase(p,r))continue;
+        }
+        activeOverlays[overlayCount++]=&r;
+    }
     const auto *native = reinterpret_cast<const uint32_t *>(p->renderBuffer + (line-1)*p->renderPitch);
     for (int nx = 0; nx < frameWidth; ++nx) {
         int x = nx - p->extraLeftRight, i = x + kPpuExtraLeftRight;
@@ -770,6 +901,16 @@ bool GatherSceneLine(Ppu *p, int line) {
             auto &c=out.candidates[5];c.art=shoreline;c.layer=0;c.priority=0x4000;
             c.screens=samples[0][i].screens;++sceneMatches[line-1];
         }
+        unsigned overlayIndex=6;
+        for(size_t overlay=0;overlay<overlayCount&&overlayIndex<out.candidates.size();++overlay) {
+            const auto &region=*activeOverlays[overlay];
+            auto art=RegionAt(p,x,line,region.layer,nullptr,region.stationary,&region);
+            if(!art.region||art.coverage==0)continue;
+            auto &c=out.candidates[overlayIndex++];c.art=art;c.layer=region.layer;
+            c.priority=region.priority>=0?region.priority:0xc000;
+            c.screens=samples[region.layer==4?3:region.layer][i].screens;
+            ++sceneMatches[line-1];
+        }
         // Sort small indices, not the large immutable sampling descriptors.
         for(unsigned n=0;n<out.candidates.size();++n) if(out.candidates[n].screens) {
             unsigned j=out.count++;
@@ -817,7 +958,7 @@ void RenderRows(void *, size_t begin, size_t end, unsigned) {
                     cache.clear();epoch=sceneEpoch;revision=line.ppu.vramWriteCount;
                     std::copy(std::begin(line.ppu.cgram),std::end(line.ppu.cgram),colours.begin());
                 }
-                sceneCameraX=line.cameraX;sceneCameraY=line.cameraY;sceneClock=line.clock;
+                sceneCameraX=line.cameraX;sceneCameraY=line.cameraY;sceneClock=line.clock;sceneFenceOffset=line.fenceOffset;
                 sceneRegionsActive=line.regionsActive && y>=size_t(std::max(32,int(line.ppu.wsHudSplitHeight&127)));
                 sceneSharedOnly=!line.regionsActive;
                 sceneValid=GatherSceneLine(&line.ppu,int(y)+1);
@@ -904,6 +1045,8 @@ extern "C" int Cv4HdPresentationScale(void) { Init(); return enabled && (HasArt(
 
 extern "C" void Cv4HdRenderBegin(Ppu *p) {
     Init();
+    SelectScene(p);
+    frameFenceOffset=pack.a02?A02FenceOffset(p):0;
     const auto *character=Cv4CharacterHd();
     p->hdTracking = enabled && (HasArt()||character);
     replaced = 0; frameScale = 0;
@@ -931,6 +1074,7 @@ extern "C" void Cv4HdRenderBegin(Ppu *p) {
 }
 extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
     if (!p->hdTracking || frameScale != scale || line < 1 || line > 224) return;
+    if(pack.a02&&line==std::max(32,int(p->wsHudSplitHeight&127))+1)frameFenceOffset=A02FenceOffset(p);
     ContextScanline(p, line);
     if (p->vramWriteCount != vramRevision || std::memcmp(palette.data(), p->cgram, sizeof(p->cgram))) {
         cache.clear(); contextCache.clear(); vramRevision = p->vramWriteCount;
@@ -948,6 +1092,7 @@ extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
             copy.ppu.renderVram=nullptr;
             copy.cameraX=g_ram[0x1c]|g_ram[0x1d]<<8;copy.cameraY=g_ram[0x1e]|g_ram[0x1f]<<8;
             copy.clock=g_ram[0x3a];
+            copy.fenceOffset=frameFenceOffset;
             copy.regionsActive=SceneActive(p);
             copy.valid=true;
         }

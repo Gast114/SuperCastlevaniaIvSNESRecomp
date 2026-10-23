@@ -4,6 +4,60 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 22. Oktober 2026.
 
+## A02: neue Landschaft eingebaut
+
+Deine elf neuen Bilder sind in beiden Spielordnern eingebaut. Das ausgewählte
+Paket heißt `hd_packs/stage-01-user-a02-v2` und wechselt automatisch zwischen
+dem bisherigen Eingang mit Zugbrücke und dem neuen zweiten Abschnitt.
+
+Das Spiel einmal vollständig schließen und neu starten. Mit F2 siehst du den
+Eintritt und den hochfahrenden Zaun. Mit F3 und Hoch prüfst du die Drehtür und
+den Wechsel vor/hinter den Zaun. Diese Abläufe sind im Spiel geprüft.
+
+Deine Arbeitsauflösung von rund 4,031 Pixeln pro Originalpixel ist passend.
+Du musst die Bilder nicht auf 10× vergrößern. Die Photoshop-Proportionen des
+Zauns bleiben erhalten. Die Hintergrundzuordnung am Ende und die Position des
+Gargoyles sind korrigiert; die Statue ist in der Spielaufnahme sichtbar.
+
+Die gespeicherte Datei `Assets (ausgeschnitten)\Stage 01\Komplett HD.psd`
+kann direkt ausgelesen werden, einschließlich Ebenennamen und Positionen.
+Du brauchst die vielen Einzelteile nicht von Hand auszuschneiden.
+
+F2 zeigt den Eintritt mit hochfahrendem Zaun. F3 zeigt die erste Drehtür;
+mit Hoch wechselt Simon auf die andere Seite des Zauns. Es gibt eine begehbare
+Spielebene vor dem Zaun und eine begehbare Spielebene dahinter. Die hintere
+Spielebene nicht mit einer rein dekorativen Hintergrundkulisse verwechseln.
+Für den Einbau die vordere und die hintere Spielebene getrennt halten.
+Gitter und feste Türrahmen dürfen in Photoshop verknüpft/gruppiert werden
+und gemeinsam in eine eigene PNG. Die einzelnen bearbeitbaren Ebenen in der
+Photoshop-Datei behalten. Die frühere Empfehlung, den Rahmen zwingend separat
+zu liefern, war nicht erforderlich. Das bewegliche Türblatt bleibt separat:
+vier Ansichten. Die drei Gargoyle-Bilder zeigen unterschiedliche Augenvarianten.
+Diese Animationsbilder nicht fest in die Landschaft hineinmalen.
+
+Falls du selbst PNGs exportierst: RGB mit echtem Alphakanal, unveränderte
+Arbeitsauflösung und Positionen. Vordere Spielebene und Gitter mit Türrahmen
+mit demselben A02-Ausschnitt und derselben Arbeitsfläche exportieren. Die
+hintere Spielebene im selben Weltbezug halten. Die separate Burg-/Himmelskulisse
+hat ihre eigene Fläche und scrollt langsamer. Türansichten auf einer gemeinsamen
+Arbeitsfläche oder als vorhandenen Streifen behalten; nicht einzeln zentrieren.
+Die Ebene Original, Hilfsrechtecke und Muster außerhalb der Szene ausblenden.
+Transparente Zaunlücken erhalten; echten schwarzen Himmel schwarz lassen.
+Die genaue Registrierung und die technische Aufteilung übernimmt der Import.
+
+Deine fertigen Exporte vom 23. Oktober liegen unter `Stage 01\A02\HD`:
+`Spielbebene-vorne.png`, `Spielebene-Hintergrund.png`, `Gitter.png`,
+`Stage-01-A02-BG-HD.png`, `Tür-01.png` bis `Tür-04.png` und
+`Gargoyle-01.png` bis `Gargoyle-03.png`. Das sind elf neue Bilder mit echtem
+Alphakanal. Die vier Türbilder haben alle dieselbe Arbeitsfläche (153×162).
+Die Landschaften wurden unterschiedlich eng zugeschnitten; beim Import ihre
+Positionen wiederherstellen, nicht ihre linken oberen Ecken gleichsetzen.
+Die Burg-/Himmelskulisse ist eine zusätzliche Ebene neben den zwei Spielebenen.
+Sicherung vor der Installation:
+`D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-23-stage01-a02-v2`.
+Spielstände, Steuerung und Charakterbilder wurden bei der Installation geprüft
+und sind unverändert. Technische Details stehen in `docs\HD_A02.md`.
+
 ## Das Spiel starten
 
 Dein Projekt liegt hier:
