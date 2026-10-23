@@ -1,0 +1,1476 @@
+{
+  "scope": "Native ordinary/provisional actors below0x80; excludes boss controllers andbosses",
+  "probe_fields": [
+    32,
+    24
+  ],
+  "full_action_coverage": false,
+  "profiles": [
+    {
+      "type": 3,
+      "variant": 0,
+      "room": 0,
+      "visible_native_actor": true,
+      "poses": [
+        "A4F8",
+        "A4FD"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "03-v00-r00-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 4,
+      "variant": 0,
+      "room": 0,
+      "visible_native_actor": false,
+      "poses": [],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 0,
+      "total_samples": 6,
+      "image": null,
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 6,
+      "variant": 0,
+      "room": 22,
+      "visible_native_actor": true,
+      "poses": [
+        "A74B"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "06-v00-r16-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 7,
+      "variant": 0,
+      "room": 44,
+      "visible_native_actor": true,
+      "poses": [
+        "916B",
+        "917C"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 5,
+      "total_samples": 6,
+      "image": "07-v00-r2c-crop.png",
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 8,
+      "variant": 0,
+      "room": 5,
+      "visible_native_actor": true,
+      "poses": [
+        "89EB"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "08-v00-r05-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 9,
+      "variant": 0,
+      "room": 8,
+      "visible_native_actor": true,
+      "poses": [
+        "8BEA",
+        "8BFC"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "09-v00-r08-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 10,
+      "variant": 0,
+      "room": 5,
+      "visible_native_actor": true,
+      "poses": [
+        "8CC3",
+        "8CD4",
+        "8CE9",
+        "8CFA"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "0a-v00-r05-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 11,
+      "variant": 0,
+      "room": 2,
+      "visible_native_actor": true,
+      "poses": [
+        "8D70"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "0b-v00-r02-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 12,
+      "variant": 0,
+      "room": 1,
+      "visible_native_actor": true,
+      "poses": [
+        "8D61",
+        "8D66"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "0c-v00-r01-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 13,
+      "variant": 0,
+      "room": 30,
+      "visible_native_actor": true,
+      "poses": [
+        "8CFA",
+        "8F15"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "0d-v00-r1e-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 15,
+      "variant": 0,
+      "room": 36,
+      "visible_native_actor": true,
+      "poses": [
+        "8EA1",
+        "8EA6"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "0f-v00-r24-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 16,
+      "variant": 0,
+      "room": 8,
+      "visible_native_actor": true,
+      "poses": [
+        "8EB9",
+        "8EC2",
+        "8ED3"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "10-v00-r08-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 17,
+      "variant": 0,
+      "room": 1,
+      "visible_native_actor": true,
+      "poses": [
+        "8AF4",
+        "8B05"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "11-v00-r01-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 17,
+      "variant": 34,
+      "room": 52,
+      "visible_native_actor": true,
+      "poses": [
+        "8AF4",
+        "8B05"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "11-v22-r34-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 18,
+      "variant": 0,
+      "room": 1,
+      "visible_native_actor": true,
+      "poses": [
+        "8AF4",
+        "8B05"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "12-v00-r01-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 18,
+      "variant": 34,
+      "room": 52,
+      "visible_native_actor": true,
+      "poses": [
+        "8AF4"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "12-v22-r34-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 19,
+      "variant": 0,
+      "room": 0,
+      "visible_native_actor": false,
+      "poses": [],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 0,
+      "total_samples": 6,
+      "image": null,
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 20,
+      "variant": 0,
+      "room": 0,
+      "visible_native_actor": false,
+      "poses": [],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 0,
+      "total_samples": 6,
+      "image": null,
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 22,
+      "variant": 0,
+      "room": 23,
+      "visible_native_actor": true,
+      "poses": [
+        "A682"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "16-v00-r17-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 23,
+      "variant": 0,
+      "room": 9,
+      "visible_native_actor": true,
+      "poses": [
+        "A6EF"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "17-v00-r09-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 44,
+      "variant": 0,
+      "room": 18,
+      "visible_native_actor": true,
+      "poses": [
+        "99B8",
+        "9B09",
+        "9B12",
+        "9B23"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "2c-v00-r12-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 48,
+      "variant": 0,
+      "room": 9,
+      "visible_native_actor": true,
+      "poses": [
+        "8DEF"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "30-v00-r09-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 49,
+      "variant": 0,
+      "room": 17,
+      "visible_native_actor": true,
+      "poses": [
+        "93BE",
+        "93D7"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "31-v00-r11-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 50,
+      "variant": 0,
+      "room": 5,
+      "visible_native_actor": true,
+      "poses": [
+        "8A41"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "32-v00-r05-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 51,
+      "variant": 0,
+      "room": 29,
+      "visible_native_actor": true,
+      "poses": [
+        "8B66"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "33-v00-r1d-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 52,
+      "variant": 0,
+      "room": 12,
+      "visible_native_actor": true,
+      "poses": [
+        "8D89",
+        "98A4"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "34-v00-r0c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 52,
+      "variant": 25,
+      "room": 12,
+      "visible_native_actor": true,
+      "poses": [
+        "98A4"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "34-v19-r0c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 53,
+      "variant": 0,
+      "room": 9,
+      "visible_native_actor": true,
+      "poses": [
+        "9BA5",
+        "9BAA"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "35-v00-r09-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 54,
+      "variant": 0,
+      "room": 19,
+      "visible_native_actor": true,
+      "poses": [
+        "9AB0",
+        "9AB5",
+        "9ABE"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "36-v00-r13-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 55,
+      "variant": 0,
+      "room": 0,
+      "visible_native_actor": true,
+      "poses": [
+        "A5A5"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "37-v00-r00-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 57,
+      "variant": 0,
+      "room": 14,
+      "visible_native_actor": true,
+      "poses": [
+        "A52A"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "39-v00-r0e-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 58,
+      "variant": 0,
+      "room": 13,
+      "visible_native_actor": true,
+      "poses": [
+        "A597"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "3a-v00-r0d-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 59,
+      "variant": 0,
+      "room": 6,
+      "visible_native_actor": true,
+      "poses": [
+        "A54A"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "3b-v00-r06-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 60,
+      "variant": 0,
+      "room": 8,
+      "visible_native_actor": true,
+      "poses": [
+        "8A05"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "3c-v00-r08-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 62,
+      "variant": 0,
+      "room": 10,
+      "visible_native_actor": true,
+      "poses": [
+        "8976",
+        "899B",
+        "89B8"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "3e-v00-r0a-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 63,
+      "variant": 0,
+      "room": 12,
+      "visible_native_actor": true,
+      "poses": [
+        "A5A5",
+        "A5AA"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "3f-v00-r0c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 66,
+      "variant": 0,
+      "room": 33,
+      "visible_native_actor": true,
+      "poses": [
+        "8EE5",
+        "8EEE",
+        "8EFB",
+        "90D7",
+        "90F8"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "42-v00-r21-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 67,
+      "variant": 0,
+      "room": 8,
+      "visible_native_actor": true,
+      "poses": [
+        "97BB",
+        "97CC",
+        "97EF"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "43-v00-r08-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 68,
+      "variant": 0,
+      "room": 12,
+      "visible_native_actor": true,
+      "poses": [
+        "A5D1"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "44-v00-r0c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 69,
+      "variant": 0,
+      "room": 12,
+      "visible_native_actor": false,
+      "poses": [],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 0,
+      "total_samples": 6,
+      "image": null,
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 70,
+      "variant": 0,
+      "room": 23,
+      "visible_native_actor": false,
+      "poses": [],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 0,
+      "total_samples": 6,
+      "image": null,
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 74,
+      "variant": 0,
+      "room": 28,
+      "visible_native_actor": true,
+      "poses": [
+        "A754"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "4a-v00-r1c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 75,
+      "variant": 0,
+      "room": 12,
+      "visible_native_actor": true,
+      "poses": [
+        "8A66",
+        "8A6F",
+        "8A78"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 4,
+      "total_samples": 6,
+      "image": "4b-v00-r0c-crop.png",
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 76,
+      "variant": 0,
+      "room": 14,
+      "visible_native_actor": true,
+      "poses": [
+        "8C43",
+        "8C58"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "4c-v00-r0e-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 77,
+      "variant": 0,
+      "room": 28,
+      "visible_native_actor": true,
+      "poses": [
+        "A7BC"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "4d-v00-r1c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 78,
+      "variant": 0,
+      "room": 2,
+      "visible_native_actor": true,
+      "poses": [
+        "8D61",
+        "8D66",
+        "8D6B"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "4e-v00-r02-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 79,
+      "variant": 0,
+      "room": 14,
+      "visible_native_actor": true,
+      "poses": [
+        "9048",
+        "9052"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 5,
+      "total_samples": 6,
+      "image": "4f-v00-r0e-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 80,
+      "variant": 0,
+      "room": 14,
+      "visible_native_actor": true,
+      "poses": [
+        "9189"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "50-v00-r0e-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 81,
+      "variant": 0,
+      "room": 14,
+      "visible_native_actor": true,
+      "poses": [
+        "8C43"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "51-v00-r0e-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 82,
+      "variant": 0,
+      "room": 26,
+      "visible_native_actor": true,
+      "poses": [
+        "8F5C"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "52-v00-r1a-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 83,
+      "variant": 0,
+      "room": 26,
+      "visible_native_actor": true,
+      "poses": [
+        "814F"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "53-v00-r1a-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 84,
+      "variant": 0,
+      "room": 26,
+      "visible_native_actor": true,
+      "poses": [
+        "9226"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "54-v00-r1a-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 86,
+      "variant": 0,
+      "room": 25,
+      "visible_native_actor": true,
+      "poses": [
+        "919D"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "56-v00-r19-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 87,
+      "variant": 0,
+      "room": 24,
+      "visible_native_actor": true,
+      "poses": [
+        "9382"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "57-v00-r18-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 88,
+      "variant": 0,
+      "room": 24,
+      "visible_native_actor": true,
+      "poses": [
+        "9268",
+        "9299"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "58-v00-r18-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 89,
+      "variant": 0,
+      "room": 35,
+      "visible_native_actor": true,
+      "poses": [
+        "9390"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "59-v00-r23-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 90,
+      "variant": 0,
+      "room": 28,
+      "visible_native_actor": true,
+      "poses": [
+        "8E06",
+        "8E1B",
+        "8E30"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "5a-v00-r1c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 91,
+      "variant": 0,
+      "room": 28,
+      "visible_native_actor": true,
+      "poses": [
+        "8E6B",
+        "8E7C"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "5b-v00-r1c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 92,
+      "variant": 0,
+      "room": 32,
+      "visible_native_actor": true,
+      "poses": [
+        "93BE"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 3,
+      "total_samples": 6,
+      "image": "5c-v00-r20-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 93,
+      "variant": 0,
+      "room": 14,
+      "visible_native_actor": true,
+      "poses": [
+        "94C7",
+        "94D9",
+        "94E3",
+        "94F2",
+        "94FF",
+        "9510",
+        "9525",
+        "953E",
+        "955B"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "5d-v00-r0e-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 94,
+      "variant": 0,
+      "room": 14,
+      "visible_native_actor": true,
+      "poses": [
+        "94C7",
+        "94D9",
+        "94E3",
+        "94F2",
+        "94FF",
+        "9510",
+        "9525",
+        "953E",
+        "955B"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "5e-v00-r0e-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 96,
+      "variant": 0,
+      "room": 43,
+      "visible_native_actor": true,
+      "poses": [
+        "A50C"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "60-v00-r2b-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 97,
+      "variant": 0,
+      "room": 23,
+      "visible_native_actor": true,
+      "poses": [
+        "A85B",
+        "A864"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "61-v00-r17-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 98,
+      "variant": 0,
+      "room": 23,
+      "visible_native_actor": true,
+      "poses": [
+        "A84A"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "62-v00-r17-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 99,
+      "variant": 0,
+      "room": 46,
+      "visible_native_actor": false,
+      "poses": [],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 0,
+      "total_samples": 6,
+      "image": null,
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 100,
+      "variant": 0,
+      "room": 12,
+      "visible_native_actor": true,
+      "poses": [
+        "A869",
+        "A87A"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "64-v00-r0c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 101,
+      "variant": 0,
+      "room": 0,
+      "visible_native_actor": true,
+      "poses": [
+        "A5A0"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "65-v00-r00-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 102,
+      "variant": 0,
+      "room": 8,
+      "visible_native_actor": true,
+      "poses": [
+        "D9A4",
+        "D9A9"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "66-v00-r08-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 103,
+      "variant": 0,
+      "room": 6,
+      "visible_native_actor": false,
+      "poses": [],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 0,
+      "total_samples": 6,
+      "image": null,
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 104,
+      "variant": 0,
+      "room": 38,
+      "visible_native_actor": false,
+      "poses": [],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 0,
+      "total_samples": 6,
+      "image": null,
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 105,
+      "variant": 0,
+      "room": 31,
+      "visible_native_actor": true,
+      "poses": [
+        "9470",
+        "9481"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "69-v00-r1f-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 106,
+      "variant": 0,
+      "room": 14,
+      "visible_native_actor": true,
+      "poses": [
+        "A53B",
+        "A5AF"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "6a-v00-r0e-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 107,
+      "variant": 0,
+      "room": 38,
+      "visible_native_actor": true,
+      "poses": [
+        "8D1D"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "6b-v00-r26-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 108,
+      "variant": 0,
+      "room": 22,
+      "visible_native_actor": true,
+      "poses": [
+        "A87F"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 3,
+      "total_samples": 6,
+      "image": "6c-v00-r16-crop.png",
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 109,
+      "variant": 0,
+      "room": 13,
+      "visible_native_actor": true,
+      "poses": [
+        "9655",
+        "965A"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "6d-v00-r0d-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 110,
+      "variant": 0,
+      "room": 10,
+      "visible_native_actor": true,
+      "poses": [
+        "96B5",
+        "96BE",
+        "96C7"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "6e-v00-r0a-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 111,
+      "variant": 0,
+      "room": 5,
+      "visible_native_actor": true,
+      "poses": [
+        "963B",
+        "9648"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "6f-v00-r05-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 112,
+      "variant": 0,
+      "room": 8,
+      "visible_native_actor": true,
+      "poses": [
+        "965F",
+        "9664"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "70-v00-r08-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 113,
+      "variant": 0,
+      "room": 5,
+      "visible_native_actor": true,
+      "poses": [
+        "963B",
+        "9648"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "71-v00-r05-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 114,
+      "variant": 0,
+      "room": 14,
+      "visible_native_actor": true,
+      "poses": [
+        "9717"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "72-v00-r0e-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 115,
+      "variant": 0,
+      "room": 3,
+      "visible_native_actor": false,
+      "poses": [],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 0,
+      "total_samples": 6,
+      "image": null,
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 116,
+      "variant": 0,
+      "room": 39,
+      "visible_native_actor": true,
+      "poses": [
+        "9730",
+        "9735"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "74-v00-r27-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 117,
+      "variant": 0,
+      "room": 36,
+      "visible_native_actor": true,
+      "poses": [
+        "973F",
+        "9760"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "75-v00-r24-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 118,
+      "variant": 0,
+      "room": 33,
+      "visible_native_actor": true,
+      "poses": [
+        "97F4",
+        "980D",
+        "9826",
+        "9833",
+        "984C"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-phlef1bi/report.json",
+      "matched_samples": 7,
+      "total_samples": 8,
+      "image": "76-v00-r21-crop.png",
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 119,
+      "variant": 0,
+      "room": 8,
+      "visible_native_actor": false,
+      "poses": [],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 0,
+      "total_samples": 6,
+      "image": null,
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 120,
+      "variant": 0,
+      "room": 12,
+      "visible_native_actor": true,
+      "poses": [
+        "8DB7",
+        "98D2"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "78-v00-r0c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 121,
+      "variant": 0,
+      "room": 12,
+      "visible_native_actor": true,
+      "poses": [
+        "8DDD",
+        "98F8"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "79-v00-r0c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 123,
+      "variant": 0,
+      "room": 29,
+      "visible_native_actor": true,
+      "poses": [
+        "8B66"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "7b-v00-r1d-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 124,
+      "variant": 128,
+      "room": 58,
+      "visible_native_actor": true,
+      "poses": [
+        "E47C"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "7c-v80-r3a-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 124,
+      "variant": 129,
+      "room": 58,
+      "visible_native_actor": true,
+      "poses": [
+        "E47C"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "7c-v81-r3a-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 124,
+      "variant": 130,
+      "room": 58,
+      "visible_native_actor": true,
+      "poses": [
+        "E47C"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "7c-v82-r3a-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 125,
+      "variant": 0,
+      "room": 61,
+      "visible_native_actor": false,
+      "poses": [],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 0,
+      "total_samples": 6,
+      "image": null,
+      "image_kind": "context_crop_not_identity",
+      "provisional_source_entry": true
+    },
+    {
+      "type": 126,
+      "variant": 0,
+      "room": 60,
+      "visible_native_actor": true,
+      "poses": [
+        "95EB",
+        "9969",
+        "998A"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "7e-v00-r3c-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    },
+    {
+      "type": 127,
+      "variant": 0,
+      "room": 62,
+      "visible_native_actor": true,
+      "poses": [
+        "9B3C"
+      ],
+      "source_report": "artwork-local/enemy-catalog-audit/audit-bc2vpovj/report.json",
+      "matched_samples": 6,
+      "total_samples": 6,
+      "image": "7f-v00-r3e-actor.png",
+      "image_kind": "exact_actor_composition",
+      "provisional_source_entry": false
+    }
+  ]
+}

@@ -41,6 +41,14 @@ static int Cv4LuaSlot(const char *args, int *slot)
 static int Cv4LuaCommand(const char *name, const char *args, char *result, size_t capacity)
 {
     int slot;
+    if(!strcmp(name,"enemy_snapshot")) {
+        FILE *file=fopen(args,"wb");
+        if(!file){snprintf(result,capacity,"Cannot write workshop snapshot");return 0;}
+        const char *json=Cv4EnemyObservation();
+        int ok=fwrite(json,1,strlen(json),file)==strlen(json);
+        if(fclose(file))ok=0;
+        snprintf(result,capacity,ok?"Workshop snapshot saved":"Cannot save workshop snapshot");return ok;
+    }
     if(!strcmp(name,"enemy")) {
         int ok=Cv4EnemyCommand(args[0]?args:"status");
         snprintf(result,capacity,"%s",Cv4EnemyStatus());return ok;

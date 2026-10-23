@@ -1,7 +1,9 @@
 # PNG-Import ohne feste Arbeitsauflösung
 
 `HD_Import_starten.cmd` öffnet das lokale Importfenster für Simon und Gegner.
-Der vorbereitete Skelett-Arbeitsordner ist direkt über einen Button erreichbar.
+Der vorbereitete Werkstatt-Arbeitsordner ist direkt über einen Button erreichbar.
+Mit `Gegner_Werkstatt_starten.cmd` lassen sich Gegner separat bewegen und
+Original/Redesign live vergleichen; siehe [ENEMY_WORKSHOP.md](ENEMY_WORKSHOP.md).
 Die Spielausgabe bleibt 10×;
 deine Photoshop-Dateien können beispielsweise mit 4,03125× arbeiten.
 PNG-Dateien werden bytegleich kopiert. Ihr Inhalt, ihre Maße und ihre
@@ -41,9 +43,11 @@ Animationsposen aus einem einzelnen Bild erfinden.
 
 ## Gegner im gleichen Fenster
 
-**Vorbereitete Skelett-Bilder öffnen** zeigt die beiden bereits aufgenommenen
-Skelett-Schritte unter `Assets (ausgeschnitten)/Gegner/01_Skelette` neben dem
-Projekt. Übersicht und komplette ZIP-Datei liegen dort bereit. Die passenden
+**Vorbereitete Skelett-Bilder öffnen** zeigt bevorzugt den Arbeitsordner
+`Assets (ausgeschnitten)/Gegner/Werkstatt` neben dem Projekt. Darin sind
+die fünf Körperposen, drei Knochenbilder, zehn Zerfallseffekte und optionale
+Einzelteile vorbereitet. Die separate Sammlung `02_Skelette_Alle_Aktionen`
+und `Skelette_Alle_Aktionen_2026-10-24.zip` liegen daneben. Die passenden
 PNGs aus `artwork` sind schon 387×387 Pixel groß und können direkt in Photoshop
 bearbeitet werden;
 `references` bleibt als Original erhalten. Die ganze transparente Bildfläche

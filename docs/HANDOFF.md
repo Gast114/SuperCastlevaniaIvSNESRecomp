@@ -4,6 +4,52 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## Separate Gegner-Werkstatt und volle Skelett-Aktionen (24.10.)
+
+Das bisherige Zwei-Gehbilder-Pilotpaket war unvollständig. Jetzt vorhanden:
+eigener Tk-Desktopclient `Gegner_Werkstatt_starten.cmd` mit isolierter Lua-EXE,
+Original/HD aus demselben nativen Feld, Pause, Einzelbild, Zeitlupe, Spawn,
+Spielerziel Links/Rechts und live austauschbaren ganzen Posen oder Einzelteilen.
+
+Native Skelettvarianten $11/$12, Knochenwerfer $12: Körperposen 8AF4,8B05,
+8B1B,8B30,8B4D; Knochen Actor02 mit 900C/9011/9016; Todeseffekte Actor2D
+mit zehn Posen 80DC..8145. Sammlung außerhalb Git in Assets (ausgeschnitten)/
+Gegner/02_Skelette_Alle_Aktionen und Arbeitskopie Gegner/Werkstatt:
+55 verschiedene 387er-PNGs, davon 18 ganze Bilder und 37 optionale Teile;
+73 native Zuordnungen. ZIP: Skelette_Alle_Aktionen_2026-10-24.zip.
+Keine Nutzerzeichnung installiert. Die alte Sammlung bleibt erhalten.
+
+Katalog: 94 Profile zweimal 24/32 native Felder geprüft, 83 exakt sichtbar.
+Davon 39 als Gegner, 17 als Objekte, 8 als Gefahren und 5 als Effekte
+beschrieben; 14 unbestimmt. Elf generische Kontexte offen. Metadaten:
+assets/enemy_catalog_verified.json. Sichtbarkeit beweist keine vollständigen
+Aktionen. Bosscontroller2A intern; Profile80,81,83..8C, davon elf mit echten
+C++-Hauptbildern. 81 braucht BG/Mode7; 82/8D offen. 8B erzeugt Haupttyp09
+in Slot0D80. 80 nutzt belegten Testkontext Raum4, Originalraum7 noch offen.
+Weitere Aktionen und Projektile familienweise ausbauen. Keine vollständige
+Sammlung aller Gegneranimationen behaupten. Grenzen: docs/ENEMY_WORKSHOP.md.
+
+Renderer: ganze Posen und __teil-N pro originalem Metaspriteindex, genaue
+OAM-Masken, 96/256 native Leinwand, 387/1032 Arbeits-PNGs. Ganze Pose nur bei
+einheitlicher Priorität/Farbrechnung; sonst Teile/Original. PNG-Aufnahme async,
+flush beim Schließen. Originalvorschau nach globaler OAM-Reihenfolge auch für
+Knochen/Körper-Überlappung. Referenzen behalten den ersten Palettenstand;
+Palette und Blitze sind in der neutralen Vorschau noch nicht farbgenau.
+
+Gezielt bestanden: 180 native Skelettfelder mit allen 5+3+10 Bildern/Teilen;
+neun Live-PNG-/Importfälle; C++-Masken, Spiegelung, große Leinwand und gemischte
+Priorität; echter Renderer mit Zaunverdeckung und identischem WRAM/VRAM/CGRAM/
+OAM; Tk-Bedienung, Pause/Einzelbild, Spawn bei Pause, Filter/Teile und Cleanup;
+Katalogmetadaten. Berichte unter artwork-local/enemy-workshop,
+enemy-workshop-review und enemy-catalog-audit. Bossabschluss:
+artwork-local/enemy-workshop/boss-profile-evidence-2026-10-24.json.
+
+Release in build und build-play/game aktualisiert. Altes EXE-Backup und
+Profilprüfsummen unter D:/Super Castlevania IV Recomp/backup/hd-artwork/
+2026-10-24-enemy-workshop-prebuild. Einstellungen und Spielstände unverändert.
+Release-SHA256: 26801DE8CA92E063A4371649755C5C53A84FFA7B27B2AE901683DB825B9368FE.
+Parallelchat-LoRA-/Landschaftsänderungen nicht mitstagen oder überschreiben.
+
 ## Fertige PNG-Sammlung für Gegner-Redesigns (23.10.)
 
 Nutzer wollte PNGs zum eigenen Redesign statt Laufzeit-Screenshots.

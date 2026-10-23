@@ -4,21 +4,31 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 22. Oktober 2026.
 
-## Fertige Gegner-PNGs zum Redesignen
+## Gegner separat ansehen und PNGs live austauschen
 
-Die erste Sammlung liegt bei deinen anderen Assets:
-`D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Gegner\01_Skelette`.
-Daneben liegt `Skelette_Redesign_Startpaket.zip` mit der ganzen Sammlung.
+`Gegner_Werkstatt_starten.cmd` im Projekt doppelklicken. Du bekommst ein eigenes
+Fenster mit Original und Redesign nebeneinander und echten Spielbewegungen.
+Figur wählen, **Spawnen / neu starten**, bei Bedarf Pause oder Einzelbild.
 
-`UEBERSICHT.png` zeigt die zwei Gehposen. Nur die beiden PNGs unter **artwork**
-bearbeiten: Sie sind schon **387 × 387 Pixel** groß, also **4,03125×**.
-Dateinamen, Transparenz und ganze Bildfläche behalten, nicht zuschneiden.
-Die Originale in **references** und **project.json** unverändert lassen.
+Für das Skelett sind jetzt **alle fünf Körperposen**, **drei Knochenbilder** und
+**zehn Zerfallseffekte** vorbereitet. Dazu kommen optionale Einzelteile.
+Die vollständige Sammlung hat 55 PNGs und liegt unter:
+`D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Gegner\02_Skelette_Alle_Aktionen`.
+Daneben liegt `Skelette_Alle_Aktionen_2026-10-24.zip`.
 
-Gib mir danach die fertigen PNGs oder den ganzen Ordner. Ich kann sie direkt
-zuordnen; beide Spielebenen und Spiegelungen gelten automatisch. Im HD-Import
-öffnet **Vorbereitete Skelett-Bilder öffnen** jetzt diese Sammlung.
-Es ist das Skelett-Startpaket, noch keine Sammlung aller Gegner.
+Die Werkstatt arbeitet in der zusätzlichen Kopie `Gegner\Werkstatt`.
+Eine Pose auswählen, PNG öffnen, in Photoshop gestalten und **im artwork-Ordner
+speichern**. Rechts erscheint die Änderung automatisch. Für Teile den Haken
+**Einzelteile anzeigen / austauschen** setzen. Eine neue ganze Pose hat Vorrang.
+
+PNGs sind schon 387×387 Pixel groß (4,03125×). Transparente Bildfläche,
+Proportion und Namen behalten, nicht zuschneiden. `references` und `project.json`
+aufbewahren. Über **PNG-Sammlung als ZIP exportieren** kannst du mir alles geben.
+Zum Einbauen im normalen HD-Import den Werkstatt-Arbeitsordner auswählen.
+
+Weitere Figuren sind als Gegner, Objekte oder ungeklärt beschriftet; sie sammeln
+beim Abspielen neue Posen. Bosse sind noch experimentell. Vollständig vorbereitet
+ist aktuell das genannte Skelettset. Anleitung: `docs\ENEMY_WORKSHOP.md`.
 
 ## Menügröße auf deinem 4K-Bildschirm
 

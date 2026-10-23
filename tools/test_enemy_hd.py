@@ -38,6 +38,14 @@ def main():
     with Image.open(source) as image:
         image.resize((387, 387), Image.Resampling.NEAREST).save(source)
     assert enemy_hd.pack(project, work / 'enemy_packs/diagnostic') == 1
+    component=work/'enemy_packs/component';component.mkdir()
+    image=Image.new('RGBA',(96,96))
+    from PIL import ImageDraw
+    ImageDraw.Draw(image).rectangle((40,40,55,55),fill=(0,255,100,255))
+    image.resize((387,387),Image.Resampling.NEAREST).save(component/'part.png')
+    frame={k:v for k,v in manifest['frames'][0].items() if k!='reference'}
+    frame.update(id=frame['id']+'__teil-0',image='part.png')
+    (component/'enemies.json').write_text(json.dumps({'version':1,'frames':[frame]}))
     test = subprocess.run([str(exe), 'verify'], cwd=work, check=True, capture_output=True, text=True).stdout
     # Safe retries never overwrite earlier artist files.
     try:

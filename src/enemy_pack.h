@@ -23,6 +23,7 @@ unsigned Cv4EnemyHdCount(void);
 const char *Cv4EnemyStatus(void);
 int Cv4EnemyCapturing(void);
 const char *Cv4EnemySelection(void);
+const char *Cv4EnemyObservation(void);
 /* capture on/off, reload, pack <directory>, status; no gameplay writes. */
 int Cv4EnemyCommand(const char *command);
 #ifdef __cplusplus

@@ -30,5 +30,9 @@ int main(int argc,char**argv){
  Cv4EnemyBegin(p,ram.data());check(Cv4EnemyHdCount()==1&&Cv4EnemyHd(0)->flip==1,"one reference recognizes complete mirrored actor");
  p->oam[23]^=1;Cv4EnemyBegin(p,ram.data());check(Cv4EnemyHdCount()==0,"unmatched sprite part preserves all native parts");
  Cv4EnemyCommand("off");Cv4EnemyBegin(p,ram.data());check(Cv4EnemyHdCount()==0,"disabling enemy pack restores original rendering");
+ set(ram,0x584,0);p->oam[20]=72|(92<<8);p->oam[21]=0x2000;p->oam[22]=88|(92<<8);p->oam[23]=0x2002;
+ check(Cv4EnemyCommand("pack component"),"load a single native component override");
+ Cv4EnemyBegin(p,ram.data());
+ check(Cv4EnemyHdCount()==1&&p->hostSprites[0].mask[1]==4,"component replaces only its own OAM slot; neighbouring native part stays intact");
  return 0;
 }

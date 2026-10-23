@@ -16,7 +16,7 @@ import enemy_hd
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-READY_ENEMY_WORKSPACE = ROOT.parent/'Assets (ausgeschnitten)'/'Gegner'/'01_Skelette'
+READY_ENEMY_WORKSPACE = ROOT.parent/'Assets (ausgeschnitten)'/'Gegner'/'Werkstatt'
 
 
 def enemy_preview(target):
@@ -149,8 +149,11 @@ def main():
             raise ValueError('Zuerst einen Vorlagenordner anlegen oder auswählen.')
         webbrowser.open(index.resolve().as_uri())
     ttk.Button(frame, text='Vorlagen als Bilderübersicht ansehen', command=lambda: run(browse_poses)).pack(anchor='w')
-    enemy_workspace = (READY_ENEMY_WORKSPACE if (READY_ENEMY_WORKSPACE/'project.json').is_file()
-                       else ROOT/'artwork-local/import-workspaces/skelette-2026-10-23')
+    enemy_workspace = next((path for path in (READY_ENEMY_WORKSPACE,
+        ROOT.parent/'Assets (ausgeschnitten)'/'Gegner'/'02_Skelette_Alle_Aktionen',
+        ROOT.parent/'Assets (ausgeschnitten)'/'Gegner'/'01_Skelette',
+        ROOT/'artwork-local/import-workspaces/skelette-2026-10-23')
+        if (path/'project.json').is_file()),READY_ENEMY_WORKSPACE)
     def select_enemies():
         if not (enemy_workspace/'project.json').is_file():
             raise ValueError('Der vorbereitete Skelett-Arbeitsordner ist noch nicht vorhanden.')

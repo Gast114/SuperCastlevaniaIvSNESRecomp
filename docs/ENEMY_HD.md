@@ -1,134 +1,91 @@
-# Gegnergrafiken vorbereiten
+# Gegner-PNGs und Live-Werkstatt
 
-Der erste unterstützte Gegner ist das laufende Skelett in A02, auf beiden
-Spielebenen. Das Spiel sammelt seine tatsächlich sichtbaren Animationsbilder
-automatisch. Neue HD-Zeichnungen werden noch nicht mitgeliefert.
+`Gegner_Werkstatt_starten.cmd` startet ein eigenes Desktopfenster mit Original
+und Redesign nebeneinander. Beide Ansichten verwenden dieselben Bewegungsdaten
+des Originalmotors. Bedienung: [ENEMY_WORKSHOP.md](ENEMY_WORKSHOP.md).
 
-Die fertige PNG-Sammlung mit den zwei Gehschritten liegt neben den anderen
-Nutzerassets unter `D:/Super Castlevania IV Recomp/Assets (ausgeschnitten)/Gegner/
-01_Skelette`. Die zwei PNGs in `artwork` sind bereits 387×387 Pixel groß,
-also 4,03125× zur nativen 96×96-Fläche. Nur darüberzeichnen und gleichnamig
-als transparentes PNG speichern. `references` enthält unveränderte Originale;
-`project.json` bewahrt die Zuordnung für beide Spielebenen. Beides aufbewahren.
+## Fertige Skelett-Sammlung
 
-`UEBERSICHT.png` und `VORLAGEN.html` zeigen die Sammlung. Daneben liegt
-`Skelette_Redesign_Startpaket.zip` mit allen nötigen Dateien. Der gemeinsame
-HD-Import öffnet über **Vorbereitete Skelett-Bilder öffnen** diese Sammlung und
-erkennt deren `project.json`. Manuelles Bearbeiten der Zuordnung ist nicht
-nötig. Der alte Arbeitsordner unter `artwork-local/import-workspaces/
-skelette-2026-10-23` bleibt als Rückfall erhalten. Die Sammlung umfasst die
-bereits belegten Gehposen, keinen vollständigen Gegnerkatalog.
+Neben dem Projekt unter `Assets (ausgeschnitten)/Gegner/02_Skelette_Alle_Aktionen`
+liegen **5 Körperposen** (2 Gehschritte, Ausholen, Werfen, Ausklang),
+**3 Knochen-Drehbilder** und **10 Zerfallseffekte** aus dem nativen Ablauf.
+Das erweitert das ältere Zwei-Gehbilder-Startpaket `01_Skelette`.
+Die alten Dateien bleiben erhalten. `$11` und `$12` sind Skelettvarianten;
+`$12` ist der Knochenwerfer. Die Typnummer allein bezeichnet keine Spielebene.
 
-## Für die Grafikarbeit
+55 unterschiedliche Arbeits-PNGs: 18 ganze Bilder und 37 optionale Einzelteile.
+73 native Zuordnungen teilen sich diese Dateien. Die Kopie `Gegner/Werkstatt`
+ist der Standardarbeitsordner der App. Daneben liegt die fertige ZIP
+`Skelette_Alle_Aktionen_2026-10-24.zip`. Originalbilder entstehen lokal aus der
+eigenen USA-ROM und gehören nicht ins Git.
 
-1. In den HD-Einstellungen **Gegner-Referenzen sammeln** einschalten und an den
-   Skeletten vorbeispielen. Die Aufnahme läuft im Hintergrund.
-2. Die Referenzen liegen im Spielordner unter `enemy_packs/native-template`.
-   Daraus erstellt `tools/enemy_hd.py prepare REFERENZEN MEIN_ORDNER` einen
-   Arbeitsordner mit `references`, `artwork` und einer kurzen Anleitung.
-   Mit `--work-size 387` sind die Arbeits-PNGs bereits passend vergrößert;
-   eine HTML-Bilderübersicht wird ebenfalls angelegt.
-   Identische Skelettbilder beider Spielebenen werden zusammengefasst: Für die
-   beiden Gehschritte genügen `Skelett_Schritt_01.png` und
-   `Skelett_Schritt_02.png`. Jede Zeichnung gilt automatisch auf beiden Ebenen.
-3. Die PNGs in `artwork` bearbeiten. Das vollständige transparente Bild und die
-   Position gegenüber der Referenz beibehalten. Die Arbeitsauflösung ist frei:
-   beispielsweise 387 × 387 für eine 96 × 96-Referenz, also 4,03125-fach. Es gibt
-   keine Pflicht zu exakt 10-facher Auflösung. Nicht auf sichtbare Pixel trimmen.
-4. Mit `tools/enemy_hd.py pack MEIN_ORDNER SPIELORDNER/enemy_packs/MEIN_PACK` einen
-   neuen Packordner erstellen und diesen in den HD-Einstellungen auswählen.
+`VORLAGEN.html` zeigt die Bilder. Nur **artwork** bearbeiten; **references**
+und **project.json** aufbewahren. PNGs sind bereits 387×387 Pixel groß:
+4,03125× zur nativen 96×96-Fläche. Ganze transparente Leinwand, Proportion und
+Dateinamen behalten. Andere proportionale Maße bis 4096×4096 funktionieren
+ebenfalls. Es gibt keine Pflicht zu 10×.
 
-Nur tatsächlich geänderte PNGs werden übernommen. Auch vorab vergrößerte,
-unbearbeitete Vorlagen erkennt der Import an gespeicherten Pixelprüfsummen.
-Unbearbeitete Posen bleiben
-original. Bestehende Arbeitsordner und Packs werden nicht überschrieben. Die
-Quell-PNGs behalten ihre exportierte Auflösung; es wird nichts vorab hochskaliert.
-Spiegelung, Animationszuordnung und Position übernimmt das Spiel.
+## Import ins Spiel
 
-Ein geändertes, gültiges PNG wird beim Spielen automatisch neu geladen. Während
-Photoshop eine Datei gerade schreibt, bleibt das zuletzt erfolgreich geladene
-Bild erhalten. Der HD-Schalter und die OBJ-Ebene gelten auch für Gegner.
+Die Werkstatt lädt gespeicherte PNGs live. **Paket zum Einbauen erstellen**
+schreibt einen neuen Ordner unter `artwork-local/enemies`. Nur veränderte PNGs
+werden bytegleich übernommen; unbearbeitete vergrößerte Vorlagen bleiben original.
 
-## Umfang des ersten Piloten
+Zum Einbauen `HD_Import_starten.cmd` öffnen, den Werkstatt-Arbeitsordner wählen,
+**Fertige PNGs prüfen / Paket erstellen** und anschließend **Paket in beide
+Spielversionen einbauen** anklicken. Die bisherige Auswahl wird gesichert.
+**Vorbereitete Skelett-Bilder öffnen** bevorzugt jetzt `Gegner/Werkstatt`.
+Details: [HD_IMPORT.md](HD_IMPORT.md).
 
-- Native A02-Skelette: Actor-Typen `$0011` und `$0012`, einschließlich der nativen
-  Animationsbeschreibungen `$8AF4` und `$8B05`, soweit tatsächlich aufgenommen.
-- Beliebig große PNGs bis 4096 × 4096, freie Sourceauflösung, transparenter Rand,
-  getrennte Posen, horizontale und vertikale Spiegelung.
-- Vollständige Metasprites: Ein neues Bild ersetzt alle eindeutig zugeordneten
-  Teile eines Gegners. Unbekannte oder unvollständig erkannte Bilder bleiben
-  vollständig original. Der Spieler und andere Objekte behalten ihre Grafik.
-- Native OBJ-Reihenfolge, Hintergrundpriorität, Fenster, Helligkeit und
-  Farbrechnung bleiben Teil der Komposition. Mehrere Gegner können gleichzeitig
-  ersetzt werden. Es gibt kein pauschales Bild über der gesamten Szene.
+Alternativ: `python tools/enemy_hd.py pack ARBEITSORDNER ZIELORDNER`.
+Den neuen Packordner nach `enemy_packs` neben der EXE kopieren und in den
+HD-Einstellungen auswählen. Fehlende Posen bleiben original.
 
-Dies ist kein vollständiger Gegnerkatalog. Weitere Gegnerfamilien, Bosse,
-aufgeteilte Körper mit unterschiedlichen Prioritäten, Spezialdarstellungen und
-native Palettenblitze müssen jeweils untersucht und geprüft werden. Die
-Skelettaufnahmen werden bewusst von Kerzen, Zugbrückenteilen, dem Turm und den
-kleinen Umgebungsanimationen getrennt. Für neue Gegner müssen Nutzer keine
-Tile-Adressen oder OAM-Slots zuordnen; die Erkennung wird im Programm ergänzt.
+Eine geänderte ganze Pose hat Vorrang vor ihren Einzelteilen. Ohne neue ganze
+Pose kann jedes erfasste native Teil separat ersetzt werden. Ganze Posen mit
+unterschiedlichen nativen Prioritäten/Farbrechenregeln fallen auf Einzelteile
+beziehungsweise Originalgrafik zurück. Einzelteil-PNGs behalten dieselbe
+Leinwand und Verankerung wie ihre ganze Pose.
 
-## Packformat und Zuordnung
+## Native Zuordnung
 
-`enemy_packs/selected.txt` enthält den ausgewählten lokalen Packnamen.
-`enemy_packs/PACK/enemies.json` beschreibt Version 1 und `frames`. Eine Pose:
+`enemy_packs/PACK/enemies.json` enthält `version: 1` und `frames`, je mit `id`,
+`actor_type`, `pose`, `image`, `display_size` und `anchor`. Die IDs erzeugt der
+Renderer aus Actor-Typ, nativem Metaspritezeiger und spiegelungsunabhängigen
+Farbindex-Pixeln. Einzelteile hängen `__teil-N` an diese ID; N ist der originale
+Metasprite-Teilindex, kein wechselnder OAM-Slot. Palette und Quellauflösung
+gehören nicht zum Schlüssel. Referenzen behalten den zuerst aufgenommenen
+Farbstand; Palettenvarianten und Blitze benötigen für eine farbexakte Vorschau
+noch eine zusätzliche Zuordnung.
 
-```json
-{
-  "id": "skelett-0011_pose-8af4_0123456789abcdef",
-  "actor_type": 17,
-  "pose": 35572,
-  "image": "skelett-0011_pose-8af4_0123456789abcdef.png",
-  "display_size": [96, 96],
-  "anchor": [48, 48]
-}
-```
+Die normale Referenzfläche ist 96×96 mit Anker 48×48. Größere erkannte Figuren
+erhalten 256×256 mit Anker 128×128, entsprechend 1032×1032 Arbeits-PNGs bei
+4,03125×. Bis zu 4096 Zuordnungen und 64 Millionen Quellpixel pro Pack sind
+zulässig. Figuren außerhalb dieser Fläche oder mit unvollständiger
+OAM-Zuordnung bleiben original.
 
-Die Beispiel-ID ist kein aufgenommener Schlüssel. Tatsächliche IDs erzeugt das
-Spiel aus Actor-Typ, nativem Metaspritezeiger und einem Fingerabdruck der
-unveränderten, von der Blickrichtung unabhängigen Farbindex-Pixel. Die
-Bildauflösung steht nicht im Schlüssel. Der komplette transparente Referenzrand
-gehört zur Positionszuordnung. Aktuell darf die native Darstellungsfläche bis
-96 × 96 Pixel umfassen, das Pack insgesamt bis 64 Millionen Quellpixel.
-
-`src/enemy_pack.cpp` rekonstruiert die native OAM-Erzeugung aus dem Actorbereich
-`$0580..$0EBF` mit 64 Bytes pro Datensatz. Es prüft für jedes Teil Position,
-Tile-/Attributwort und Größe gegen die tatsächlich übertragene OAM. Auch der
-vorherige Actor-Schnappschuss darf nur bei vollständiger exakter Übereinstimmung
-verwendet werden, da Spiellogik und OAM unterschiedliche Felder abbilden können.
-ROM, RAM, VRAM, CGRAM und OAM werden dabei nur gelesen.
-
-Die PPU erhält Hostbilder samt Masken ausschließlich für deren bestätigte
-OAM-Slots. `hostSpriteWinners` benennt pro Pixel den wirklichen Gewinner. Der
-HD-Renderer verwendet genau dieses Bild, einschließlich dessen Position,
-Spiegelung und frei skalierter Quellpixel. Die Sammlung schreibt höchstens 512
-Referenzen asynchron und verändert bereits vorhandene Referenz-PNGs nicht.
+`src/enemy_pack.cpp` liest Actor-Datensätze `$0580..$0EBF`, Metasprites aus
+ROM-Bank `$04` und tatsächlich übertragene OAM. Jedes Teil muss in Position,
+Größe und Attributwort exakt passen. Spieler, unbekannte Teile und andere
+OAM-Slots werden nicht vom Ersatzbild verdeckt. Im Spiel bleiben native
+OBJ-Reihenfolge, Zaun-/Hintergrundpriorität, Fenster und Farbrechnung wirksam.
+PNG-Aufnahme und HD-Ersatz schreiben keine Gastdaten.
 
 ## Gezielte Prüfungen
 
-`python tools/test_enemy_workspace.py` prüft die fertige 387er-Sammlung:
-zwei unterschiedliche PNGs für vier Spielzustände, Überspringen unveränderter
-Arbeitsvorlagen und bytegleicher Import eines bearbeiteten PNGs auf beiden
-Spielebenen bei unverändertem Anker und nativer Anzeigegröße. Für diese
-Sammlung sind keine Änderungen der Spiel-EXE nötig.
+- `tools/test_enemy_workshop_native.py`: ROM-Boot, 180 echte Felder, zwei Geh-,
+  drei Wurf-, drei Knochen- und zehn Zerfallbilder plus Einzelteile.
+- `tools/test_enemy_workshop_live.py --recording AUFNAHMEORDNER`: Live-Speichern,
+  unvollständige/fehlende PNGs, Wiederherstellung, globale OAM-Reihenfolge,
+  Vorrang ganzer Posen, Einzelteile, Altdaten und bytegleicher Import.
+- `tools/test_enemy_hd.py` und `tools/test_enemy_workshop_renderer.py`:
+  native Masken, Nachbarteile, Spiegelung, 387-/1032-PNGs, große Leinwand und
+  Prioritätsrückfall in unabhängig kompilierten C++-Probes.
+- `tools/test_enemy_workshop_live_render.py`: echter Renderer, einzelnes
+  Skelettteil, Zaunverdeckung sowie identische 128 KiB WRAM und
+  VRAM-/CGRAM-/OAM-Dumps mit und ohne Grafikpaket.
+- `tools/test_enemy_catalog_data.py`: 94 eindeutige Profile, 83 sichtbar in
+  zwei kurzen nativen Durchläufen; konservative Gegner-/Objektbeschriftung.
 
-`python tools/test_enemy_hd.py` kompiliert einen kleinen eigenständigen Test
-mit künstlichen ROM-/PPU-Daten. Er prüft vollständige Teilezuordnung,
-automatische Referenzaufnahme, 387 × 387-PNG auf 96 × 96-Darstellungsfläche,
-Anker, Spiegelung, Rückfall bei einem unbekannten Teil und das Abschalten.
-Alle Testdateien entstehen in einem neuen Ordner unter
-`artwork-local/enemy-hd-2026-10-23`; Spielerprofile bleiben unberührt.
-
-Ein isolierter echter Spielversuch hat die A02-Skelette zusätzlich visuell und
-über Actor-Datensätze bestätigt. Die Testszene wird über die native Raumladung
-geladen und Simon für reproduzierbares Streaming in die Nähe gesetzt. Das ist
-kein vollständiger natürlicher Leveldurchlauf.
-
-`tools/test_enemy_runtime.py --build-dir build-lua --fixture PFAD/ZUR/SKELETT.sav`
-prüft die vollständige Strecke von der automatischen Aufnahme bis zur sichtbaren
-387 × 387-Testgrafik im laufenden HD-Renderer. An drei identischen Spielfeldern
-müssen sämtliche 128 KiB WRAM und die VRAM-/CGRAM-/OAM-Dumps mit und ohne neue
-Grafiken identisch sein. Der geprüfte native Skelett-Arbeitsordner benötigt zwei
-PNG-Dateien für vier zugeordnete native Posen. Testbilder und Protokoll liegen
-lokal unter `artwork-local/enemy-hd-2026-10-23/review`.
+Sichtbarkeit beweist weder vollständige Animationen noch einen Spieldurchlauf.
+Katalogaudits und Bilder bleiben unter `artwork-local/enemy-catalog-audit`.

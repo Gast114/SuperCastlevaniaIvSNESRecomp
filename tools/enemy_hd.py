@@ -41,7 +41,7 @@ def prepare(source, destination, work_size=0):
     cards = []
     for frame in manifest['frames']:
         original = source / frame['reference']
-        family = 'Skelett' if frame['actor_type'] in (17,18) else f'Gegner_{frame["actor_type"]:04x}'
+        family = 'Skelett' if frame['actor_type'] in (17,18) else 'Knochen' if frame['actor_type']==2 else f'Gegner_{frame["actor_type"]:04x}'
         with Image.open(original) as image:
             identity = (family, image.size, hashlib.sha256(image.convert('RGBA').tobytes()).digest())
         name = artwork_by_pixels.get(identity)
@@ -93,7 +93,7 @@ def prepare(source, destination, work_size=0):
         'a{color:#a6d9ff}p{line-height:1.5}h2{font-size:18px}</style>'
         '<h1>Deine Gegner-PNGs zum Überarbeiten</h1>'
         '<p>Nur die PNGs in <strong>artwork</strong> bearbeiten. Dateinamen und komplette transparente Bildfläche behalten. '
-        'Originale und Zuordnung liegen separat bereit. Beide Blickrichtungen und Spielebenen sind automatisch zugeordnet.</p>'
+        'Originale und die Zuordnung zu den aufgenommenen Spielzuständen liegen separat bereit.</p>'
         f'<p>{len(artwork_by_pixels)} verschiedene PNGs für {len(frames)} aufgenommene Spielzustände. '
         'Diese Sammlung enthält die bereits zugeordneten Posen; sie ist kein vollständiger Gegnerkatalog.</p>'
         '<main>' + ''.join(cards) + '</main></html>', encoding='utf-8')
@@ -120,8 +120,11 @@ def pack(project, destination, all_references=False):
         reference = project / 'references' / frame['reference']
         with Image.open(source) as image:
             image.load()
-            if max(image.size) > 4096 or min(image.size) < 1:
+            if image.format != 'PNG' or max(image.size) > 4096 or min(image.size) < 1:
                 raise ValueError(f'PNG size outside 1..4096 pixels: {name}')
+            dw,dh=frame['display_size']
+            if not (1<=dw<=256 and 1<=dh<=256) or abs(image.width/dw-image.height/dh)>1/min(dw,dh):
+                raise ValueError(f'Keep the complete proportional PNG canvas; do not crop: {name}')
             if not all_references:
                 if data.get('work_templates', {}).get(name) == pixel_hash(image):
                     continue
@@ -131,6 +134,13 @@ def pack(project, destination, all_references=False):
         # Runtime keeps the PNG's exact original resolution, dimensions and
         # transparent canvas. display_size maps the full reference canvas.
         pending.append((source, {k: v for k, v in frame.items() if k != 'reference'}))
+    if len(pending)>4096:
+        raise ValueError('Enemy pack exceeds 4096 native mappings; split the artwork into smaller packs.')
+    pixels=0
+    for source,_ in pending:
+        with Image.open(source) as image:pixels+=image.width*image.height
+    if pixels>64*1024*1024:
+        raise ValueError('Enemy pack exceeds 64 million source pixels; split the artwork into smaller packs.')
     if not pending:
         raise ValueError('No changed artwork. Edit artwork/ PNGs first; --include-references is for renderer diagnostics.')
     destination.mkdir(parents=True)
