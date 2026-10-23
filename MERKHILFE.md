@@ -39,12 +39,12 @@ Dort kannst du diese Bilder ersetzen:
 | Stehen | `Idle-01_HD_10x_240x460.png` | 240 × 460 |
 | Ducken | `Ducking-01_HD_10x_230x350.png` | 230 × 350 |
 | Springen | `Jumping-01_HD_10x_200x450.png` | 200 × 450 |
-| Laufen 1 | `Walking-01_HD_10x.png` | 200 × 460 |
-| Laufen 2 | `Walking-02_HD_10x.png` | 230 × 450 |
-| Laufen 3 | `Walking-03_HD_10x.png` | 200 × 460 |
-| Laufen 4 | `Walking-04_HD_10x.png` | 250 × 460 |
-| Laufen 5 | `Walking-05_HD_10x.png` | 240 × 460 |
-| Laufen 6 | `Walking-06_HD_10x.png` | 230 × 450 |
+| Laufen 1 | `Walking-01_HD_10x.png` | 330 × 510 |
+| Laufen 2 | `Walking-02_HD_10x.png` | 330 × 510 |
+| Laufen 3 | `Walking-03_HD_10x.png` | 330 × 510 |
+| Laufen 4 | `Walking-04_HD_10x.png` | 330 × 510 |
+| Laufen 5 | `Walking-05_HD_10x.png` | 330 × 510 |
+| Laufen 6 | `Walking-06_HD_10x.png` | 330 × 510 |
 
 1. Bewahre eine Kopie des alten Bildes auf.
 2. Speichere dein neues Bild als PNG mit durchsichtigem Hintergrund.
@@ -67,6 +67,43 @@ Wenn du die Spielversion unter `build` benutzt, ersetze die Bilder dort:
 ```text
 build\characters\simon-user-hd-three-poses-v1
 ```
+
+## Deine in Photoshop verbesserten Laufbilder
+
+Die sechs überarbeiteten Bilder sind seit dem 23. Oktober im Spiel eingebaut.
+Sie sind in beiden Spielordnern und im lokalen Quellpaket gespeichert.
+Deine ausgeschnittenen Vorlagen bleiben hier erhalten:
+
+```text
+artwork-local\lora-pilot-2026-10-21\walking-neural-edit-2026-10-22\review-v1\frames
+```
+
+Für das Spiel haben alle sechs Laufbilder jetzt **330 × 510 Pixel**.
+Nur die transparente Arbeitsfläche wurde ergänzt. Deine Zeichnung wurde
+nicht gestreckt, verkleinert oder neu von der KI gemalt.
+
+Wenn du direkt ein Spielbild in Photoshop bearbeitest, behalte diese ganze
+Arbeitsfläche bei. Bitte nicht wieder eng auf die Figur zuschneiden.
+Die Position der Figur auf der Arbeitsfläche soll beim Speichern gleich bleiben.
+Dann kannst du das PNG im Spielordner direkt ersetzen.
+
+Falls das laufende Spiel noch die alten Bilder zeigt:
+**Esc → Character workshop → Reload**.
+
+Vorherige Spielbilder und deine neuen Vorlagen sind gesichert unter:
+`D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-10-23-simon-photoshop-walk`.
+
+## Weitere Animationen als einzelne Bilder vorbereiten
+
+Ein PNG pro Frame ist am einfachsten. Für die Treppe zum Beispiel:
+`going-upstairs-01.png` bis `going-upstairs-06.png`.
+Die sechs Original-Vorlagen liegen jetzt unter
+`D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Simon Belmont`.
+
+Bei den späteren HD-Bildern bitte für eine Animation immer dieselbe transparente
+Arbeitsfläche verwenden. Die Bilder nicht einzeln zentrieren oder eng zuschneiden.
+Ein fester Bezugspunkt hilft bei der Zuordnung im Spiel. Die Beine dürfen sich
+natürlich innerhalb der Fläche bewegen. Wir verwenden weiter nur **10x**.
 
 ## HD ein- und ausschalten
 
@@ -411,9 +448,9 @@ artwork-local\lora-pilot-2026-10-21\walking-neural-edit-2026-10-22\review-v1
 - **Gehposen_10x.zip:** Bilder und Vorschau zusammen mitnehmen.
 - **placement.json:** Größe und gemeinsamen Standpunkt aufheben.
 
-Die Vorschau ist noch nicht im Spiel eingebaut. Deine bisherigen Spielbilder
-sind aktiv. Auch diese neue Fassung braucht deine Beurteilung. Kleine Details
-an der Rüstung können sich noch unterscheiden.
+Die KI-Ausgabe war zunächst nur eine Vorschau. Du hast die sechs Einzelbilder
+danach in Photoshop verbessert. Diese bearbeitete Fassung ist jetzt im Spiel
+eingebaut. Die älteren Kontaktbilder und ZIPs zeigen noch den KI-Zwischenstand.
 
 Für die Korrekturen gibt es zusätzlich **FLUX.2 Klein** auf deinem Rechner.
 Die bisherigen Modelle und Python-Umgebungen wurden nicht geändert.

@@ -6,7 +6,43 @@ unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
 ## Aktuell: lokaler SDXL-LoRA-Pilot und GPU-Beschleunigung
 
-### Neuester Stand: lokale neuronale Korrektur als neue Vorschau fertig
+### Neuester Stand: Photoshop-Laufbilder des Nutzers installiert
+
+2026-10-23: Nutzer hat sechs PNGs in walking-neural-edit-2026-10-22/review-v1/frames
+selbst überarbeitet und den Einbau ausdrücklich beauftragt. Tatsächliche Dateien
+waren eng zugeschnitten:201x478,256x480,296x470,237x480,224x488,267x462; niemals
+unverändert in den Renderer kopieren (%10-Anforderung und alte display_size!).
+Gegen die gesicherten Vor-Photoshop-PNGs registriert, ganzer Körper und Schuhe
+geben dieselben Translationen:[64,13],[33,13],[12,23],[50,13],[44,13],[22,28].
+Ohne Resampling auf gemeinsame330x510-PNGs gesetzt. Vier transparente Pixel
+links plus sechs rechts machen den alten nativen Ursprung31,4 bei int-Offset31
+exakt darstellbar. Neuer PNG-root[170,210], hd.offset[31,27], display_size[33,51],
+scale10 für alle sechs. Original-RGBA jedes bearbeiteten Bilds unverändert auf
+Arbeitsfläche kopiert und exakt geprüft. Keine neuen KI-Berechnungen/EXE-Builds.
+
+Installiert in build-play/game/characters/simon-user-hd-three-poses-v1,
+build/characters/simon-user-hd-three-poses-v1 und artwork-local/characters/... .
+Pro Ziel nur sechs Lauf-PNGs, ihre hd-Felder im Manifest und Importbelege geändert.
+Native IDs, cells, anchor/hand, body.png, übrige3HD-Posen und Gameplay erhalten.
+Beide Spielordner haben das Paket schon ausgewählt. Automatisches Reload oder
+Esc → Character workshop → Reload. Keine Gameplay-Testmatrix nötig für Bildimport.
+
+Audit/Originalquellen/vorherige Pakete/Prüfsummen:
+artwork-local/simon-photoshop-walk-install-2026-10-23/install.json und Unterordner.
+Externes SHA256-geprüftes Backup:
+D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-10-23-simon-photoshop-walk.
+Die Photoshop-Quelldateien nicht ändern. Alte Kontaktbögen/ZIPs in review-v1
+wurden nicht neu erzeugt und zeigen noch den ursprünglichen KI-Stand.
+
+Nutzer hat auch going-upstairs-01.png bis06 + going-upstairs.png unter
+D:/Super Castlevania IV Recomp/Assets (ausgeschnitten)/Simon Belmont ergänzt.
+Das sind native RGBA21x47,32x47,21x47,26x47,26x47,24x47. Noch keine HD-Treppen-
+Bilder erzeugt/installiert; Vorlagen erhalten. Einzelne Frames, gemeinsame
+transparente HD-Arbeitsfläche und fester Bezugspunkt empfohlen; keine separate
+Zentrierung, kein Alpha-Trim pro Phase. Hinweise in MERKHILFE.md ergänzt.
+
+### Vorheriger Stand: lokale neuronale Korrektur als Vorschau
+
 
 Aktuelle Ausgabe:
 `artwork-local/lora-pilot-2026-10-21/walking-neural-edit-2026-10-22/review-v1`.

@@ -6,6 +6,14 @@ wurden für diesen Pilot nicht geändert. Alltagshinweise stehen in MERKHILFE.md
 
 ## Ergebnis und Grenzen
 
+**Update23.10.:** Der Nutzer hat die sechs Einzel-PNGs in Photoshop überarbeitet
+und den Einbau beauftragt. Diese Nutzerfassung ist jetzt in beiden Spielordnern
+aktiv. Aus zugeschnittenen Quellen ohne Resampling auf330x510-Arbeitsfläche
+gebracht; alle Details im neuesten HANDOFF-Abschnitt und im lokalen
+simon-photoshop-walk-install-2026-10-23/install.json. Alte Kontaktbögen und ZIPs
+zeigen weiter den KI-Zwischenstand. Die folgenden Absätze sind dessen Verlauf.
+
+
 **Neue lokale Vorschau fertig:** `walking-neural-edit-2026-10-22/review-v1`.
 Sechs transparente320x510-PNGs in10x mit gemeinsamen Koordinaten, Kontaktbogen,
 Animation, synchronem Vergleich, HTML und ZIP. Wirklich visuell geprüft;
