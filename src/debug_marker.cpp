@@ -1,3 +1,4 @@
+#include "runtime_settings_imgui.h"
 /* Debug markers: Ctrl+D (config.ini [KeyMap] DebugMarker) or Select+L3 on a
  * pad ([Controller] DebugGesture) freezes the game and records the moment
  * into debug_markers/<time>_<scene>/ beside the executable:
@@ -252,7 +253,8 @@ extern "C" void Cv4DebugMarkerDraw(void) {
   if (!g_open)
     return;
   const ImGuiIO &io = ImGui::GetIO();
-  const float width = io.DisplaySize.x - 48 < 620 ? io.DisplaySize.x - 48 : 620;
+  const float scale=Cv4RuntimeUiScale();
+  const float width=std::min(io.DisplaySize.x-24*scale,760*scale);
   ImGui::SetNextWindowPos({io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f},
                           ImGuiCond_Always, {0.5f, 0.5f});
   ImGui::SetNextWindowSize({width, 0}, ImGuiCond_Always);
@@ -267,10 +269,10 @@ extern "C" void Cv4DebugMarkerDraw(void) {
     ImGui::SetKeyboardFocusHere();
     g_focus_note = false;
   }
-  ImGui::InputTextMultiline("##note", g_note, sizeof(g_note), {-1, 150});
+  ImGui::InputTextMultiline("##note", g_note, sizeof(g_note), {-1, std::min(150*scale,io.DisplaySize.y*.3f)});
   if (ImGui::Button("Speichern  (Strg+Enter / A)"))
     Save();
-  ImGui::SameLine();
+  if (width>650*scale)ImGui::SameLine();
   if (g_open && ImGui::Button("Verwerfen  (Esc / B)"))
     Discard();
   ImGui::End();

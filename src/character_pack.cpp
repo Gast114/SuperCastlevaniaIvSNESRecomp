@@ -1,3 +1,4 @@
+#include "runtime_settings_imgui.h"
 #include "character_pack.h"
 #include "character_json.h"
 #include "character_tuning.h"
@@ -348,10 +349,8 @@ extern "C" const Cv4CharacterHdFrame *Cv4CharacterHd(void){return hdFrame.pixels
 extern "C" const char *Cv4CharacterPose(void){return currentId.c_str();}
 extern "C" void Cv4CharacterEditor(){
   if(!initialized)return;
-  auto display=ImGui::GetIO().DisplaySize;
-  ImGui::SetNextWindowPos({24,76},ImGuiCond_Always);
-  ImGui::SetNextWindowSize({std::min(600.f,display.x-48),std::min(760.f,display.y-92)},ImGuiCond_Always);
-  if(!ImGui::Begin("Character workshop")){ImGui::End();return;}
+  Cv4RuntimeUiPanel(900,1100);
+  if(!ImGui::Begin("Character workshop",nullptr,ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse)){ImGui::End();return;}
   ImGui::TextWrapped("%s",status.c_str());
   if(ImGui::Checkbox("Use character pack",&enabled))std::ofstream("characters/selected.txt")<<(enabled?active.directory:"");
   ImGui::SameLine();ImGui::Checkbox("Collect Simon poses",&capture);
@@ -422,8 +421,8 @@ extern "C" void Cv4CharacterEditor(){
     if(playing)selected=(int)(ImGui::GetTime()*8)%shown.frames.size();
     ImGui::SliderInt("Frame",&selected,0,(int)shown.frames.size()-1);Frame&f=shown.frames[selected];
     ImGui::TextWrapped("%s | %s | Cell %d",f.label.c_str(),f.id.c_str(),f.cell);
-    ImVec2 pos=ImGui::GetCursorScreenPos();float scale=3;auto*d=ImGui::GetWindowDrawList();
-    for(int y=0;y<12;++y)for(int x=0;x<12;++x)d->AddRectFilled({pos.x+x*24,pos.y+y*24},{pos.x+(x+1)*24,pos.y+(y+1)*24},((x+y)&1)?IM_COL32(38,40,48,255):IM_COL32(55,58,68,255));
+    ImVec2 pos=ImGui::GetCursorScreenPos();float scale=3*Cv4RuntimeUiScale();auto*d=ImGui::GetWindowDrawList();
+    for(int y=0;y<12;++y)for(int x=0;x<12;++x)d->AddRectFilled({pos.x+x*8*scale,pos.y+y*8*scale},{pos.x+(x+1)*8*scale,pos.y+(y+1)*8*scale},((x+y)&1)?IM_COL32(38,40,48,255):IM_COL32(55,58,68,255));
     preview(shown,f,pos,scale);int rf=find(reference,f.id);if(overlay&&rf>=0)preview(reference,reference.frames[rf],pos,scale,0x60ffffff);
     auto mark=[&](int x,int y,ImU32 c){float xx=pos.x+(previewFlip?Cell-x:x)*scale,yy=pos.y+y*scale;d->AddLine({xx-6,yy},{xx+6,yy},c,2);d->AddLine({xx,yy-6},{xx,yy+6},c,2);};
     mark(f.ax,f.ay,IM_COL32(0,255,120,255));mark(f.hx,f.hy,IM_COL32(255,190,40,255));ImGui::Dummy({Cell*scale,Cell*scale});

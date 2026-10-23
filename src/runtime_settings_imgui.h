@@ -11,6 +11,8 @@ typedef struct RecompRuntimeUi RecompRuntimeUi;
 bool Cv4RuntimeSettingsImGuiInit(void *window, void *gl_context);
 void Cv4RuntimeSettingsImGuiShutdown(void);
 bool Cv4RuntimeSettingsImGuiProcessEvent(const void *event);
+float Cv4RuntimeUiScale(void);
+void Cv4RuntimeUiPanel(float max_width, float max_height);
 void Cv4RuntimeSettingsImGuiRender(void *ui, int width, int height);
 
 #ifdef __cplusplus

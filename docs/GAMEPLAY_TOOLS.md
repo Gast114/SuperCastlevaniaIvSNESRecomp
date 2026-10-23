@@ -1,6 +1,6 @@
 # Spieltechnik und Grafikwerkzeuge – 23. Oktober 2026
 
-Die fünf beauftragten Arbeiten sind unabhängig von neuen HD-Designs umgesetzt.
+Die sechs beauftragten Arbeiten sind unabhängig von neuen HD-Designs umgesetzt.
 Bedienung steht auch in `MERKHILFE.md`.
 
 ## Debug-Marker: wiederholte Kulisse an der Zugbrücke
@@ -52,6 +52,36 @@ Bilderübersicht, Prüfung und Paketbau. Quell-PNGs bleiben bytegleich; Anzeigeg
 und Verankerung stammen aus der nativen Vorlage. Der Einbauen-Knopf übernimmt
 ein geprüftes Paket in beide Spielversionen und sichert die bisherige Auswahl.
 Details und Grenzen: `HD_IMPORT.md`.
+
+## Menü auf 4K-Bildschirmen
+
+Das Escape-Menü verwendet jetzt eine größere Lato-Schrift mit passenden
+Schaltflächen, Abständen, Bildvorschauen und Scrollleisten. Automatik bezieht
+Windows-Skalierung und Fensterauflösung ein: 3840×2160 ergibt 200% mit 36px
+Schrift; 800×600 bleibt mit 18px bedienbar. Mehrere Schriftgrößen liegen direkt
+im Font-Atlas, damit die Vergrößerung lesbar bleibt.
+
+Oben bei `Menu size` stehen Automatic und 100–250% zur Wahl. Die Auswahl wird
+in `ui_settings.json` gespeichert; die wirksame Größe wird für kleine Fenster
+begrenzt. Der aktuelle Prozentwert steht daneben. Die Navigationsleiste bricht
+bei Bedarf um und reserviert ihren tatsächlichen Platz für alle Unterseiten.
+
+Shortcuts haben größere Zeilen, einen Filter und feste Spalten für Tastenkürzel
+und Löschen. Controller-Kürzel und Hilfe lassen sich unter der Liste aufklappen.
+Allgemeine Spieloptionen skalieren mit; lange Beschreibungen brechen um.
+HD-Seite, Figurenwerkstatt, Debug-Notiz und Einzelbildsteuerung nutzen dieselbe
+Schrift und Größenanpassung.
+
+Release-Nachweise: `build/menu-scale-wecb9l9v/report.json` prüft echte Renderings
+in 800×600 und 3840×2160, Shortcut-Klicks sowie Größenwahl per Maus und Speichern/
+Lesen der Einstellung. Die abschließende 4K-Ansicht nach Anpassung der +/-
+Schaltflächen liegt unter `build/menu-final-vuh5l7r3/settings-4k.png`.
+Bestehende Shortcut-, Performance- und HD-Menütests bestanden ebenfalls:
+`build/shortcut-ui-er62aq7b`, `build/performance-ui-67yfmia2`,
+`build/hd-ui-check-o8myv0jv`. Sichtprüfungen: `artwork-local/menu-4k-2026-10-23`.
+Beide Spielordner enthalten die neue EXE. Vorherige EXEs und Installationsbeleg
+mit unveränderten Spielerdaten liegen unter `D:/Super Castlevania IV Recomp/
+backup/hd-artwork/2026-10-23-menu-4k-prebuild`.
 
 ## Gezielte Nachweise
 

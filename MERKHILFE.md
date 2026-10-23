@@ -4,6 +4,19 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 22. Oktober 2026.
 
+## Menügröße auf deinem 4K-Bildschirm
+
+Spiel neu starten und mit Escape das Menü öffnen. Schrift und Knöpfe werden
+jetzt automatisch größer; auf 4K ist die Voreinstellung 200%.
+
+Oben bei **Menu size** kannst du **Automatic** oder **100% bis 250%** wählen.
+Die Auswahl wird gespeichert. Bei kleinen Fenstern wird die Größe begrenzt,
+damit die Bedienung erreichbar bleibt.
+
+Unter **Shortcuts**: im Feld **Filter actions** suchen, auf das Tastenkürzel
+klicken und die neue Kombination drücken. **Clear** löscht, Escape bricht die
+Eingabe ab. Controller-Kürzel stehen zum Aufklappen unter der Liste.
+
 ## Rewind, NEW GAME+ und neue HD-Werkzeuge
 
 F8 öffnet Rewind. Mit Links/Rechts einen Zeitpunkt aussuchen, mit Enter oder

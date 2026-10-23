@@ -4,6 +4,27 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## Menüüberarbeitung für 4K vom 23.10. (Punkt 6)
+
+Escape-Menü: Lato 18px Basis, mehrere direkt gerasterte Größen bis45px,
+automatische Windows-/Auflösungsskalierung (4K:200%,36px), gespeicherte
+Menu-size-Auswahl 100–250%/Automatic in ui_settings.json. Fensterbegrenzung,
+umbruchfähige Navigation und tatsächliche Work-Area für alle Panels.
+Shortcuts:42px-Zeilen multipliziert mit UI-Skala, Filter, feste Binding-/Clear-
+Spalten, einklappbare Controller-Hilfe. HD-/Figuren-/Notiz-/Einzelbild-UI passt
+sich mit an. Shared runtime UI skaliert Desktop-Metriken, größere Panels,
+umgebrochene Beschreibungen und +/- auf der ersten Textzeile.
+
+UI-Fork:39adc724dd725cd777480e91d18ee68dc460739f auf
+Gast114/recomp-ui codex/sciv-menu-work-area veröffentlicht; Pin und Bare-Backup
+aktualisiert. Root-Spielordner build und build-play/game aktualisiert.
+Vorherige EXEs + Installationsbeleg unter D:/Super Castlevania IV Recomp/backup/
+hd-artwork/2026-10-23-menu-4k-prebuild; Konfiguration, Grafikpaketauswahl und
+Spielerdaten per Hash unverändert. Details/Nachweise:docs/GAMEPLAY_TOOLS.md.
+Neue gezielte Regression:tools/test_menu_scale.py. Echte 800×600-/4K-Renderings,
+Shortcut-Interaktion, Menu-size-Mauswahl/Speichern/Lesen und bestehende
+Shortcut-/Performance-/HD-Menütests bestanden. Keine neue Spielgrafik erzeugt.
+
 ## Spieltechnik vom 23.10.: Rewind, zweiter Durchgang, Gegner und Import
 
 Nutzerauftrag mit fünf Punkten umgesetzt: neuester Debug-Marker an der
