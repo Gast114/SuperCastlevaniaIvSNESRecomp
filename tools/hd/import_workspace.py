@@ -16,6 +16,7 @@ import enemy_hd
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
+READY_ENEMY_WORKSPACE = ROOT.parent/'Assets (ausgeschnitten)'/'Gegner'/'01_Skelette'
 
 
 def enemy_preview(target):
@@ -51,6 +52,8 @@ def main():
     template = tk.StringVar(value=str(ROOT/'build-play/game/characters/simon-template'))
     candidates = list((ROOT/'artwork-local/import-workspaces').glob('*/workspace.json'))
     candidates += list((ROOT/'artwork-local/import-workspaces').glob('*/project.json'))
+    if (READY_ENEMY_WORKSPACE/'project.json').is_file():
+        candidates.append(READY_ENEMY_WORKSPACE/'project.json')
     latest = max(candidates, key=lambda p: p.stat().st_mtime).parent if candidates else ''
     workspace = tk.StringVar(value=str(latest))
     status = tk.StringVar(value='Fertige Posen können einzeln importiert werden. Fehlende Bilder bleiben original.')
@@ -146,7 +149,8 @@ def main():
             raise ValueError('Zuerst einen Vorlagenordner anlegen oder auswählen.')
         webbrowser.open(index.resolve().as_uri())
     ttk.Button(frame, text='Vorlagen als Bilderübersicht ansehen', command=lambda: run(browse_poses)).pack(anchor='w')
-    enemy_workspace = ROOT/'artwork-local/import-workspaces/skelette-2026-10-23'
+    enemy_workspace = (READY_ENEMY_WORKSPACE if (READY_ENEMY_WORKSPACE/'project.json').is_file()
+                       else ROOT/'artwork-local/import-workspaces/skelette-2026-10-23')
     def select_enemies():
         if not (enemy_workspace/'project.json').is_file():
             raise ValueError('Der vorbereitete Skelett-Arbeitsordner ist noch nicht vorhanden.')

@@ -42,7 +42,10 @@ Animationsposen aus einem einzelnen Bild erfinden.
 ## Gegner im gleichen Fenster
 
 **Vorbereitete Skelett-Bilder öffnen** zeigt die beiden bereits aufgenommenen
-Skelett-Schritte. Die passenden PNGs aus `artwork` in Photoshop bearbeiten;
+Skelett-Schritte unter `Assets (ausgeschnitten)/Gegner/01_Skelette` neben dem
+Projekt. Übersicht und komplette ZIP-Datei liegen dort bereit. Die passenden
+PNGs aus `artwork` sind schon 387×387 Pixel groß und können direkt in Photoshop
+bearbeitet werden;
 `references` bleibt als Original erhalten. Die ganze transparente Bildfläche
 proportional beibehalten, beispielsweise 387×387 Pixel statt nativen 96×96.
 Ein Bild kann automatisch mehreren Spielzuständen zugeordnet sein.

@@ -4,6 +4,27 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## Fertige PNG-Sammlung für Gegner-Redesigns (23.10.)
+
+Nutzer wollte PNGs zum eigenen Redesign statt Laufzeit-Screenshots.
+Startpaket angelegt neben den bisherigen Assets unter D:/Super Castlevania IV
+Recomp/Assets (ausgeschnitten)/Gegner/01_Skelette. Zwei artwork-PNGs bereits
+387×387 (4,03125×), native references unverändert96×96, project.json mit vier
+belegten Zuständen ($11/$12 × $8AF4/$8B05), Bildergalerie, UEBERSICHT.png,
+kurze Anleitung. ZIP daneben:Skelette_Redesign_Startpaket.zip. Keine Art ins
+Spiel installiert; die EXEs und Profile bleiben unverändert.
+
+Tools:enemy_hd.prepare optional --work-size387, Galerie wird automatisch
+angelegt. work_templates-Pixelprüfsummen verhindern, dass bloß vorab vergrößerte
+Originale als neue Designs gepackt werden. Geänderte Exporte bleiben bytegleich.
+GUI-Button für vorbereitete Skelette bevorzugt die neue Sammlung, mit altem
+internen Arbeitsordner als Rückfall. Zwei fokussierte Importtests und Prüfung
+gegen die echten vier Runtime-Referenzen bestanden. Siehe docs/ENEMY_HD.md.
+
+Aktueller Umfang bleibt nur die sicher zugeordneten Skelett-Gehposen.
+Optionale Frage zu weiteren Gegnern gestellt; bislang keine Antwort.
+Nicht als fertigen Katalog aller Gegner ausgeben. Artwork und ZIP bleiben lokal.
+
 ## Menüüberarbeitung für 4K vom 23.10. (Punkt 6)
 
 Escape-Menü: Lato 18px Basis, mehrere direkt gerasterte Größen bis45px,

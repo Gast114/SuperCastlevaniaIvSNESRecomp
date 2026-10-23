@@ -4,6 +4,22 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 22. Oktober 2026.
 
+## Fertige Gegner-PNGs zum Redesignen
+
+Die erste Sammlung liegt bei deinen anderen Assets:
+`D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Gegner\01_Skelette`.
+Daneben liegt `Skelette_Redesign_Startpaket.zip` mit der ganzen Sammlung.
+
+`UEBERSICHT.png` zeigt die zwei Gehposen. Nur die beiden PNGs unter **artwork**
+bearbeiten: Sie sind schon **387 × 387 Pixel** groß, also **4,03125×**.
+Dateinamen, Transparenz und ganze Bildfläche behalten, nicht zuschneiden.
+Die Originale in **references** und **project.json** unverändert lassen.
+
+Gib mir danach die fertigen PNGs oder den ganzen Ordner. Ich kann sie direkt
+zuordnen; beide Spielebenen und Spiegelungen gelten automatisch. Im HD-Import
+öffnet **Vorbereitete Skelett-Bilder öffnen** jetzt diese Sammlung.
+Es ist das Skelett-Startpaket, noch keine Sammlung aller Gegner.
+
 ## Menügröße auf deinem 4K-Bildschirm
 
 Spiel neu starten und mit Escape das Menü öffnen. Schrift und Knöpfe werden

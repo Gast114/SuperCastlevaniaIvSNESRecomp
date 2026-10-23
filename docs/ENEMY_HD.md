@@ -4,11 +4,20 @@ Der erste unterstützte Gegner ist das laufende Skelett in A02, auf beiden
 Spielebenen. Das Spiel sammelt seine tatsächlich sichtbaren Animationsbilder
 automatisch. Neue HD-Zeichnungen werden noch nicht mitgeliefert.
 
-Ein fertiger Arbeitsordner mit den zwei Gehschritten liegt unter
-`artwork-local/import-workspaces/skelette-2026-10-23`. `VORLAGEN.html` zeigt die
-Referenzen als Galerie. Der gemeinsame HD-Import erkennt dessen `project.json`
-und erstellt daraus ein Gegnerpaket. Manuelles Bearbeiten der Zuordnung ist
-nicht nötig.
+Die fertige PNG-Sammlung mit den zwei Gehschritten liegt neben den anderen
+Nutzerassets unter `D:/Super Castlevania IV Recomp/Assets (ausgeschnitten)/Gegner/
+01_Skelette`. Die zwei PNGs in `artwork` sind bereits 387×387 Pixel groß,
+also 4,03125× zur nativen 96×96-Fläche. Nur darüberzeichnen und gleichnamig
+als transparentes PNG speichern. `references` enthält unveränderte Originale;
+`project.json` bewahrt die Zuordnung für beide Spielebenen. Beides aufbewahren.
+
+`UEBERSICHT.png` und `VORLAGEN.html` zeigen die Sammlung. Daneben liegt
+`Skelette_Redesign_Startpaket.zip` mit allen nötigen Dateien. Der gemeinsame
+HD-Import öffnet über **Vorbereitete Skelett-Bilder öffnen** diese Sammlung und
+erkennt deren `project.json`. Manuelles Bearbeiten der Zuordnung ist nicht
+nötig. Der alte Arbeitsordner unter `artwork-local/import-workspaces/
+skelette-2026-10-23` bleibt als Rückfall erhalten. Die Sammlung umfasst die
+bereits belegten Gehposen, keinen vollständigen Gegnerkatalog.
 
 ## Für die Grafikarbeit
 
@@ -17,6 +26,8 @@ nicht nötig.
 2. Die Referenzen liegen im Spielordner unter `enemy_packs/native-template`.
    Daraus erstellt `tools/enemy_hd.py prepare REFERENZEN MEIN_ORDNER` einen
    Arbeitsordner mit `references`, `artwork` und einer kurzen Anleitung.
+   Mit `--work-size 387` sind die Arbeits-PNGs bereits passend vergrößert;
+   eine HTML-Bilderübersicht wird ebenfalls angelegt.
    Identische Skelettbilder beider Spielebenen werden zusammengefasst: Für die
    beiden Gehschritte genügen `Skelett_Schritt_01.png` und
    `Skelett_Schritt_02.png`. Jede Zeichnung gilt automatisch auf beiden Ebenen.
@@ -27,7 +38,9 @@ nicht nötig.
 4. Mit `tools/enemy_hd.py pack MEIN_ORDNER SPIELORDNER/enemy_packs/MEIN_PACK` einen
    neuen Packordner erstellen und diesen in den HD-Einstellungen auswählen.
 
-Nur tatsächlich geänderte PNGs werden übernommen. Unbearbeitete Posen bleiben
+Nur tatsächlich geänderte PNGs werden übernommen. Auch vorab vergrößerte,
+unbearbeitete Vorlagen erkennt der Import an gespeicherten Pixelprüfsummen.
+Unbearbeitete Posen bleiben
 original. Bestehende Arbeitsordner und Packs werden nicht überschrieben. Die
 Quell-PNGs behalten ihre exportierte Auflösung; es wird nichts vorab hochskaliert.
 Spiegelung, Animationszuordnung und Position übernimmt das Spiel.
@@ -93,6 +106,12 @@ Spiegelung und frei skalierter Quellpixel. Die Sammlung schreibt höchstens 512
 Referenzen asynchron und verändert bereits vorhandene Referenz-PNGs nicht.
 
 ## Gezielte Prüfungen
+
+`python tools/test_enemy_workspace.py` prüft die fertige 387er-Sammlung:
+zwei unterschiedliche PNGs für vier Spielzustände, Überspringen unveränderter
+Arbeitsvorlagen und bytegleicher Import eines bearbeiteten PNGs auf beiden
+Spielebenen bei unverändertem Anker und nativer Anzeigegröße. Für diese
+Sammlung sind keine Änderungen der Spiel-EXE nötig.
 
 `python tools/test_enemy_hd.py` kompiliert einen kleinen eigenständigen Test
 mit künstlichen ROM-/PPU-Daten. Er prüft vollständige Teilezuordnung,
