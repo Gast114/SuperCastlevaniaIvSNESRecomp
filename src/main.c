@@ -38,6 +38,7 @@
 #include "snes/ppu.h"
 #include "snes/snes.h"
 #include "character_pack.h"
+#include "enemy_pack.h"
 #include "debug_marker.h"
 #include "hd_collect.h"
 #include "hd_render.h"
@@ -162,6 +163,7 @@ static void Cv4RomLoaded(const uint8_t *rom, size_t size)
 {
     if (rom)
         Cv4CharacterInit(rom, (unsigned)size);
+        Cv4EnemyInit(rom, (unsigned)size);
     Cv4LuaCommandsInstall();
 }
 
@@ -261,6 +263,7 @@ static void Cv4BeginSimFrame(unsigned number)
         PpuSetWidescreenLayerWorldMirrorBand(g_ppu, 1, 0, 224, 0, 0xffff);
     }
     Cv4CharacterBegin(g_ppu, g_ram);
+    Cv4EnemyBegin(g_ppu, g_ram);
     /* Cutscenes drawn as one 256-pixel picture get designed margin columns
      * (assets/widescreen_margins.txt) instead of whatever else their map holds. */
     Cv4MarginFillApply(g_ppu, Cv4SceneName(scene));

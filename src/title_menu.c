@@ -23,7 +23,7 @@
  * lle_only in src/gen/program_manifest.json), so they read cart->rom.
  *
  * The confirmation still branches on the retail values; campaign2.c turns a
- * confirmed 3 into START plus the campaign tag before $00:8715 reads it.
+ * confirmed 3 into START plus a second-quest request before $00:8715 reads it.
  */
 #include "title_menu.h"
 

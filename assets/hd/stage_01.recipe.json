@@ -79,11 +79,11 @@
     {
       "layer": 1,
       "image": "HD/03_HINTERGRUND_HD_LINKS_3390x1920.png",
-      "coordinates": "map",
+      "coordinates": "world",
       "x": -54,
       "y": 0,
-      "wrap_x": 512,
-      "wrap_y": 256
+      "wrap_x": 0,
+      "wrap_y": 0
     },
     {
       "layer": 4,

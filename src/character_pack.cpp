@@ -169,17 +169,23 @@ Pack load(const std::string&directory){
       const auto &offset=hd.at("offset").items();
       if(offset.size()!=2||a.hdScale!=10||a.hdImage.empty()||fs::path(a.hdImage).filename()!=fs::path(a.hdImage))throw std::runtime_error("HD pose needs a local PNG, scale 10 and two offsets");
       a.hdX=offset[0].number();a.hdY=offset[1].number();
+      auto display=hd.object.find("display_size");
+      if(display!=hd.object.end()) {
+        const auto &size=display->second.items();
+        if(size.size()!=2)throw std::runtime_error("Invalid HD display size");
+        a.displayW=size[0].number();a.displayH=size[1].number();
+        if(a.displayW<1||a.displayH<1||a.displayW>Cell||a.displayH>Cell||a.hdX<0||a.hdY<0||a.hdX>Cell||a.hdY>Cell||a.hdX+a.displayW>Cell||a.hdY+a.displayH>Cell)throw std::runtime_error("HD display size exceeds cell");
+      }
       int channels;
       auto image=path(p,a.hdImage.c_str());
-      if(!stbi_info(image.string().c_str(),&a.hdW,&a.hdH,&channels)||a.hdW<=0||a.hdH<=0||a.hdW%10||a.hdH%10||a.hdX<0||a.hdY<0||a.hdX+a.hdW/10>Cell||a.hdY+a.hdH/10>Cell)throw std::runtime_error("HD pose exceeds its 96 x 96 native cell");
+      if(!stbi_info(image.string().c_str(),&a.hdW,&a.hdH,&channels)||a.hdW<=0||a.hdH<=0||a.hdW>8192||a.hdH>8192||uint64_t(a.hdW)*a.hdH>32*1024*1024)throw std::runtime_error("Invalid or excessively large HD pose PNG");
+      // Explicit native display bounds decouple Photoshop's working resolution
+      // from the compositor's 10x sampling. Keep legacy implicit 10x packs strict.
+      if(!a.displayW&&(a.hdW%10||a.hdH%10||a.hdX<0||a.hdY<0||a.hdX+a.hdW/10>Cell||a.hdY+a.hdH/10>Cell))throw std::runtime_error("HD pose exceeds its 96 x 96 native cell; non-10x artwork needs display_size");
       uint8_t *bytes=stbi_load(image.string().c_str(),&a.hdW,&a.hdH,&channels,4);
       if(!bytes)throw std::runtime_error("Cannot load HD pose PNG");
       int sourceW=a.hdW,sourceH=a.hdH;
-      if(auto display=hd.object.find("display_size");display!=hd.object.end()) {
-        const auto &size=display->second.items();
-        if(size.size()!=2){stbi_image_free(bytes);throw std::runtime_error("Invalid HD display size");}
-        a.displayW=size[0].number();a.displayH=size[1].number();
-        if(a.displayW<1||a.displayH<1||a.hdX+a.displayW>Cell||a.hdY+a.displayH>Cell){stbi_image_free(bytes);throw std::runtime_error("HD display size exceeds cell");}
+      if(a.displayW) {
         a.hdW=a.displayW*10;a.hdH=a.displayH*10;
       }
       for(unsigned flip=0;flip<4;++flip) {

@@ -30,10 +30,10 @@ Mode 7 rooms, bosses and scripted camera boundaries—is ongoing.
 |---|---|
 | Quick-load slot 1 | `F1` |
 | Quick-save slot 1 | `Shift+F1` |
-| Load slots 1–10 | `F1`–`F10` |
+| Load slots | `F1`–`F6`, `F11`–`F12`, `F9`–`F10` |
 | Save slots 1–10 | `Shift+F1`–`Shift+F10` |
-| Save-state browser | `F11` |
-| Rewind browser | `F12` |
+| Save-state browser | `F7` |
+| Rewind browser | `F8` |
 | Fast-forward | `Tab` |
 | Pause | `P` |
 | Pause/settings menu | `Escape` |
@@ -56,15 +56,25 @@ The native title menu offers **START**, **NEW GAME+**, **CONTINUE** and
 **OPTION**, using the game's font, heart cursor and confirmation blink.
 Use Up/Down and Start to select an entry.
 
-NEW GAME+ is intended to select the original game's harder second playthrough
-after completion. Wiring that second-quest state is still pending: the current
-entry continues to load the earlier single-room sandbox from `src/campaign2.c`.
-START launches the original campaign. Reset from Escape to return to the title.
+NEW GAME+ starts the original game's harder second playthrough, the same quest
+flag the cartridge sets after its ending. Native difficulty and additional
+enemy spawns apply from the first room. START begins the ordinary first quest.
+The quest follows save states, rewind and the game's own continue/password
+logic. Reset from Escape to return to the title.
 
-Regression test (requires Pillow): `python tools/test_campaign2.py --rom PATH`.
-It checks both START choices, OPTION, empty-room rendering and jumping/landing.
+Regression test (Lua build required):
+`python tools/test_campaign2.py --build-dir build-lua --rom PATH`.
+It compares START and NEW GAME+ against the native ending restart, including
+room difficulty, enemy spawning, save/load and reset.
 
 ### Switchable HD graphics
+
+The current skeleton replacement pilot and resolution-independent Photoshop
+import window are described in [docs/ENEMY_HD.md](docs/ENEMY_HD.md) and
+[docs/HD_IMPORT.md](docs/HD_IMPORT.md). Start `HD_Import_starten.cmd` for pose
+templates, previews and installation in both local player folders. The latest
+rewind, native second-quest and bridge fixes are recorded in
+[docs/GAMEPLAY_TOOLS.md](docs/GAMEPLAY_TOOLS.md).
 
 **Escape > HD graphics > HD graphics enabled** switches between original
 and replacement artwork. Backgrounds, text/HUD and sprites have separate

@@ -138,6 +138,7 @@ target_sources(SuperCastlevaniaIvSNESRecomp PRIVATE
     ${SNESRECOMP_ROOT}/host/snesrecomp_codegen_host.c
     src/runtime_settings_imgui.cpp
       src/character_pack.cpp
+      src/enemy_pack.cpp
       src/character_tuning.cpp
     src/campaign2.c
     src/debug_capture.c

@@ -1,5 +1,6 @@
 #include "runtime_settings_imgui.h"
 #include "character_pack.h"
+#include "enemy_pack.h"
 #include "debug_marker.h"
 #include "hd_collect.h"
 #include "hd_render.h"
@@ -205,9 +206,26 @@ static void HdPanel() {
   if (ImGui::Button("Reload graphics pack")) Cv4HdLoadPack(Cv4HdPackPath());
   ImGui::TextWrapped("%s", Cv4HdStatus());
   ImGui::Text("%u visible native pixels matched in the last frame", Cv4HdReplacedPixels());
-  ImGui::TextWrapped("Missing tiles and unsupported effects keep their original graphics. Original sprite silhouettes are retained.");
-  if (Cv4HdPackScale() > 0 && Cv4HdPackScale() < 10)
-    ImGui::TextWrapped("This pack has %dx artwork. 4K output does not create missing detail; full 4K artwork should use 80 x 80 pixels per original 8 x 8 tile.", Cv4HdPackScale());
+  ImGui::TextWrapped("Missing artwork and unsupported effects keep their original graphics. Your artwork keeps its intended size at different source resolutions.");
+  ImGui::SeparatorText("Enemy graphics");
+  bool enemiesCollect=Cv4EnemyCapturing()!=0;
+  if(ImGui::Checkbox("Collect enemy poses while playing",&enemiesCollect))
+    Cv4EnemyCommand(enemiesCollect?"capture on":"capture off");
+  const std::string enemySelection=Cv4EnemySelection();
+  if(ImGui::BeginCombo("Enemy pack",enemySelection.empty()?"Original enemies":enemySelection.c_str())) {
+    if(ImGui::Selectable("Original enemies",enemySelection.empty()))Cv4EnemyCommand("off");
+    std::error_code error;
+    for(const auto &entry:std::filesystem::directory_iterator("enemy_packs",error)) {
+      if(!entry.is_directory(error)||entry.path().filename()=="native-template"||
+         !std::filesystem::exists(entry.path()/"enemies.json",error))continue;
+      auto name=entry.path().filename().string();
+      if(ImGui::Selectable(name.c_str(),name==enemySelection))Cv4EnemyCommand(("pack "+name).c_str());
+    }
+    ImGui::EndCombo();
+  }
+  if(ImGui::Button("Reload enemy images"))Cv4EnemyCommand("reload");
+  ImGui::TextWrapped("%s",Cv4EnemyStatus());
+  ImGui::TextWrapped("Skeleton poses are collected automatically. Finished images can be prepared with the enemy import tool; missing poses keep their original appearance.");
   ImGui::Separator();
   bool collecting = Cv4HdCollecting() != 0;
   if (ImGui::Checkbox("Collect graphics while playing", &collecting))

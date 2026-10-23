@@ -42,6 +42,7 @@
 #include "game_rtl.h"
 #include "campaign2.h"
 #include "character_pack.h"
+#include "enemy_pack.h"
 #include "hd_collect.h"
 #include "scene.h"
 #include "game_performance.h"
@@ -295,6 +296,7 @@ void GameDrawPpuFrame(void)
     }
     Cv4CharacterEnd(g_ppu);
     Cv4HdRenderEnd();
+    Cv4EnemyEnd(g_ppu);
     Cv4HdFrame(g_ppu, Cv4CurrentSceneName(), g_ram[0x86]);
 }
 

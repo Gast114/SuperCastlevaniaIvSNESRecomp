@@ -4,6 +4,36 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## Spieltechnik vom 23.10.: Rewind, zweiter Durchgang, Gegner und Import
+
+Nutzerauftrag mit fünf Punkten umgesetzt: neuester Debug-Marker an der
+Zugbrücke korrigiert (BG2-Weltkoordinaten statt wiederholtem Kartenanfang),
+F8-Rewind verlässt nach Enter/Escape zuverlässig das Menü (Öffnungsflanke vor
+modalem Aufruf verbrauchen), NEW GAME+ setzt das echte native Questflag$88
+wie der Abspann statt Sandbox. START bleibt normal; Save/Load und zusätzliche
+A02-Gegner sind belegt. Kein vollständiger Spiel-/Passwortdurchlauf behauptet.
+
+Gegner-HD funktioniert als geprüfter Skelett-Pilot ($11/$12, zwei Schritte,
+beide Spielebenen), mit vollständiger OAM-Zuordnung und PPU-Gewinnerkennung.
+Unbekannte Posen bleiben nativ; weitere Gegner/Bosse brauchen eigene Belege.
+Keine neuen HD-Designs installiert. Vorlagen: `artwork-local/import-workspaces/
+skelette-2026-10-23/VORLAGEN.html` (nur zwei PNGs bearbeiten).
+
+`HD_Import_starten.cmd`: gemeinsames Fenster für Simon und Gegner, Original-
+Vorlagen mit Bildergalerie, freie PNG-Auflösung inkl.4,03125×, Paketprüfung und
+Einbauen-Knopf für beide Spielordner mit Auswahlbackup/Rollback. Quell-PNGs
+bleiben bytegleich. Sechs Import-, fünf Installertests und echte Laufzeittests
+bestanden. Details/gezielte Nachweise: `docs/GAMEPLAY_TOOLS.md`, `HD_IMPORT.md`,
+`ENEMY_HD.md`. Rewind und HD-Menü auch im Release ohne Lua getestet.
+
+Beide Spieler-EXEs installiert; Kulisse `hd_packs/stage-01-user-a02-v3` gewählt.
+Sicherung/Hashes: `D:/Super Castlevania IV Recomp/backup/hd-artwork/
+2026-10-23-gameplay-tools-v1`; vor Neubau alte EXEs zusätzlich `...-prebuild`.
+Saves, Marker, Charakter-/Gegnerpakete und Steuerung hashgleich erhalten.
+Framework `fc9dface236e695931c42f51d68651bb64d8f39b` auf eigenem gast114/sciv
+veröffentlicht und Bare-Backup aktualisiert; Root-Pin angepasst. Fremde lokale
+LoRA-/Landschaftsänderungen nicht mit diesem Auftrag committen.
+
 ## Aktuell: lokaler SDXL-LoRA-Pilot und GPU-Beschleunigung
 
 ### Neuester Stand: Photoshop-Laufbilder des Nutzers installiert

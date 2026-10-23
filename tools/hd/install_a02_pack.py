@@ -15,8 +15,8 @@ def sha(path):
 
 def protected(folder):
     paths = [folder / n for n in ('config.ini','keybinds.ini','rom.cfg','performance_settings.json')]
-    paths += list((folder / 'saves').glob('*'))
-    paths += [p for p in (folder / 'characters').rglob('*') if p.is_file()]
+    for name in ('saves','debug_markers','characters','enemy_packs'):
+        paths += [p for p in (folder / name).rglob('*') if p.is_file()]
     return {str(p.relative_to(folder)): sha(p) for p in paths if p.is_file()}
 
 

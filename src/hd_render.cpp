@@ -4,6 +4,7 @@
  * Guest picture memory, collision and save states are never modified. */
 #include "hd_render.h"
 #include "character_pack.h"
+#include "enemy_pack.h"
 #include "character_json.h"
 #include "render_workers.h"
 extern "C" {
@@ -457,6 +458,7 @@ struct Sample {
     uint8_t coverage = 2;
     const Region *owner=nullptr;
     int imageScale=0;
+    int displayW=0,displayH=0,imageH=0,sampleX=0,sampleY=0;
 };
 Sample CharacterSample(int x,int line) {
     const auto *f=Cv4CharacterHd();
@@ -465,6 +467,24 @@ Sample CharacterSample(int x,int line) {
     if(px<0||py<0||px>=f->width/f->scale||py>=f->height/f->scale)return {};
     Sample s;s.region=f->pixels+size_t(py*f->scale)*f->width+px*f->scale;
     s.stride=f->width;s.imageScale=f->scale;return s;
+}
+Sample EnemySample(Ppu *p,int x,int line,uint16_t pixel) {
+    unsigned owner=p->hostSpriteWinners[x+kPpuExtraLeftRight];
+    if(!owner)return {};
+    const auto *f=Cv4EnemyHd(owner-1);
+    if(!f||pixel!=(f->priority|0x80))return {};
+    int px=x-f->x,py=line-1-f->y;
+    if(px<0||py<0||px>=f->displayWidth||py>=f->displayHeight)return {};
+    Sample s;s.region=f->pixels;s.stride=f->width;s.imageH=f->height;
+    s.displayW=f->displayWidth;s.displayH=f->displayHeight;s.sampleX=px;s.sampleY=py;
+    s.source.flip=f->flip;return s;
+}
+uint32_t MappedPixel(const Sample &s,int dx,int dy) {
+    int x=(s.sampleX*scale+dx)*s.stride/(s.displayW*scale);
+    int y=(s.sampleY*scale+dy)*s.imageH/(s.displayH*scale);
+    if(s.source.flip&1)x=s.stride-1-x;
+    if(s.source.flip&2)y=s.imageH-1-y;
+    return s.region[size_t(y)*s.stride+x];
 }
 struct PixelColour {
     uint32_t native = 0, original = 0, other = 0;
@@ -520,7 +540,8 @@ Sample FindSource(Ppu *p, int x, int line, unsigned layer, const PpuTileSource &
 }
 Sample Find(Ppu *p, int x, int line, uint16_t pixel) {
     int i=x+kPpuExtraLeftRight;
-    if(p->hostObjPixels&&pixel==(p->hostObjPriority|0x80)&&(p->hostObjColors[i]>>24)) {
+    if(auto s=EnemySample(p,x,line,pixel);s.region)return s;
+    if(!p->hostSpriteWinners[i]&&p->hostObjPixels&&pixel==(p->hostObjPriority|0x80)&&(p->hostObjColors[i]>>24)) {
         auto sample=CharacterSample(x,line);if(sample.region)return sample;
     }
     unsigned layer = (pixel >> 8) & 15;
@@ -531,11 +552,12 @@ Sample Find(Ppu *p, int x, int line, uint16_t pixel) {
 }
 uint32_t SampleRgb(const Sample &s, int tx, int ty, uint32_t original) {
     if (!s.tile&&!s.region) return original;
+    uint32_t mapped=s.displayW?MappedPixel(s,tx,ty):0;
     int density=s.imageScale?s.imageScale:pack.scale;
     tx=tx*density/scale;ty=ty*density/scale;
     if (s.source.flip & 1) tx = density - 1 - tx;
     if (s.source.flip & 2) ty = density - 1 - ty;
-    uint32_t c = s.region?s.region[size_t(ty)*s.stride+tx]:(*s.tile)[(s.source.py * pack.scale + ty) * pack.size + s.source.px * pack.scale + tx];
+    uint32_t c = s.displayW?mapped:s.region?s.region[size_t(ty)*s.stride+tx]:(*s.tile)[(s.source.py * pack.scale + ty) * pack.size + s.source.px * pack.scale + tx];
     unsigned a = c >> 24;
     if (a == 255) return c & 0xffffff;
     if (!a) return original;
@@ -741,6 +763,7 @@ Sample RegionAt(Ppu *p, int x, int line, unsigned layer, const PpuTileSource *na
 }
 uint32_t ArtRgba(const Candidate &c, int dx, int dy) {
     const auto &s = c.art;
+    if(s.displayW)return MappedPixel(s,dx,dy);
     int density=s.imageScale?s.imageScale:pack.scale;
     dx=dx*density/scale;dy=dy*density/scale;
     if (s.affine) {
@@ -842,7 +865,8 @@ bool GatherSceneLine(Ppu *p, int line) {
             // change the picture. Preserve the finished native pixel wherever
             // none matches; defer background provenance until a match needs it.
             const auto &s=samples[3][i];PpuTileSource source{};
-            bool host=p->hostObjPixels&&s.pixel==(p->hostObjPriority|0x80)&&(p->hostObjColors[i]>>24)&&CharacterSample(x,line).region;
+            bool host=EnemySample(p,x,line,s.pixel).region ||
+                (!p->hostSpriteWinners[i]&&p->hostObjPixels&&s.pixel==(p->hostObjPriority|0x80)&&(p->hostObjColors[i]>>24)&&CharacterSample(x,line).region);
             bool shared=host||(s.source.valid && PpuGetTileSource(p,x,line,s.pixel,&source) &&
                 FindSource(p,x,line,4,s.source,true).tile);
             if(!shared){StoreScenePixel(index,out);continue;}
@@ -864,7 +888,8 @@ bool GatherSceneLine(Ppu *p, int line) {
             c.screens = s.screens; c.layer = s.pixel >> 8 & 15; c.priority = s.pixel & 0xff00;
             bool opaque = layer == 4 || PPU_mode(p) == 7 ? (s.pixel & 255) != 0 : s.source.valid && ((s.pixel & ((1u<<s.source.bpp)-1)) != 0);
             c.rgba = opaque ? 0xff000000u | Rgb(PpuPixelColor(p, s.pixel, i)) : 0;
-            if (layer == 4 && p->hostObjPixels && s.pixel == (p->hostObjPriority|0x80) && (p->hostObjColors[i]>>24))
+            if(layer==4&&p->hostSpriteWinners[i])c.rgba=p->hostSpriteColors[i];
+            else if (layer == 4 && p->hostObjPixels && s.pixel == (p->hostObjPriority|0x80) && (p->hostObjColors[i]>>24))
                 c.rgba = p->hostObjColors[i];
             if (layer == 4 && tower.region && s.source.valid) {
                 const auto &masks=tower.owner->maskKeys;
@@ -873,8 +898,12 @@ bool GatherSceneLine(Ppu *p, int line) {
                 if(hide) { c.rgba=0;c.screens=0;continue; }
             }
             c.art = layer < 2 ? RegionAt(p, x, line, layer, &s.source) : Sample{};
-            if(layer==4&&p->hostObjPixels&&s.pixel==(p->hostObjPriority|0x80)&&(p->hostObjColors[i]>>24))
-                c.art=CharacterSample(x,line);
+            if(layer==4) {
+                auto enemy=EnemySample(p,x,line,s.pixel);
+                if(enemy.region)c.art=enemy;
+                else if(!p->hostSpriteWinners[i]&&p->hostObjPixels&&s.pixel==(p->hostObjPriority|0x80)&&(p->hostObjColors[i]>>24))
+                    c.art=CharacterSample(x,line);
+            }
             if (c.art.owner && c.art.owner->priority >= 0) c.priority = c.art.owner->priority;
             if (!c.art.region && !c.art.affine && s.source.valid) {
                 // OBJ provenance must still identify the real winning object.
@@ -985,7 +1014,7 @@ void RenderRows(void *, size_t begin, size_t end, unsigned) {
                     for(int dy=0;dy<scale;++dy) {
                         auto row=first+size_t(dy)*frameWidth*scale+nx*scale;
                         if(!c.art.region&&!c.art.affine)std::fill_n(row,scale,c.rgba&0xffffff);
-                        else if(c.art.region && !c.art.source.flip && (c.art.imageScale?c.art.imageScale:pack.scale)==scale) {
+                        else if(c.art.region && !c.art.displayW && !c.art.source.flip && (c.art.imageScale?c.art.imageScale:pack.scale)==scale) {
                             const auto *src=c.art.region+size_t(dy)*c.art.stride;
                             for(int dx=0;dx<scale;++dx)row[dx]=src[dx]&0xffffff;
                         } else for(int dx=0;dx<scale;++dx)row[dx]=ArtRgba(c,artOffset[cellOffset[dx]],artOffset[cellOffset[dy]])&0xffffff;
@@ -1041,14 +1070,15 @@ extern "C" uint64_t Cv4HdFrameChecksum(void) {
     for(uint32_t pixel:surface)hash=(hash^(pixel&0xffffff))*1099511628211ull;
     return hash;
 }
-extern "C" int Cv4HdPresentationScale(void) { Init(); return enabled && (HasArt()||Cv4CharacterHd()) ? scale : 1; }
+extern "C" int Cv4HdPresentationScale(void) { Init(); return enabled && (HasArt()||Cv4CharacterHd()||Cv4EnemyHdCount()) ? scale : 1; }
 
 extern "C" void Cv4HdRenderBegin(Ppu *p) {
     Init();
     SelectScene(p);
     frameFenceOffset=pack.a02?A02FenceOffset(p):0;
     const auto *character=Cv4CharacterHd();
-    p->hdTracking = enabled && (HasArt()||character);
+    bool enemies=Cv4EnemyHdCount()!=0;
+    p->hdTracking = enabled && (HasArt()||character||enemies);
     replaced = 0; frameScale = 0;
     if (!p->hdTracking) return;
     frameWidth = 256 + 2 * p->extraLeftRight;
@@ -1057,7 +1087,7 @@ extern "C" void Cv4HdRenderBegin(Ppu *p) {
         if(character)characterRevision=character->revision;
         surface.resize(size_t(frameWidth) * 224 * scale * scale);
         pixels.resize(size_t(frameWidth) * 224);
-        sceneFrame = character || (!pack.regions.empty() && (SceneActive() || SharedObjectsActive()));
+        sceneFrame = character || enemies || (!pack.regions.empty() && (SceneActive() || SharedObjectsActive()));
         if (sceneFrame) {
             scenePixels.resize(size_t(frameWidth)*224);sceneLines.resize(224);
             scenePixelDirty.resize(size_t(frameWidth)*224);

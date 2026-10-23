@@ -22,6 +22,7 @@
 #include "lua_bridge.h"
 #include "game_performance.h"
 #include "character_pack.h"
+#include "enemy_pack.h"
 #include "cpu_state.h"
 #include "snes/ppu.h"
 
@@ -40,6 +41,10 @@ static int Cv4LuaSlot(const char *args, int *slot)
 static int Cv4LuaCommand(const char *name, const char *args, char *result, size_t capacity)
 {
     int slot;
+    if(!strcmp(name,"enemy")) {
+        int ok=Cv4EnemyCommand(args[0]?args:"status");
+        snprintf(result,capacity,"%s",Cv4EnemyStatus());return ok;
+    }
     if(!strcmp(name,"frameinspect")) {
         if(!strcmp(args,"on"))SnesDesktopSetFrameInspection(true);
         else if(!strcmp(args,"off"))SnesDesktopSetFrameInspection(false);

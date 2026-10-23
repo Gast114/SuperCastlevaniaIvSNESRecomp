@@ -1,6 +1,6 @@
 # Stage 01 / A02: installed user artwork
 
-The new collection is `hd_packs/stage-01-user-a02-v2`. It retains the existing
+The new collection is `hd_packs/stage-01-user-a02-v3`. It retains the existing
 entrance/drawbridge pack and selects A02 automatically using block 1 and the
 native BG map addresses `[0,4096]`. The output stays at 10x. Restart the game
 after replacing the executable; F2 tests the entrance/fence rise, F3 and Up
@@ -48,7 +48,7 @@ visual placement must not move the native color probe.
 Build a new collection with:
 
 ```powershell
-python tools/hd/build_a02_pack.py --source '../Assets (ausgeschnitten)/Stage 01/A02/HD' --entrance artwork-local/packs/stage-01-user-v4-final --out artwork-local/packs/NEW-FOLDER
+python tools/hd/build_a02_pack.py --source '../Assets (ausgeschnitten)/Stage 01/A02/HD' --entrance artwork-local/packs/stage-01-user-a02-v3/entrance --out artwork-local/packs/NEW-FOLDER
 ```
 
 ## Runtime behavior
@@ -87,12 +87,19 @@ before/after installation. Existing packs remain available. Source PNGs and
 the Photoshop file stay unchanged; local artwork and generated packs stay
 git-ignored.
 
-Installed on 2026-10-23 in both player folders. Both settings files select
-`hd_packs/stage-01-user-a02-v2`, and both executables have the same SHA-256.
+The v2 import was installed on 2026-10-23 in both player folders.
 The external backup and installation receipt are in
 `D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-10-23-stage01-a02-v2`.
 The receipt confirms all protected files are unchanged and every copied pack
 file matches its source.
+
+The later v3 collection retains all v2 A02 artwork and fixes the user's bridge
+marker `2026-10-22_21-47-16_level`. The entrance BG2 image is world-registered
+with no wrapping: its old 512-pixel map wrap repeated the starting ruin at the
+right edge of the bridge. Water animation keeps its separate native wrapping.
+`tools/test_bridge_background.py` checks the actual marker's open right sky,
+unchanged HUD, native field and game state; passed in
+`build-lua/bridge-repeat-check-qfir23rr`. See `GAMEPLAY_TOOLS.md` for installation.
 
 Passed checks: `build-lua/a02-hd-check-zbvvar6v` (v2 F2/F3, HUD, native simulation,
 gate depth and entrance checksum), `build-lua/a02-hd-check-a1gsw98n`

@@ -4,10 +4,34 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 22. Oktober 2026.
 
+## Rewind, NEW GAME+ und neue HD-Werkzeuge
+
+F8 öffnet Rewind. Mit Links/Rechts einen Zeitpunkt aussuchen, mit Enter oder
+Leertaste dort weiterspielen. Escape oder Rücktaste bricht ab. Der Fehler,
+bei dem das Menü sofort wieder aufging, ist behoben.
+
+NEW GAME+ startet den originalen schwereren zweiten Durchgang, wie nach dem
+Durchspielen. START bleibt der normale erste Durchgang.
+
+`HD_Import_starten.cmd` öffnet das Importfenster. Vorlagen als Bilderübersicht
+ansehen, fertige PNGs im vorbereiteten Ordner ablegen, Paket erstellen und
+anschließend mit dem Einbauen-Knopf in beide Spielversionen übernehmen.
+4,x-fache Arbeitsauflösung ist möglich; du musst nicht auf 10× vergrößern.
+Anleitung: `docs\HD_IMPORT.md`.
+
+Die erste Gegner-Unterstützung ist für die Skelette vorbereitet. Unter
+Escape → HD graphics → Enemy graphics werden ihre Posen automatisch gesammelt.
+Spiegelung und Zuordnung übernimmt das Spiel; du musst keine Tiles auswählen.
+Neue Gegner-HD-Zeichnungen sind noch nicht enthalten. Anleitung: `docs\ENEMY_HD.md`.
+
+Der Debug-Marker vom 22. Oktober an der Zugbrücke ist korrigiert: Die
+Hintergrundkulisse beginnt rechts nicht erneut. Das neue Paket heißt
+`hd_packs/stage-01-user-a02-v3`. Nach den Änderungen das Spiel neu starten.
+
 ## A02: neue Landschaft eingebaut
 
 Deine elf neuen Bilder sind in beiden Spielordnern eingebaut. Das ausgewählte
-Paket heißt `hd_packs/stage-01-user-a02-v2` und wechselt automatisch zwischen
+Paket heißt `hd_packs/stage-01-user-a02-v3` und wechselt automatisch zwischen
 dem bisherigen Eingang mit Zugbrücke und dem neuen zweiten Abschnitt.
 
 Das Spiel einmal vollständig schließen und neu starten. Mit F2 siehst du den

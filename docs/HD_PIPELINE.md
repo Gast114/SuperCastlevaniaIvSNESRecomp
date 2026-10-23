@@ -18,18 +18,23 @@ Posen wieder auf Original. Über **Use character pack** lässt sich nur die
 Figurenprobe deaktivieren. Fehlende Lauf-, Treppen- und Angriffsposen verwenden
 weiterhin Originalgrafik. Die Probe enthält keine neu erfundenen Animationen.
 
-Für weitere Posen bitte das jetzige Format beibehalten:
+Für weitere Posen steht der einfache Ablauf in [HD_IMPORT.md](HD_IMPORT.md).
+`HD_Import_starten.cmd` erzeugt passende native Vorlagen und übernimmt die
+Zuordnung. Die Arbeitsauflösung darf 4,03125× oder einen anderen Faktor haben;
+die Spielausgabe bleibt 10×. PNG-Dateien bleiben beim Import unverändert.
+Für manuell vorbereitete Paare gilt:
 
-- Je Animationsframe eine native SD-Referenz und ein transparentes RGBA-PNG in10×.
-- Breite **und** Höhe der jeweiligen Vorlage verzehnfachen:24×46 →240×460.
+- Je Animationsframe eine native SD-Referenz und ein transparentes RGBA-PNG.
+- Breite **und** Höhe der jeweiligen Vorlage proportional vergrößern.
   Ducken/Springen behalten ihre eigenen Abmessungen; nicht alle Posen auf
   dieselbe Figurenhöhe strecken. DPI-Angaben ändern die Darstellung nicht.
 - Haare, Hände, Waffenführung und Schuhe vollständig erhalten; transparente
   Sicherheitsränder weder abschneiden noch nachträglich unterschiedlich skalieren.
-  Zusätzlichen Rand in SD und HD an derselben Stelle vorsehen, ebenfalls10×.
+  Zusätzlichen Rand in SD und HD an derselben Stelle proportional vorsehen.
 - Figur, Rüstung, Proportionen, Licht und Stil zwischen Frames konstant halten.
   Nur die Rechtsansicht liefern; die andere Blickrichtung entsteht automatisch.
-- Namen wie `Walking-01.png` / `Walking-01_HD_10x_<Breite>x<Höhe>.png` verwenden.
+- Gleiche Namen wie `Walking-01.png` in getrennten `Original`-/`HD`-Ordnern verwenden.
+  Alte Paare mit `_HD_10x_...` im gleichen Ordner bleiben kompatibel.
   Ein vollständiger Laufzyklus ist die sinnvollste nächste Gruppe.
 
 Der Import übernimmt Verankerung und Zuordnung. Ein großer Spritebogen oder
@@ -38,9 +43,10 @@ werden wiederverwendet. Einzelbilder eines Angriffs müssen zur nativen
 Hand-/Peitschenposition passen; die Spielmechanik bleibt erhalten.
 
 Technisch bleibt das Character-Manifest Version1 kompatibel. Jeder Frame kann
-optional ein `hd`-Objekt mit `image`, `scale:10` und `offset:[x,y]` in seiner
+optional ein `hd`-Objekt mit `image`, `scale:10`, `display_size:[nativeBreite,nativeHöhe]` und `offset:[x,y]` in seiner
 nativen96×96-Zelle besitzen. `body.png` dient als Vorschau/Verankerung;
-die tatsächlichen HD-Pixel bleiben in den einzelnen Quelldateien. Änderungen
+die tatsächlichen HD-Pixel bleiben in den einzelnen Quelldateien. `display_size`
+entkoppelt die native Darstellung von der Photoshop-Auflösung. Änderungen
 an diesen PNGs werden live geladen; unvollständiges Speichern ersetzt kein
 gültiges Bild. Der Compositor liest die volle Detailauflösung und verwendet
 native OBJ-Priorität, Fenster, Sichtbarkeit und Farbmathematik.
