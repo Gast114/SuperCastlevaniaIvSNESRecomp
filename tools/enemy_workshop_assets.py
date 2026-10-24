@@ -8,11 +8,6 @@ from pathlib import Path
 from PIL import Image
 from enemy_hd import pixel_hash,pack
 
-POSE_NAMES={0x8af4:'Gehen_01',0x8b05:'Gehen_02',0x8b1b:'Wurf_01_Ausholen',
-            0x8b30:'Wurf_02_Werfen',0x8b4d:'Wurf_03_Ausklang',
-            0x900c:'Drehung_01',0x9011:'Drehung_02',0x9016:'Drehung_03'}
-
-
 class Workspace:
     def __init__(self,folder):
         self.folder=Path(folder).resolve();self.folder.mkdir(parents=True,exist_ok=True)
@@ -21,15 +16,52 @@ class Workspace:
         self.data=json.loads(self.path.read_text(encoding='utf-8')) if self.path.exists() else {
             'version':1,'name':'Gegner-Werkstatt','frames':[],'work_templates':{}}
         self.data.setdefault('work_templates',{})
+        self.data.setdefault('library_profiles',[])
         for frame in self.data['frames']:
             frame.setdefault('component','__teil-' in frame['id'])
-            frame.setdefault('label',Path(frame['image']).stem.replace('_',' '))
+            frame['label']=f'M-{frame["actor_type"]:04X} P-{frame["pose"]:04X}'
+            if frame['component']:frame['label']+=' · Teil '+frame['id'].rsplit('__teil-',1)[1]
         self.frames={f['id']:f for f in self.data['frames']}
         self.identities={}
         for frame in self.data['frames']:
             if frame.get('pixel_identity'):self.identities[frame['pixel_identity']]=frame['image']
         self.cache={};self.last_error=''
         self.invalid=set()
+
+    def save(self):
+        temporary=self.path.with_suffix('.tmp.json')
+        temporary.write_text(json.dumps(self.data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+        temporary.replace(self.path)
+
+    def load_library(self,library_path):
+        """Merge prepared originals while retaining every existing artist PNG."""
+        library_path=Path(library_path)
+        if library_path.is_dir():library_path=library_path/'library.json'
+        stamp=[str(library_path.resolve()),library_path.stat().st_mtime_ns,library_path.stat().st_size]
+        if self.data.get('library_stamp')==stamp:return 0
+        library=json.loads(library_path.read_text(encoding='utf-8'))
+        if library.get('version')!=1 or not isinstance(library.get('profiles'),list):
+            raise ValueError('Ungültige Sprite-Bibliothek')
+        allowed={identifier for profile in library['profiles'] for identifier in profile.get('frame_ids',[])}
+        source=library_path.parent/'native-template'
+        manifest=json.loads((source/'enemies.json').read_text(encoding='utf-8'))
+        if not allowed<={f['id'] for f in manifest['frames']}:
+            raise ValueError('Sprite-Bibliothek enthält unvollständige Zuordnungen')
+        added=self.ingest(source,allowed)
+        if not allowed<=self.frames.keys():raise ValueError('Original-PNGs der Sprite-Bibliothek fehlen')
+        self.data['library_profiles']=library['profiles']
+        self.data['library_source']=str(library_path.resolve())
+        self.data['library_rom_sha256']=library.get('rom_sha256')
+        self.data['library_stamp']=stamp
+        self.save()
+        return added
+
+    def frames_for(self,profile_key,components=False):
+        profile=next((p for p in self.data['library_profiles'] if p['key']==profile_key),None)
+        if profile is None:return []
+        identifiers=set(profile.get('frame_ids',[]))
+        return list({f['image']:f for f in self.frames.values()
+                     if f['id'] in identifiers and f['component']==components}.values())
 
     def ingest(self,source,allowed_ids=None):
         try:manifest=json.loads((Path(source)/'enemies.json').read_text())
@@ -45,13 +77,15 @@ class Workspace:
             except OSError:continue
             actor=frame['actor_type'];pose=frame['pose']
             family='Skelett' if actor in (17,18) else 'Knochen' if actor==2 else 'Zerfall_Effekt' if actor==45 else f'Figur_{actor:02X}'
+            title=f'M-{actor:04X}'
+            filename_family=title
             identity=family+':'+pixel_hash(native)
             name=self.identities.get(identity)
             is_part='__teil-' in frame['id']
-            label=POSE_NAMES.get(pose,f'Pose_{pose:04X}')
+            label=f'P-{pose:04X}'
             if name is None:
                 suffix='_Teil_'+frame['id'].rsplit('__teil-',1)[1].zfill(2) if is_part else ''
-                stem=family+'_'+label+suffix;name=stem+'.png';number=2
+                stem=filename_family+'_'+label+suffix;name=stem+'.png';number=2
                 while (self.folder/'artwork'/name).exists() or (self.folder/'references'/name).exists():
                     name=f'{stem}_{number:02d}.png';number+=1
                 shutil.copy2(path,self.folder/'references'/name)
@@ -61,14 +95,13 @@ class Workspace:
                 self.data['work_templates'][name]=pixel_hash(working)
                 self.identities[identity]=name
             mapping=dict(frame,image=name,reference=name,pixel_identity=identity,
-                         component=is_part,label=family+' '+label.replace('_',' '))
+                         component=is_part,label=title+' '+label.replace('_',' '))
             # Reused identical component images still keep a meaningful label.
-            if is_part:mapping['label']=family+' '+label.replace('_',' ')+' · Teil '+frame['id'].rsplit('__teil-',1)[1]
+            if is_part:mapping['label']=title+' '+label.replace('_',' ')+' · Teil '+frame['id'].rsplit('__teil-',1)[1]
+            if frame.get('source_kind')=='rom_pose':mapping['label']+=' · ROM-Vorlage'
             self.frames[frame['id']]=mapping;self.data['frames'].append(mapping);added+=1
         if added:
-            temporary=self.path.with_suffix('.tmp.json')
-            temporary.write_text(json.dumps(self.data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
-            temporary.replace(self.path)
+            self.save()
             self.gallery()
         return added
 

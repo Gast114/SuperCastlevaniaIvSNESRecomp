@@ -12,8 +12,22 @@ from tkinter import ttk,filedialog,messagebox
 from PIL import Image,ImageDraw,ImageOps,ImageTk
 from enemy_workshop_native import NativeSession,ROOT
 from enemy_workshop_assets import Workspace
+from enemy_workshop_library import DEFAULT_LIBRARY,profile_key
 
 DEFAULT_WORKSPACE=ROOT.parent/'Assets (ausgeschnitten)'/'Gegner'/'Werkstatt'
+
+
+def pose_preview(workspace,identifier,custom,size):
+    """Still PNG inspection; native movement remains a separate view mode."""
+    image=Image.new('RGBA',size,'#19212c')
+    source=workspace.image(identifier,custom)
+    if source is not None:
+        frame=workspace.frames[identifier];dw,dh=frame['display_size']
+        zoom=.9*min(size[0]/dw,size[1]/dh)
+        picture=source.resize((max(1,round(dw*zoom)),max(1,round(dh*zoom))),
+                              Image.Resampling.LANCZOS if custom and workspace.edited(identifier) else Image.Resampling.NEAREST)
+        image.alpha_composite(picture,((size[0]-picture.width)//2,(size[1]-picture.height)//2))
+    return image.convert('RGB')
 
 
 def preview(snapshot,workspace,custom,size,follow=True,background='#19212c'):
@@ -24,7 +38,15 @@ def preview(snapshot,workspace,custom,size,follow=True,background='#19212c'):
     zoom=min(width/256,height/224)
     actors=snapshot.get('actors',[])
     main=next((a for a in actors if a['slot']==snapshot.get('target',0x580)),None)
-    origin=(128-main['x'],128-main['y']) if follow and main else (0,0)
+    arena=snapshot.get('arena')
+    origin=(128-main['x'],128-main['y']) if follow and main and not arena else (0,0)
+    if arena:
+        floor=round(arena['floor']*zoom)
+        draw.rectangle((0,floor,width,height),fill='#303b49')
+        draw.line((0,floor,width,floor),fill='#92a5ba',width=max(1,round(zoom)))
+        x=round(arena['target_x']*zoom);y=round(arena['target_y']*zoom)
+        draw.rectangle((x-6*zoom,y-12*zoom,x+6*zoom,y+12*zoom),outline='#7089a3',width=max(1,round(zoom)))
+        draw.text((8,8),'KI-Ziel',fill='#aab9c9')
     def paste(identifier,actor,edited=False):
         source=workspace.image(identifier,edited)
         if source is None:return
@@ -58,9 +80,9 @@ def preview(snapshot,workspace,custom,size,follow=True,background='#19212c'):
 
 
 class Worker(threading.Thread):
-    def __init__(self,commands,events,rom,build):
+    def __init__(self,commands,events,rom,build,arena=False):
         super().__init__(daemon=True);self.commands=commands;self.events=events
-        self.rom=rom;self.build=build;self.stopping=False
+        self.rom=rom;self.build=build;self.stopping=False;self.arena=arena
 
     def publish(self,value):
         try:self.events.put_nowait(value)
@@ -71,17 +93,22 @@ class Worker(threading.Thread):
 
     def run(self):
         session=None
-        allowed_ids=set()
+        allowed_ids=set();groups={}
         def allow(snapshot):
+            group=groups.setdefault(profile_key(entry),set())
             for actor in snapshot.get('actors',[]):
                 allowed_ids.add(actor['id'])
                 allowed_ids.update(p['id'] for p in actor['parts'])
+                group.add(actor['id']);group.update(p['id'] for p in actor['parts'])
+        def group_event():
+            return {'profile_key':profile_key(entry),'profile_frame_ids':sorted(groups.get(profile_key(entry),())),
+                    'active_action':action}
         try:
-            session=NativeSession(self.rom,self.build);session.start()
+            session=NativeSession(self.rom,self.build);session.arena_enabled=self.arena;session.start()
             entry=next(e for e in session.catalog if e['type']==18 and e['variant']==0)
             snapshot=session.spawn(entry);paused=False;speed=1.;action='Natürlich';action_age=0;missing_age=0;collect=[]
             allow(snapshot)
-            self.publish({'catalog':session.catalog,'references':str(session.references),'snapshot':snapshot,'status':'Native Laufzeit bereit'})
+            self.publish(dict(catalog=session.catalog,references=str(session.references),snapshot=snapshot,status='Native Laufzeit bereit',**group_event()))
             deadline=time.monotonic()
             while not self.stopping:
                 step=False;changed=False
@@ -93,25 +120,34 @@ class Worker(threading.Thread):
                     try:
                         if kind=='spawn':
                             entry=command['entry'];snapshot=session.spawn(entry,command.get('count',1));action='Natürlich';action_age=0;changed=True;collect=[]
+                            if self.arena:paused=bool(snapshot.get('context_error'))
                         elif kind=='collect':
                             entry=command['entry'];snapshot=session.spawn(entry);action='Gehen';session.action(action)
                             action_age=0;collect=['Werfen','Zerfallen'];paused=False;changed=True
                         elif kind=='pause':paused=command['value']
                         elif kind=='step':step=True
                         elif kind=='speed':speed=command['value']
-                        elif kind=='action':session.action(command['value']);action=command['value'];action_age=0;collect=[]
+                        elif kind=='action':
+                            if self.arena:
+                                snapshot=session.spawn(entry)
+                                # Let gravity reach the flat floor before an isolated action.
+                                if not entry.get('boss'):snapshot=session.step(24)
+                            session.action(command['value']);action=command['value'];action_age=0;collect=[]
+                            paused=False;changed=True
                         elif kind=='direction':
                             session.direction=1 if command['value']=='Rechts' else -1
                             x=session.read(session.target+0xa)
-                            session.write({0x54a:x+(64 if command['value']=='Rechts' else -64)})
+                            if self.arena:session.arena_target=224 if command['value']=='Rechts' else 32
+                            else:session.write({0x54a:x+(64 if command['value']=='Rechts' else -64)})
                     except Exception as error:self.publish({'error':str(error)})
                 if self.stopping:break
                 if changed:
                     allow(snapshot)
-                    self.publish({'catalog':session.catalog,'references':str(session.references),'snapshot':snapshot,'allowed_ids':sorted(allowed_ids)})
+                    self.publish(dict(catalog=session.catalog,references=str(session.references),snapshot=snapshot,allowed_ids=sorted(allowed_ids),**group_event()))
                 if not paused or step:
                     fields=1 if step else 2
                     snapshot=session.step(fields);action_age+=fields
+                    if snapshot.get('context_error'):paused=True
                     missing_age=0 if any(a['type']==entry.get('main_type',entry['type']) for a in snapshot['actors']) else missing_age+fields
                     allow(snapshot)
                     # Re-run the real action routine; the animation itself is
@@ -122,8 +158,8 @@ class Worker(threading.Thread):
                         snapshot=session.spawn(entry);session.action(action);action_age=0
                     elif action in ('Natürlich','Gehen') and missing_age>=(240 if entry.get('boss') else 120):
                         snapshot=session.spawn(entry);action_age=0;missing_age=0
-                    self.publish({'catalog':session.catalog,'references':str(session.references),'snapshot':snapshot,'allowed_ids':sorted(allowed_ids),
-                                  'status':f'Originalmotor · {session.elapsed} Felder · {action}'})
+                    self.publish(dict(catalog=session.catalog,references=str(session.references),snapshot=snapshot,allowed_ids=sorted(allowed_ids),
+                                      status=snapshot.get('context_error',f'Originalmotor · {session.elapsed} Felder · {action}'),**group_event()))
                 deadline+=1/(30*speed)
                 time.sleep(max(.001,min(.1,deadline-time.monotonic())))
                 if deadline<time.monotonic()-.25:deadline=time.monotonic()
@@ -133,8 +169,11 @@ class Worker(threading.Thread):
 
 
 class Workshop:
-    def __init__(self,root,rom=None,build=None,workspace=DEFAULT_WORKSPACE):
+    def __init__(self,root,rom=None,build=None,workspace=DEFAULT_WORKSPACE,library=DEFAULT_LIBRARY):
         self.root=root;self.workspace=Workspace(workspace)
+        if library and (Path(library)/'library.json').is_file():self.workspace.load_library(library)
+        self.library_profiles={p['key']:p for p in self.workspace.data['library_profiles']}
+        self.live_profile_ids={}
         root.title('Gegner-Werkstatt · Super Castlevania IV')
         scale=max(1.,float(root.tk.call('tk','scaling'))/(96/72),
                   min(root.winfo_screenwidth()/1920,root.winfo_screenheight()/1080))
@@ -149,6 +188,7 @@ class Workshop:
         self.enemy=tk.StringVar();self.action=tk.StringVar(value='Natürlich');self.speed=tk.StringVar(value='100%')
         self.follow=tk.BooleanVar(value=True);self.selected_id=None;self.list_signature=None
         self.only_current=tk.BooleanVar(value=True);self.active_entry={'type':18}
+        self.pose_view=tk.BooleanVar(value=False);self.pose_was_paused=False
         self.collect_on_ready=not bool(self.workspace.frames);self.closing=False
         outer=ttk.Frame(root,padding=18);outer.pack(fill='both',expand=True)
         ttk.Label(outer,text='Gegner-Werkstatt',font=('Segoe UI',23,'bold')).pack(anchor='w')
@@ -156,6 +196,7 @@ class Workshop:
         controls=ttk.Frame(outer);controls.pack(fill='x')
         self.enemy_box=ttk.Combobox(controls,textvariable=self.enemy,state='readonly',width=42)
         self.enemy_box.pack(side='left',padx=(0,8))
+        self.enemy_box.bind('<<ComboboxSelected>>',lambda _:self.browse_profile())
         self.count_box=ttk.Spinbox(controls,from_=1,to=8,textvariable=self.count,width=3)
         self.count_box.pack(side='left',padx=5)
         ttk.Button(controls,text='Spawnen / neu starten',command=self.spawn).pack(side='left',padx=5)
@@ -164,7 +205,7 @@ class Workshop:
         ttk.Button(controls,text='Links',command=lambda:self.send('direction',value='Links')).pack(side='left',padx=3)
         ttk.Button(controls,text='Rechts',command=lambda:self.send('direction',value='Rechts')).pack(side='left',padx=3)
         playback=ttk.Frame(outer);playback.pack(fill='x',pady=10)
-        ttk.Checkbutton(playback,text='Pause',variable=self.pause,command=lambda:self.send('pause',value=self.pause.get())).pack(side='left')
+        ttk.Checkbutton(playback,text='Pause',variable=self.pause,command=self.playback_pause).pack(side='left')
         ttk.Button(playback,text='Ein Feld weiter',command=self.single_step).pack(side='left',padx=8)
         speed_box=ttk.Combobox(playback,textvariable=self.speed,values=['25%','50%','100%'],state='readonly',width=6)
         speed_box.pack(side='left');speed_box.bind('<<ComboboxSelected>>',lambda _:self.send('speed',value=int(self.speed.get()[:-1])/100))
@@ -180,6 +221,7 @@ class Workshop:
         ttk.Label(editor,text='Aufgenommene Posen und Geschosse',font=('Segoe UI',12,'bold')).pack(anchor='w')
         ttk.Checkbutton(editor,text='Einzelteile anzeigen / austauschen',variable=self.parts,command=self.refresh_list).pack(anchor='w',pady=8)
         ttk.Checkbutton(editor,text='Nur aktuelle Figur und zugeordnete Geschosse',variable=self.only_current,command=self.refresh_list).pack(anchor='w')
+        ttk.Checkbutton(editor,text='Ausgewählte PNG groß vergleichen (Pause)',variable=self.pose_view,command=self.switch_pose_view).pack(anchor='w',pady=(4,6))
         list_frame=ttk.Frame(editor);list_frame.pack(fill='both',expand=True)
         self.tree=ttk.Treeview(list_frame,show='tree',selectmode='browse',height=12)
         scrollbar=ttk.Scrollbar(list_frame,orient='vertical',command=self.tree.yview)
@@ -201,15 +243,40 @@ class Workshop:
         root.after(50,self.tick)
 
     def send(self,kind,**values):self.commands.put(dict(kind=kind,**values))
+    def switch_pose_view(self):
+        if self.pose_view.get():
+            self.pose_was_paused=self.pause.get();self.pause.set(True);self.send('pause',value=True)
+        else:
+            self.pause.set(self.pose_was_paused);self.send('pause',value=self.pose_was_paused)
+    def leave_pose_view(self):
+        if self.pose_view.get():self.pose_view.set(False);self.switch_pose_view()
+    def playback_pause(self):
+        if not self.pause.get():self.pose_view.set(False)
+        self.send('pause',value=self.pause.get())
+    def browse_profile(self):
+        index=self.enemy_box.current()
+        if index<0:return
+        self.active_entry=self.catalog[index];self.refresh_list()
+        if not self.pose_view.get():self.pose_view.set(True);self.switch_pose_view()
+        prepared=self.library_profiles.get(profile_key(self.active_entry),{})
+        self.context.set(f'{len(prepared.get("poses",[]))} Posen vorbereitet. PNG direkt bearbeiten; „Spawnen“ startet den nativen Ablauf.' if prepared else 'Neue Posen werden beim Spawnen gesammelt.')
     def single_step(self):
+        self.leave_pose_view()
         self.pause.set(True);self.send('pause',value=True);self.send('step')
     def spawn(self):
         i=self.enemy_box.current()
         if i>=0:
             self.active_entry=self.catalog[i]
+            if self.active_entry.get('preview_only'):
+                if not self.pose_view.get():self.pose_view.set(True);self.switch_pose_view()
+                self.action_box.configure(values=['Natürlich']);self.count_box.configure(state='disabled')
+                self.context.set(self.active_entry['coverage_note']);return
+            self.leave_pose_view()
             self.action.set('Natürlich');self.send('spawn',entry=self.catalog[i],count=self.count.get())
             self.action_box.configure(values=['Natürlich','Gehen','Werfen','Zerfallen'] if self.catalog[i]['type'] in (17,18) else ['Natürlich'])
             entry=self.catalog[i]
+            prepared=self.library_profiles.get(profile_key(entry),{})
+            if prepared:self.status.set(f'{len(prepared.get("poses",[]))} Posen vorbereitet · PNGs sofort bearbeitbar')
             self.count_box.configure(state='disabled' if entry.get('boss') else 'normal')
             if entry.get('boss'):
                 self.context.set(entry.get('coverage_note','Experimenteller Bosskontext: '+('native Darstellung geprüft; weitere Abläufe noch unvollständig.' if entry.get('preview_verified') else 'Initialisierung / Sichtbarkeit noch unvollständig.')))
@@ -217,6 +284,7 @@ class Workshop:
     def collect(self):
         index=next((i for i,e in enumerate(self.catalog) if e['type']==18 and e['variant']==0),None)
         if index is None:return
+        self.leave_pose_view()
         self.enemy_box.current(index);self.pause.set(False)
         self.active_entry=self.catalog[index]
         self.count_box.configure(state='normal')
@@ -267,7 +335,9 @@ class Workshop:
                 if 'catalog' in event and not self.catalog:
                     groups={'enemy':'Gegner','object':'Objekt','hazard':'Gefahr','effect':'Effekt','unclassified':'Unbestimmt'}
                     order={'enemy':0,'object':2,'hazard':3,'effect':4,'unclassified':5}
-                    self.catalog=sorted(event['catalog'],key=lambda e:(1 if e.get('boss') else order.get(e.get('category'),5),e['type'],e['variant']))
+                    entries=list(event['catalog']);keys={profile_key(e) for e in entries}
+                    entries.extend(p for key,p in self.library_profiles.items() if key not in keys and p.get('preview_only'))
+                    self.catalog=sorted(entries,key=lambda e:(6 if e.get('preview_only') else 1 if e.get('boss') else order.get(e.get('category'),5),e['type'],e['variant']))
                     self.enemy_box.configure(values=[e['name'] if e.get('boss') else
                         f'{groups.get(e.get("category"),"Unbestimmt")} {e["type"]:02X} · {e["name"]}'+
                         (' · Kontext offen' if not e.get('native_verified') else '') for e in self.catalog])
@@ -276,14 +346,19 @@ class Workshop:
                 if 'references' in event:self.references=Path(event['references'])
                 if 'snapshot' in event:self.snapshot=event['snapshot']
                 if 'allowed_ids' in event:self.allowed_ids.update(event['allowed_ids'])
+                if 'profile_key' in event:self.live_profile_ids.setdefault(event['profile_key'],set()).update(event.get('profile_frame_ids',[]))
                 self.status.set(event.get('fatal',event.get('error',event.get('status',self.status.get()))))
         except queue.Empty:pass
         if self.references:self.workspace.ingest(self.references,self.allowed_ids)
         family={self.active_entry['type'],*self.active_entry.get('child_types',[])}
         if self.active_entry['type'] in (17,18):family.update((17,18,2,45))
+        active_key=self.active_entry.get('key',profile_key(self.active_entry))
+        prepared=self.library_profiles.get(active_key)
+        selected_ids=set(prepared.get('frame_ids',[])) if prepared else None
+        if selected_ids is not None:selected_ids.update(self.live_profile_ids.get(active_key,()))
         frames=list({f['image']:f for f in self.workspace.frames.values()
                      if f.get('component',False)==self.parts.get() and
-                     (not self.only_current.get() or f['actor_type'] in family)}.values())
+                     (not self.only_current.get() or (f['id'] in selected_ids if selected_ids is not None else f['actor_type'] in family))}.values())
         signature=tuple(f['id'] for f in frames)
         if signature!=self.list_signature:
             self.tree.delete(*self.tree.get_children())
@@ -303,7 +378,7 @@ class Workshop:
                 self.asset_preview.configure(image=self.asset_photo)
         for i,canvas in enumerate(self.canvases):
             size=(max(2,canvas.winfo_width()),max(2,canvas.winfo_height()))
-            picture=preview(self.snapshot,self.workspace,bool(i),size,self.follow.get())
+            picture=pose_preview(self.workspace,self.selected_id,bool(i),size) if self.pose_view.get() and self.selected_id else preview(self.snapshot,self.workspace,bool(i),size,self.follow.get())
             photo=ImageTk.PhotoImage(picture);self.photos.append(photo)
             canvas.delete('all');canvas.create_image(0,0,anchor='nw',image=photo)
         if self.workspace.last_error:self.status.set(self.workspace.last_error)
@@ -323,11 +398,17 @@ def main():
     parser.add_argument('--rom',type=Path)
     parser.add_argument('--build',type=Path)
     parser.add_argument('--workspace',type=Path,default=DEFAULT_WORKSPACE)
+    parser.add_argument('--library',type=Path,default=DEFAULT_LIBRARY)
+    parser.add_argument('--prepare-library',action='store_true',help='Merge the prepared library into artist files without opening a window')
     args=parser.parse_args()
+    if args.prepare_library:
+        workspace=Workspace(args.workspace);added=workspace.load_library(args.library)
+        print(f'{added} Zuordnungen ergänzt; {len(workspace.frames)} vorbereitet. Zeichnungen bleiben erhalten.')
+        return
     try:
         import ctypes
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
     except (AttributeError,OSError):pass
-    root=tk.Tk();Workshop(root,args.rom,args.build,args.workspace);root.mainloop()
+    root=tk.Tk();Workshop(root,args.rom,args.build,args.workspace,args.library);root.mainloop()
 
 if __name__=='__main__':main()

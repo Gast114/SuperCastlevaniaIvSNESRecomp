@@ -9,7 +9,7 @@ from enemy_workshop import Workshop,ROOT
 
 def main():
     folder=Path(tempfile.mkdtemp(prefix='ui-check-',dir=ROOT/'artwork-local/enemy-workshop'))
-    root=tk.Tk();root.withdraw();app=Workshop(root,workspace=folder/'workspace')
+    root=tk.Tk();root.withdraw();app=Workshop(root,workspace=folder/'workspace',library=None)
     report={'passed':False,'checks':[],'desktop_screenshot':False}
     def wait(predicate,timeout=25):
         deadline=time.monotonic()+timeout

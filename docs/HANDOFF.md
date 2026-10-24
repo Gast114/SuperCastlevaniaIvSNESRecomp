@@ -4,6 +4,57 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## Korrektur: Monster-Prüfstand statt gemischter Sprite-Browser (24.10.)
+
+**Aktueller Nutzerwunsch:** Keine erfundenen Namen. Monster per stabilem Code
+wählen, eigene Namen speichern, Körper/Angriffe/Geschosse/Todesbilder zusammen
+sehen; echte KI in neutraler Umgebung, Live-Werte und belegte KI-Erklärungen.
+Bilder möglichst nicht ansehen, weil das sein Sitzungskontingent belastet.
+Diese Umsetzung wurde ohne Bildbetrachter oder Screenshotansicht geprüft.
+
+Launcher startet jetzt `tools/monster_workshop.py`. Der frühere Client bleibt
+interne Grundlage; die Standardansicht ist Monster → Variante → Aktionsreiter.
+Codes M-XXXX, Namen in `project.json/monster_names`. PNGs bestehender Projekte
+werden nicht umbenannt oder überschrieben. Neue Dateien/Monster-ZIPs verwenden
+Codes. Angriff von M-0012 enthält Körper und Knochen; geteilte PNGs können
+mehreren Aktionen angehören. Optionale Grafikvarianten halten die Standardliste
+bei einer PNG pro Pose/Teil. Lebende PNGs und exakte native Import-IDs bleiben.
+
+NativeSession.arena_enabled lädt erst Originalgrafiken und ersetzt dann beide
+privaten Kollisionskarten 4000/A000 durch Luft/Boden192/Seitenwände. Raster nach
+00:CF86, 4 Seiten mit je 32x32 8px-Zellen. Heroziel96/168, invulnerabel; Raumskript0
+und Phase5 werden pro Feld gehalten. 31 lädt die echte Platzierung Raum18,
+05:9128 statt Raum17 mit automatischem Übergang. Bossstart deaktiviert die
+neutrale Arena für den Controller und bleibt experimenteller Originalkontext.
+45/46 gewöhnliche Codes kurz sichtbar geprüft. 007F bleibt instabil; die Szene
+hält an und zeigt keine Müllwerte. Unsichtbare Helfer6C/73 und leerer Handler77
+(02:A970 = RTL) sind keine eigenen Monster. Kategorien/Namen alter Audits nicht
+als verbindliche Monster-Identifikation verwenden.
+
+Werte: HP-Basis01:AC00+t*2, live+06; Kontakt01:AF00+t (BYTE!), Hitbox+28/+2A,
+State+12, X/Y+0A/+0E, Geschwindigkeit18/1A/1C/1E. Bosskontakt01:B201; Alias8B→09
+noch ohne geprüften Schadenswert. Modell: tools/monster_model.py.
+Gehen/Springen/Angriff für12/31/56 durch Originalzustände geprüft;11/69 kein
+nativer Sprung/Wurf. Attack56 benutzt 91D8/9201 und ist Nahkontakt, kein Geschoss
+(E096 ist Schadenprüfung, kein Spawner). M0012 Wurfkörper8B1B/8B30/8B4D,
+Geschoss2 mit900C/9011/9016. Todesübergang nach00:DBF2..DC64, neue Bilder werden
+unter monster_actions gespeichert. Andere Aktions-/Geschosszuordnungen noch
+ungeprüft: Natürlich und Noch zuordnen ehrlich ausweisen.
+
+Interne vollständiger vorbereitete Bildbibliothek: 106 native Profile plus16
+reine Vorlagengruppen,3697 Bild-/Teil-Zuordnungen;631 ganze Vorlagen,3066 Teile.
+25.504 native Felder aus kurzen Probeabläufen;425 zusätzliche PNGs aus direkt
+belegten ROM-Posen und gemessenen GFX-Kontexten. Kein Vollständigkeitsnachweis aller
+Aktionen. Werkzeuge enemy_workshop_library.py, enemy_sprite_inventory.py,
+enemy_sprite_export.py, prepare_sprite_library.py. Warm-Cache startet keinen
+Emulator. Source-PNGs und Zeichnungen bleiben erhalten; ROM/PNGs nicht in Git.
+Extra-Kontext-/Boss82/8D-Probes sind Forschungswerkzeuge, noch nicht im Standard.
+
+Gezielte Prüfungen: test_monster_workshop.py (native Tk-Funktionen, echte Sprung-
+und Wurfroutine, Werte, Pause, PNG-Livereload, Export, Tod, Codes/Namen),
+test_enemy_library.py (8 Prüfungen), test_enemy_sprite_inventory.py (6 Prüfungen).
+Neue Anleitung: docs/ENEMY_WORKSHOP.md; Merkhilfe entsprechend ersetzt.
+
 ## Separate Gegner-Werkstatt und volle Skelett-Aktionen (24.10.)
 
 Das bisherige Zwei-Gehbilder-Pilotpaket war unvollständig. Jetzt vorhanden:

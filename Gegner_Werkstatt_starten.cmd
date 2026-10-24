@@ -11,7 +11,13 @@ cmake -S . -B build-lua -G Ninja -DCMAKE_BUILD_TYPE=Release -DSNESRECOMP_ENABLE_
 if errorlevel 1 goto failed
 cmake --build build-lua --target SuperCastlevaniaIvSNESRecomp -j 8
 if errorlevel 1 goto failed
-"%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\enemy_workshop.py"
+"%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\enemy_workshop_library.py" --ensure
+if errorlevel 1 goto failed
+"%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\prepare_sprite_library.py" --ensure
+if errorlevel 1 goto failed
+"%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\enemy_workshop.py" --prepare-library
+if errorlevel 1 goto failed
+"%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\monster_workshop.py"
 if errorlevel 1 goto failed
 exit /b 0
 :failed

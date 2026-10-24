@@ -1,77 +1,106 @@
-# Die separate Gegner-Werkstatt
+# Monster-Werkstatt
 
-Im Projekt `Gegner_Werkstatt_starten.cmd` doppelklicken. Das Werkzeug verwendet
-die bestehende lokale Python-Umgebung und baut bei Bedarf seine Lua-Laufzeit.
-Die eigene ungeheaderte USA-ROM liegt wie bisher im Projekt.
+`Gegner_Werkstatt_starten.cmd` startet die neue Monsteransicht in einem eigenen
+Fenster. Die vorhandenen Arbeits-PNGs bleiben erhalten. Original und Redesign
+verwenden denselben nativen Bewegungsablauf; Photoshop-Änderungen werden live
+neu geladen.
 
-## Gestalten und vergleichen
+## So benutzt du sie
 
-1. Figur auswählen und **Spawnen / neu starten** anklicken. Normale Figuren
-   lassen sich mehrfach erzeugen, Bosse einzeln. Original und Redesign laufen
-   nebeneinander mit denselben echten Bewegungsdaten.
-2. Beim Skelett **Vollständige Skelett-Aktionen sammeln** anklicken. Gehen,
-   Knochenwurf und Zerfallen werden durch Originalroutinen ausgeführt.
-   Die vorbereitete Sammlung enthält diese Bilder bereits vollständig.
-3. **Pause**, **Ein Feld weiter** oder 25/50/100% verwenden. Links/Rechts
-   versetzt das native Spielerziel auf die entsprechende Seite; die Figur
-   reagiert nach ihrer ursprünglichen KI.
-4. Eine Pose auswählen und **PNG … öffnen** anklicken. Windows verwendet das
-   zugeordnete Programm, beispielsweise Photoshop. Das PNG im Ordner
-   `artwork` speichern; rechts erscheint die Änderung automatisch.
-5. **Einzelteile anzeigen / austauschen** blendet Teilbilder ein. Alternativ
-   über **PNG ersetzen** ein fertiges Bild auswählen. Dabei wird die vorige
-   Arbeitsdatei in `history` gesichert.
-6. **PNG-Sammlung als ZIP exportieren** gibt Vorlagen, Zuordnung und Galerie
-   zusammen. **Paket zum Einbauen erstellen** packt fertige Bilder.
-   Installation über den HD-Import: [ENEMY_HD.md](ENEMY_HD.md).
+1. Links einen **Monster-Code** wählen, zum Beispiel **M-0012**. Varianten
+   gehören unter denselben Code. Im Feld **Dein Name** kannst du selbst einen
+   Namen vergeben und speichern.
+2. **Spawnen / neu starten** setzt das Monster in die neutrale Testszene.
+   **Ziel links/rechts** versetzt das Spielerziel, auf das die Original-KI
+   reagiert. Die Vorschau zeigt einen flachen Boden mit echten Kollisionen.
+3. Die Reiter **Gehen / Bewegen**, **Springen**, **Angriff** und **Sterben**
+   enthalten die zugeordneten Posen. **Aktion abspielen** startet eine geprüfte
+   Originalroutine. Der Knochenwurf gehört zum Angriff von M-0012: Körper und
+   alle drei Knochen-Drehbilder stehen zusammen.
+4. Eine PNG auswählen und **PNG öffnen** anklicken. In Photoshop im selben
+   `artwork`-Ordner speichern. Rechts erscheint die Änderung automatisch.
+   **PNG ersetzen** übernimmt eine fertige Datei und sichert die vorige Fassung.
+5. **Einzelteile** zeigt die Teile einer Pose. **Grafikvarianten** zeigt weitere
+   native Grafikfassungen; normalerweise reicht die übersichtliche Standardliste.
+   **PNG einzeln ansehen** hält die Laufzeit für die Bildkontrolle an.
+6. **Dieses Monster als PNG-Set** exportiert eine ZIP mit Code-Dateinamen,
+   Originalen, bearbeitbaren PNGs und der Aktionszuordnung. Das entpackte Projekt
+   kann direkt im [HD-Import](HD_IMPORT.md) gepackt werden. **HD-Paket erstellen**
+   packt die veränderten Zeichnungen des aktuellen Arbeitsordners.
 
-Standardarbeitsordner: `D:/Super Castlevania IV Recomp/Assets (ausgeschnitten)/
-Gegner/Werkstatt`. Neue Aufnahmen überschreiben keine vorhandenen Zeichnungen.
-Identische Bilder teilen sich eine Datei. **Nur aktuelle Figur und zugeordnete
-Geschosse** hält die Liste übersichtlich.
+Arbeitsordner: `D:/Super Castlevania IV Recomp/Assets (ausgeschnitten)/Gegner/Werkstatt`.
+Dateinamen bereits vorhandener Arbeitsdateien bleiben erhalten, damit offene
+Photoshop-Dateien weiter passen. Neu angelegte Dateien und exportierte Sets
+verwenden Codes. Die angezeigten Monster-Namen bestimmst du selbst.
 
-Bei einer vorübergehend unvollständigen PNG bleibt das letzte gültige Bild
-sichtbar. Leinwand und Proportionen beibehalten; nicht auf das Motiv zuschneiden.
-Eine neue ganze Pose hat Vorrang vor ihren neuen Einzelteilen.
+Die PNGs haben eine vollständig transparente Leinwand, meist 387×387 Pixel.
+Proportionen und Leinwand beibehalten, nicht auf das Motiv zuschneiden.
+Eine neue ganze Pose hat Vorrang vor ihren Einzelteilen. Bei einem unvollständigen
+PNG-Speichervorgang bleibt das letzte gültige Bild sichtbar.
 
-## Umfang und offene Kontexte
+## Werte und KI
 
-Skelett: fünf Körperposen, drei Knochenbilder, zehn Zerfallseffekte und 37
-optionale Einzelteile. Der Originalmotor führt die Abläufe tatsächlich aus.
+Rechts stehen die laufende Gesundheit, der Basiswert aus der ROM,
+Kontaktschaden, Trefferbox, Zustand, Position und native Geschwindigkeitswerte.
+Gesundheit verwendet interne Schadenseinheiten; Kontaktschaden zählt
+Spieler-Lebenspunkte. Die gespeicherte Geschwindigkeit kann am Boden weiter
+nach unten zeigen, obwohl die Kollision die tatsächliche Bewegung verhindert.
 
-Der weitere Katalog kommt aus originalen Platzierungs-/Grafikressourcentabellen.
-94 normale Figuren- und Objektprofile wurden zweimal kurz geprüft; 83 waren
-sichtbar. 39 davon sind als Gegner beschrieben, 17 als Objekte, 8 als Gefahren,
-5 als Effekte; 14 sichtbare Figuren bleiben unbestimmt. Beschriftungen sind
-visuelle Beschreibungen. Ungeprüfte Initialisierungen tragen **Kontext offen**.
+Basisgesundheit: ROM `01:AC00 + Typ*2`; aktueller Wert: Actor `+06`.
+Initialisierung: `00:D74E..D75C`. Kontaktschaden: Byte-Tabelle `01:AF00 + Typ`,
+angewendet durch `00:DD0A..DD21`. Die laufende Trefferbox kommt aus `+28/+2A`.
+Bosskontakt nutzt `00:DE14..DE33`; bei einem abweichenden sichtbaren Haupttyp
+wird ohne geprüfte Zuordnung kein Schadenwert behauptet.
 
-Neue sichtbare Posen werden während des Ablaufs gesammelt. Für weitere
-Familien sind gezielte Aktions- und Projektilprofile noch auszubauen; ein kurzer
-sichtbarer Ablauf ist kein vollständiger Nachweis aller Aktionen.
+Geprüfte Aktionsauslöser:
 
-Bossprofile führen den originalen Szenencontroller `$2A` aus, der Grafiken lädt
-und den Boss erzeugt. Die Musikwartezeit wird in der privaten Szene übersprungen.
-Diese Profile bleiben **experimentell**, weil manche zusätzliche Raumskripte
-brauchen. `$81` verwendet unter anderem BG/Mode7 statt einer gewöhnlichen
-OBJ-Figur. `$8B` erzeugt seinen sichtbaren Körper als Actor `$09`, der separat
-zugeordnet ist. `$82` und `$8D` haben noch keinen vorbereiteten Ablauf.
-Boss `$80` nutzt den belegten experimentellen Raum 4; sein Originalraum 7
-braucht noch zusätzliche Szeneninitialisierung. Kein Bossprofil verspricht
-vollständige Angriffs- und Todesanimationen.
+| Codes | Gehen | Springen | Angriff | Sterben |
+| --- | --- | --- | --- | --- |
+| M-0011 | ja | keine eigene Routine | Kontakt | ja |
+| M-0012 | ja | ja, gleiche Geh-PNGs | Wurf mit echtem Knochen | ja |
+| M-0031 | ja | ja, gleiche Geh-PNGs | native Angriffsfolge | ja |
+| M-0056 | ja | ja, gleiche Geh-PNGs | native Angriffsfolge | ja |
+| M-0069 | ja | keine eigene Routine | Kontakt | nativer Ablauf |
+| übrige normale Codes | natürlicher KI-Ablauf | noch ungeprüft | noch ungeprüft | nativer Todesübergang |
 
-Der Vergleich verwendet eine neutrale Bühne. Kollisionen und Raumskripte laufen
-in der privaten Originalszene weiter. Spezielle Palettenwechsel, Blitzfarben
-und BG/Mode7-Darstellungen sind noch nicht farbgetreu in der neutralen OBJ-
-Vorschau abgebildet. Die native Zaunverdeckung im Spiel ist separat geprüft.
+Die KI-Hinweise beschreiben nur belegte Eigenschaften. Für andere Monster zeigt
+**Natürlich** den echten Ablauf; ihre noch ungeprüften Posen liegen unter
+**Noch zuordnen**. Deaktivierte Aktionsknöpfe bedeuten „ungeprüft“, nicht
+„dieses Monster kann das nicht“. Eine native Aktion darf anschließend in die
+normale KI zurückkehren. Geteilte Bilder dürfen zu mehreren Aktionen gehören.
 
-## Getrennte Laufzeit
+## Umfang und verbleibende Kontexte
 
-Die App startet eine eigene Lua-fähige EXE unter
-`artwork-local/enemy-workshop/session-*`. ROM-Boot, Raumladung, Actor-Startwerte,
-Pause und Einzelbilder werden über eine lokale Lua-Schnittstelle gesteuert.
-Spielstände und Einstellungen des Spielers werden nicht geöffnet. Beim
-Schließen werden PNG-Aufnahmen gespeichert und der eigene Prozess beendet.
+Der interne Vorrat enthält 3.697 native Bild-/Teil-Zuordnungen aus gemessenen
+Originalabläufen und belegten ROM-Posen. Diese Zahl ist kein Nachweis eines
+vollständigen Aktionskatalogs. Die Monsteransicht trennt Körper, Geschosse und
+Umgebungsobjekte; die frühere gemischte Sprite-Auswahl ist nicht mehr der Start.
 
-Andere Arbeitsordner: `python tools/enemy_workshop.py --workspace "D:/Mein Ordner"`.
-Optional `--rom` und `--build` für eine eigene USA-ROM beziehungsweise einen
-Lua-fähigen Build verwenden. ROM und daraus exportierte Bilder bleiben lokal.
+Im kurzen neutralen Test wurden 45 von 46 normalen Monster-Codes sichtbar.
+M-007F braucht noch eine stabile Übernahme seines vertikalen Grafikkontexts.
+Ungültige Werte werden dort ausgeblendet und die Szene angehalten. Die Angriffs-
+und Sprungauslöser der weiteren Familien sowie ihre Geschosszuordnungen müssen
+noch einzeln geprüft werden. Neue Todesposen werden bei **Sterben** gespeichert.
+
+**Bosse (experimentell)** blendet Bossprofile gesondert ein. Sie verwenden ihre
+originalen Szenenskripte; eine allgemeine neutrale Boss-Kollisionsfläche fehlt.
+M-0081 benötigt BG/Mode7; M-0082 und M-008D haben noch keinen vorbereiteten
+Startablauf. Bossprofile versprechen keine vollständigen Aktionen.
+
+## Getrennte Laufzeit und technische Prüfung
+
+Die eigene Lua-EXE und ihre Spielstände liegen unter
+`artwork-local/enemy-workshop/session-*`. Die ROM und die Spielstände des
+normalen Spiels werden nicht geändert. Die neutrale Szene ersetzt beide
+privaten 64×64-Kollisionskarten durch Luft, Boden und Seitenwände; die
+ursprüngliche Kollisionsroutine `00:CF86` bleibt aktiv. Normale Szenenskripte
+werden auf den ruhigen ersten Raum begrenzt, Grafiken vorher nativ geladen.
+M-0031 nutzt die originale Platzierung `05:9128` in Raum 18, weil sein erster
+Raum einen automatischen Übergang startet.
+
+`python tools/test_monster_workshop.py` prüft die echten Tk-Bedienfunktionen,
+Sprung, Wurf, Tod, Werte, Pause, Live-PNG-Wechsel und Export ohne Bildbetrachter.
+`tools/test_enemy_library.py` prüft Quellen, Cache und Erhalt der Arbeits-PNGs.
+Andere Arbeitsordner: `python tools/monster_workshop.py --workspace "D:/Mein Ordner"`.
+Optional sind `--rom`, `--build` und `--library` verfügbar. ROM und exportierte
+Originalbilder bleiben lokal.

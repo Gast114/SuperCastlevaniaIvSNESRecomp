@@ -36,6 +36,7 @@ class NativeSession:
         self.catalog=self.read_catalog()+boss_profiles(self)
         self.direction=-1
         self.elapsed=0
+        self.arena_enabled=False;self.arena_target=96
 
     def word(self,bank,address):
         offset=bank*0x8000+(address&0x7fff)
@@ -133,16 +134,51 @@ class NativeSession:
             # Scripted gates/props may be created by the room after streaming
             # stops. They are not descendants of the selected skeleton.
             family={self.entry['type'],self.entry.get('main_type',self.entry['type'])}
-            if self.entry['type'] in (17,18):family.update((2,45))
+            if self.entry['type'] in (0x11,0x12,0x31,0x56):family.update((2,45,0x3d))
             family.update(self.entry.get('child_types',[]))
+            if self.entry['type']<128:family.add(self.bytes[0x8000+((0xae00+self.entry['type'])&0x7fff)])
             result['actors']=[a for a in result['actors'] if a['type'] in family]
             main=next((a for a in result['actors'] if a['type']==self.entry.get('main_type',self.entry['type'])),None)
             if main:self.target=main['slot']
             result['target']=self.target
+            if getattr(self,'arena_enabled',False) and not self.entry.get('boss'):
+                result['arena']={'floor':192,'target_x':self.arena_target,'target_y':168}
+            values=self.lua.eval(f'return mainmemory.read_u16_le({self.target}+6),mainmemory.read_u16_le({self.target}+0x12),'
+                f'mainmemory.read_u16_le({self.target}+0xa),mainmemory.read_u16_le({self.target}+0xe),'
+                f'mainmemory.read_u16_le({self.target}+0x28),mainmemory.read_u16_le({self.target}+0x2a),'
+                f'mainmemory.read_u16_le({self.target}+0x18),mainmemory.read_u16_le({self.target}+0x1a),'
+                f'mainmemory.read_u16_le({self.target}+0x1c),mainmemory.read_u16_le({self.target}+0x1e),'
+                f'mainmemory.read_u16_le({self.target}+0x10)')['values']
+            values=list(map(int,values))
+            signed=lambda v:v-65536 if v>=32768 else v
+            result['live_stats']=dict(hp=values[0],state=values[1],x=values[2],y=values[3],half_width=values[4],half_height=values[5],
+                                      speed_x=signed(values[7])+values[6]/65536,speed_y=signed(values[9])+values[8]/65536,
+                                      actor_type=values[10],present=values[10]==self.entry.get('main_type',self.entry['type']))
+            if self.arena_enabled and not self.entry.get('boss') and values[10]>0x8d:
+                result['context_error']=f'M-{self.entry["type"]:04X}: Grafik-/Szenenkontext noch nicht stabil. Bitte ein anderes Monster wählen.'
+                result['live_stats']={'present':False}
+                result['actors']=[]
         return result
+
+    def prepare_arena(self):
+        # The original collision lookup 00:CF86 reads 64x64 8px cells
+        # from 7E:4000 / 7E:A000. Tile 0=air, 1=solid. Both planes agree.
+        # Bound each RPC below the Lua runtime's instruction limit.
+        for page in range(4):
+            self.lua.eval(f'for i={page*1024},{page*1024+1023} do '
+                'local solid=(i>=1024 or i%1024>=768 or i%32==0 or i%32==31) and 1 or 0 '
+                'mainmemory.write_u16_le(0x4000+i*2,solid) mainmemory.write_u16_le(0xa000+i*2,solid) end')
+        self.camera(0,0)
+        self.write({0x54a:self.arena_target,0x54e:168,0xbc:0x7fff,
+                    0x70:5,0x86:self.arena_room,0xb8:0,0x552:0,0x558:0,0x55a:0,0x55c:0,0x55e:0,0x13f4:16})
 
     def step(self,frames=1):
         if getattr(self,'entry',{}).get('boss'):hold_boss_stage(self,self.entry)
+        elif getattr(self,'entry',None) and self.arena_enabled:
+            for _ in range(frames):
+                self.prepare_arena();play.advance(self.lua,1)
+            self.elapsed+=frames
+            return self.snapshot()
         play.advance(self.lua,frames);self.elapsed+=frames
         return self.snapshot()
 
@@ -151,14 +187,42 @@ class NativeSession:
         self.write({0x1c:x,0x1e:y,0x1280:x,0x12c0:x,0x1298:y,0x12d8:y})
 
     def spawn(self,entry,count=1):
-        if entry.get('boss'):return spawn_boss(self,entry)
+        if entry.get('boss'):
+            arena=self.arena_enabled;self.arena_enabled=False
+            try:return spawn_boss(self,entry)
+            finally:self.arena_enabled=arena
+        if self.arena_enabled and entry['type']==0x7f:
+            # Room62's tall scene needs its original camera-driven streaming
+            # to finish before replacing collision RAM with the neutral grid.
+            self.arena_enabled=False
+            try:self.spawn(entry,count)
+            finally:self.arena_enabled=True
+            self.arena_room=0
+            self.write({self.target+0xa:160,self.target+0xe:128})
+            return self.step(4)
+        if self.arena_enabled and entry['type']==0x31:
+            # The first $31 placement is inside room17's automatic transition.
+            # Use its real room18 placement (05:9128) for the graphics loader.
+            entry=dict(entry,room=18,x=248,y=184,flags=0xf8,record=0x9128)
         self.command('loadfile',self.base)
         self.write({0x86:entry['room'],0x70:3})
-        play.advance(self.lua,100)
+        if self.arena_enabled:
+            # Stop at the first playable field, before room-specific exits can
+            # send the inherited player position into a neighbouring room.
+            for _ in range(180):
+                play.advance(self.lua,1)
+                if self.read(0x70)==5 and self.read(0x3c)==0:break
+            else:raise RuntimeError('Der Grafikraum wurde nicht vollständig geladen.')
+            # Retain the loaded graphics, then use the quiet first-room script
+            # context. Later rooms have doors, auto-scroll and boss triggers.
+            self.arena_room=0;self.entry=entry
+            self.prepare_arena()
+        else:play.advance(self.lua,100)
         x,y=entry['x'],entry['y']
         self.camera(x-160,y-176)
         self.write({0x54a:max(32,x-72),0x54e:y})
-        play.advance(self.lua,32)
+        if self.arena_enabled:self.step(24)
+        else:play.advance(self.lua,32)
         # The retail loader has supplied the room's actual graphics, palette,
         # collision data and $13A0 resource list. Initialize like $00:D6F0.
         group=self.word(1,0xa900+entry['type']*3)
@@ -176,6 +240,7 @@ class NativeSession:
         self.camera(x-160,y-176)
         self.write({0x54a:x-64,0x54e:y})
         t=entry['type'];hit=self.word(1,0xab00+t*2)
+        if self.arena_enabled and t!=0x2a:x,y=160,128;self.prepare_arena()
         difficulty=self.read(0x84)
         for n in range(max(1,min(8,count))):
             base=0x580+n*0x40
@@ -196,6 +261,24 @@ class NativeSession:
         return snapshot
 
     def action(self,action):
+        if action=='Gehen' and self.entry['type'] in (0x11,0x12,0x31,0x56,0x69):
+            self.write({self.target+0x12:2,self.target+0x22:0})
+            return
+        if action=='Sterben' and self.entry['type']<128:
+            t=self.entry['type'];base=self.target
+            self.write({base+6:0,base+0x16:0,base+0x2e:0,
+                base+0x10:self.bytes[0x8000+((0xae00+t)&0x7fff)],
+                base+0x12:self.bytes[0x8000+((0xae80+t)&0x7fff)]})
+            return
+        if action=='Angriff' and self.entry['type'] in (18,49,86):
+            state={18:7,49:9,86:8}[self.entry['type']]
+            self.write({self.target+0x12:state,self.target+0x22:0,self.target+0x24:0,self.target+0x2c:0})
+            return
+        if action=='Springen' and self.entry['type'] in (18,49,86):
+            right=self.arena_target>=self.read(self.target+0xa)
+            self.write({self.target+0x1e:0xfffa,self.target+0x1c:0,self.target+0x18:0,
+                        self.target+0x1a:1 if right else 0xffff,self.target+0x12:5 if right else 3})
+            return
         if self.entry['type'] not in (0x11,0x12):
             if action!='Natürlich':raise ValueError('Für diese Figur ist nur der native Ablauf zugeordnet.')
             return

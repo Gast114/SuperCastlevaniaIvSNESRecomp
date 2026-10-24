@@ -1,0 +1,393 @@
+{
+  "schema": "sciv neutral monster arena observations v1",
+  "rom_sha256": "0ef6f4cce5a2273fa49fe1ce724e0048a8e39c91da6b00dbb693fe1ba909177d",
+  "date": "2026-10-24",
+  "images_opened": false,
+  "ordinary_profiles": 46,
+  "visible": 45,
+  "limits": [
+    "A short visible probe does not prove every action, all projectiles, or long-term stability.",
+    "Bosses retain their experimental original scene contexts.",
+    "Default target96 activates type36; other initial visibility probes used target64."
+  ],
+  "profiles": [
+    {
+      "type": 7,
+      "code": "M-0007",
+      "visible": true,
+      "context_room": 44,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 8,
+      "code": "M-0008",
+      "visible": true,
+      "context_room": 5,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 9,
+      "code": "M-0009",
+      "visible": true,
+      "context_room": 8,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 10,
+      "code": "M-000A",
+      "visible": true,
+      "context_room": 5,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 11,
+      "code": "M-000B",
+      "visible": true,
+      "context_room": 2,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 12,
+      "code": "M-000C",
+      "visible": true,
+      "context_room": 1,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 13,
+      "code": "M-000D",
+      "visible": true,
+      "context_room": 30,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 15,
+      "code": "M-000F",
+      "visible": true,
+      "context_room": 36,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 16,
+      "code": "M-0010",
+      "visible": true,
+      "context_room": 8,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 17,
+      "code": "M-0011",
+      "visible": true,
+      "context_room": 1,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 18,
+      "code": "M-0012",
+      "visible": true,
+      "context_room": 1,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 48,
+      "code": "M-0030",
+      "visible": true,
+      "context_room": 9,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 49,
+      "code": "M-0031",
+      "visible": true,
+      "context_room": 18,
+      "probe_fields": 24,
+      "target_x": 64,
+      "native_record": "05:9128"
+    },
+    {
+      "type": 50,
+      "code": "M-0032",
+      "visible": true,
+      "context_room": 5,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 51,
+      "code": "M-0033",
+      "visible": true,
+      "context_room": 29,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 52,
+      "code": "M-0034",
+      "visible": true,
+      "context_room": 12,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 53,
+      "code": "M-0035",
+      "visible": true,
+      "context_room": 9,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 54,
+      "code": "M-0036",
+      "visible": true,
+      "context_room": 19,
+      "probe_fields": 80,
+      "target_x": 96,
+      "native_poses": [
+        39600,
+        39605,
+        39614,
+        39623,
+        39640,
+        39653
+      ]
+    },
+    {
+      "type": 62,
+      "code": "M-003E",
+      "visible": true,
+      "context_room": 10,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 66,
+      "code": "M-0042",
+      "visible": true,
+      "context_room": 33,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 67,
+      "code": "M-0043",
+      "visible": true,
+      "context_room": 8,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 75,
+      "code": "M-004B",
+      "visible": true,
+      "context_room": 12,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 76,
+      "code": "M-004C",
+      "visible": true,
+      "context_room": 14,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 78,
+      "code": "M-004E",
+      "visible": true,
+      "context_room": 2,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 81,
+      "code": "M-0051",
+      "visible": true,
+      "context_room": 14,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 82,
+      "code": "M-0052",
+      "visible": true,
+      "context_room": 26,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 84,
+      "code": "M-0054",
+      "visible": true,
+      "context_room": 26,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 86,
+      "code": "M-0056",
+      "visible": true,
+      "context_room": 25,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 87,
+      "code": "M-0057",
+      "visible": true,
+      "context_room": 24,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 88,
+      "code": "M-0058",
+      "visible": true,
+      "context_room": 24,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 89,
+      "code": "M-0059",
+      "visible": true,
+      "context_room": 35,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 90,
+      "code": "M-005A",
+      "visible": true,
+      "context_room": 28,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 91,
+      "code": "M-005B",
+      "visible": true,
+      "context_room": 28,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 92,
+      "code": "M-005C",
+      "visible": true,
+      "context_room": 32,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 105,
+      "code": "M-0069",
+      "visible": true,
+      "context_room": 31,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 107,
+      "code": "M-006B",
+      "visible": true,
+      "context_room": 38,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 110,
+      "code": "M-006E",
+      "visible": true,
+      "context_room": 10,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 111,
+      "code": "M-006F",
+      "visible": true,
+      "context_room": 5,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 112,
+      "code": "M-0070",
+      "visible": true,
+      "context_room": 8,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 113,
+      "code": "M-0071",
+      "visible": true,
+      "context_room": 5,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 117,
+      "code": "M-0075",
+      "visible": true,
+      "context_room": 36,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 118,
+      "code": "M-0076",
+      "visible": true,
+      "context_room": 33,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 120,
+      "code": "M-0078",
+      "visible": true,
+      "context_room": 12,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 123,
+      "code": "M-007B",
+      "visible": true,
+      "context_room": 29,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 126,
+      "code": "M-007E",
+      "visible": true,
+      "context_room": 60,
+      "probe_fields": 24,
+      "target_x": 64
+    },
+    {
+      "type": 127,
+      "code": "M-007F",
+      "visible": false,
+      "context_room": 62,
+      "probe_fields": 24,
+      "target_x": 64,
+      "limitation": "Vertical room62 context is unstable after transfer; preview pauses and live values are hidden."
+    }
+  ]
+}

@@ -4,31 +4,32 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 22. Oktober 2026.
 
-## Gegner separat ansehen und PNGs live austauschen
+## Monster-Werkstatt: Codes, Aktionen und eigene Namen
 
-`Gegner_Werkstatt_starten.cmd` im Projekt doppelklicken. Du bekommst ein eigenes
-Fenster mit Original und Redesign nebeneinander und echten Spielbewegungen.
-Figur wählen, **Spawnen / neu starten**, bei Bedarf Pause oder Einzelbild.
+`Gegner_Werkstatt_starten.cmd` startet die neue Monsteransicht.
+Links einen **Code** wählen, zum Beispiel **M-0012**, dann **Spawnen / neu starten**.
+Einen eigenen Namen kannst du bei **Dein Name** eintragen und speichern.
 
-Für das Skelett sind jetzt **alle fünf Körperposen**, **drei Knochenbilder** und
-**zehn Zerfallseffekte** vorbereitet. Dazu kommen optionale Einzelteile.
-Die vollständige Sammlung hat 55 PNGs und liegt unter:
-`D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Gegner\02_Skelette_Alle_Aktionen`.
-Daneben liegt `Skelette_Alle_Aktionen_2026-10-24.zip`.
+Original und Redesign laufen nebeneinander auf neutralem Boden. **Ziel links/rechts**
+beeinflusst die Original-KI. Rechts stehen Gesundheit, Kontaktschaden, Trefferbox
+und weitere Live-Werte. Unter Gehen, Springen, Angriff und Sterben findest du die
+zugeordneten PNGs. Der Knochen gehört beim Werfer mit unter **Angriff**.
+**Aktion abspielen** startet den geprüften Ablauf; ungeprüfte Knöpfe sind grau.
+Viele weitere Aktionszuordnungen sind noch offen. **Natürlich** zeigt ihre echte KI.
 
-Die Werkstatt arbeitet in der zusätzlichen Kopie `Gegner\Werkstatt`.
-Eine Pose auswählen, PNG öffnen, in Photoshop gestalten und **im artwork-Ordner
-speichern**. Rechts erscheint die Änderung automatisch. Für Teile den Haken
-**Einzelteile anzeigen / austauschen** setzen. Eine neue ganze Pose hat Vorrang.
+PNG auswählen, **PNG öffnen**, in Photoshop im gleichen `artwork`-Ordner speichern:
+Das Redesign aktualisiert sich live. **Einzelteile** zeigt optionale Teile,
+**Grafikvarianten** weitere native Fassungen. Vorhandene Dateinamen bleiben erhalten.
+Arbeitsordner: `D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Gegner\Werkstatt`.
 
-PNGs sind schon 387×387 Pixel groß (4,03125×). Transparente Bildfläche,
-Proportion und Namen behalten, nicht zuschneiden. `references` und `project.json`
-aufbewahren. Über **PNG-Sammlung als ZIP exportieren** kannst du mir alles geben.
-Zum Einbauen im normalen HD-Import den Werkstatt-Arbeitsordner auswählen.
+**Dieses Monster als PNG-Set** exportiert die Vorlagen mit Code-Namen und Zuordnung.
+PNGs meist 387×387 Pixel: ganze transparente Leinwand behalten, nicht zuschneiden.
+Die ZIP entpacken und später im HD-Import als Gegnerprojekt verwenden.
 
-Weitere Figuren sind als Gegner, Objekte oder ungeklärt beschriftet; sie sammeln
-beim Abspielen neue Posen. Bosse sind noch experimentell. Vollständig vorbereitet
-ist aktuell das genannte Skelettset. Anleitung: `docs\ENEMY_WORKSHOP.md`.
+45 von 46 normalen Codes wurden in der neutralen Szene sichtbar geprüft.
+M-007F braucht noch einen stabilen Grafikkontext; Bosse sind separat experimentell.
+Die alte Skelett-Sammlung unter `Gegner\02_Skelette_Alle_Aktionen` bleibt erhalten.
+Weitere Hinweise: `docs\ENEMY_WORKSHOP.md`.
 
 ## Menügröße auf deinem 4K-Bildschirm
 
