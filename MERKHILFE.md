@@ -17,6 +17,11 @@ zugeordneten PNGs. Der Knochen gehört beim Werfer mit unter **Angriff**.
 **Aktion abspielen** startet den geprüften Ablauf; ungeprüfte Knöpfe sind grau.
 Viele weitere Aktionszuordnungen sind noch offen. **Natürlich** zeigt ihre echte KI.
 
+Rechts unter **Werte** stehen **Normal** und **New Game+** nebeneinander.
+Über **Vorschau** kannst du den Durchgang wechseln; das Monster wird neu gestartet.
+Beispiel M-0012: Gesundheit 48 → 64, Kontaktschaden weiterhin 3.
+Eigene Spielmodi mit eigenen Werten sind als spätere Erweiterung vorbereitet.
+
 PNG auswählen, **PNG öffnen**, in Photoshop im gleichen `artwork`-Ordner speichern:
 Das Redesign aktualisiert sich live. **Einzelteile** zeigt optionale Teile,
 **Grafikvarianten** weitere native Fassungen. Vorhandene Dateinamen bleiben erhalten.

@@ -127,6 +127,11 @@ class Worker(threading.Thread):
                         elif kind=='pause':paused=command['value']
                         elif kind=='step':step=True
                         elif kind=='speed':speed=command['value']
+                        elif kind=='quest':
+                            if command['value'] not in (0,1):raise ValueError('Unbekannter Durchgang.')
+                            session.quest=command['value'];snapshot=session.spawn(entry)
+                            action='Natürlich';action_age=0;collect=[];changed=True
+                            paused=bool(snapshot.get('context_error'))
                         elif kind=='action':
                             if self.arena:
                                 snapshot=session.spawn(entry)

@@ -4,6 +4,28 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## Monsterwerte: Normal / New Game+ und spätere eigene Modi (24.10.)
+
+Nutzer möchte beide Originaldurchgänge separat sehen und später eigene Modi mit
+überschriebenen Werten entwickeln. Rechts jetzt Reiter Werte und KI/Hinweise,
+Vergleichstabelle Normal/NG+ sowie Auswahl Vorschau, die die echte private Szene
+neu spawnt. NativeSession.quest setzt0088 vor Raumladung;0084/0088/source_room
+werden mit den Live-Werten geliefert. Keine Änderungen am normalen Spiel.
+
+ROM00:D3FA..D40E: 0084 = Byte01:A88F+Raum + (0088?16:0).
+ROM00:D74E..D75C: HP = min(7FFF, Wort01:AC00+Typ*2 +0084).
+Kontakt01:AF00+Typ bleibt hierbei unverändert. Früher Raum M0012:48/64 HP,
+Kontakt3/3. Später Kontext M006B:64/80 HP, Schwierigkeit16/32, nativ geprüft.
+Boss-HP weiter ungeprüft; kein pauschales+16 auf alle Attribute behaupten.
+
+Modell tools/monster_balance.py: original_stats und pure resolve_mode.
+Version1, base_profile normal/new_game_plus, overrides nach M-XXXX; anfangs hp
+und contact_damage mit Grenzen/Typprüfung. Original/effective getrennt und tief
+kopiert. Kein automatisches Laden/Schreiben von Moduswerten im eigentlichen Spiel;
+Editor und Engine-Anwendung sind Zukunftsarbeit, keine aktuelle Änderung.
+Prüfung: test_monster_balance.py fünf Tests, erweiterter nativer Tk-Test inklusive
+NG+-Umschaltung und Rückkehr zu Normal; keine Bilder angesehen.
+
 ## Korrektur: Monster-Prüfstand statt gemischter Sprite-Browser (24.10.)
 
 **Aktueller Nutzerwunsch:** Keine erfundenen Namen. Monster per stabilem Code

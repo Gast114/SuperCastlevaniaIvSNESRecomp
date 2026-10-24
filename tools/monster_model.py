@@ -1,4 +1,5 @@
 """Monster codes, verified action ownership and original combat parameters."""
+from monster_balance import original_stats
 
 SKELETONS={0x11,0x12,0x31,0x56,0x69}
 WALK={0x11:{0x8af4,0x8b05},0x12:{0x8af4,0x8b05},0x31:{0x93be,0x93d7},
@@ -50,10 +51,11 @@ def ai_notes(entry):
 
 def combat_stats(rom,entry,live=None):
     t=entry['type'];live=live or {}
-    base=word(rom,1,0xac00+t*2) if t<128 else None
-    contact=byte(rom,1,0xaf00+t) if t<128 else byte(rom,1,0xb201+(t&0x7f))
-    if entry.get('boss') and entry.get('main_type',t)!=t:contact=None
-    return dict(code=code(t),base_hp=base,current_hp=live.get('hp'),contact_damage=contact,
+    room=live.get('source_room',entry.get('room',0))
+    profiles={name:original_stats(rom,entry,name,room) for name in ('normal','new_game_plus')}
+    normal=profiles['normal']
+    return dict(code=code(t),base_hp=normal['base_hp'],current_hp=live.get('hp'),contact_damage=normal['contact_damage'],
+                profiles=profiles,live_quest=live.get('quest'),live_difficulty=live.get('difficulty'),
                 hitbox_width=live.get('half_width',0)*2,hitbox_height=live.get('half_height',0)*2,
                 state=live.get('state'),x=live.get('x'),y=live.get('y'),speed_x=live.get('speed_x'),speed_y=live.get('speed_y'),
                 hp_unit='interne Schadenseinheiten',damage_unit='Lebenspunkte des Spielers',

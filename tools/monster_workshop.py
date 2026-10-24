@@ -67,6 +67,7 @@ class MonsterWorkshop:
         self.paused=tk.BooleanVar(value=False);self.still=tk.BooleanVar(value=False)
         self.speed=tk.StringVar(value='100%');self.show_bosses=tk.BooleanVar(value=False)
         self.graphics_variants=tk.BooleanVar(value=False)
+        self.preview_mode=tk.StringVar(value='Normal')
         self.status=tk.StringVar(value='Eigene Original-Laufzeit startet …')
         self.context=tk.StringVar(value='Monster per Code wählen. Namen kannst du selbst vergeben.')
         self.stats=tk.StringVar();self.notes=tk.StringVar();self.file=tk.StringVar()
@@ -133,11 +134,24 @@ class MonsterWorkshop:
         ttk.Button(edit,text='PNG öffnen',command=self.open_png).pack(side='left')
         ttk.Button(edit,text='PNG ersetzen',command=self.replace).pack(side='left',padx=5)
         ttk.Label(center,textvariable=self.file,wraplength=round(730*scale)).pack(anchor='w')
-        ttk.Label(right,text='Werte aus dem Original',font=('Segoe UI',13,'bold')).pack(anchor='w',pady=8)
-        ttk.Label(right,textvariable=self.stats,justify='left').pack(anchor='w')
-        ttk.Label(right,text='KI / Verhalten',font=('Segoe UI',13,'bold')).pack(anchor='w',pady=(20,8))
-        ttk.Label(right,textvariable=self.notes,wraplength=round(295*scale),justify='left').pack(anchor='w')
-        ttk.Label(right,textvariable=self.context,wraplength=round(295*scale),justify='left').pack(anchor='w',pady=14)
+        details=ttk.Notebook(right);details.pack(fill='both',expand=True,pady=(0,8))
+        stats_panel=ttk.Frame(details,padding=8);ai_panel=ttk.Frame(details,padding=8)
+        details.add(stats_panel,text='Werte');details.add(ai_panel,text='KI / Hinweise')
+        ttk.Label(stats_panel,text='Werte aus dem Original',font=('Segoe UI',13,'bold')).pack(anchor='w',pady=8)
+        self.comparison=ttk.Treeview(stats_panel,columns=('stat','normal','ng'),show='headings',height=2,selectmode='none')
+        for key,label,width in (('stat','Startwert',136),('normal','Normal',72),('ng','New Game+',94)):
+            self.comparison.heading(key,text=label);self.comparison.column(key,width=round(width*scale),stretch=True)
+        self.comparison.insert('','end',iid='hp',values=('Gesundheit','—','—'))
+        self.comparison.insert('','end',iid='contact',values=('Kontaktschaden','—','—'))
+        self.comparison.pack(fill='x',pady=(0,8))
+        mode_row=ttk.Frame(stats_panel);mode_row.pack(fill='x',pady=(0,8))
+        ttk.Label(mode_row,text='Vorschau:').pack(side='left',padx=(0,5))
+        mode_box=ttk.Combobox(mode_row,textvariable=self.preview_mode,values=['Normal','New Game+'],state='readonly',width=14)
+        mode_box.pack(side='left');mode_box.bind('<<ComboboxSelected>>',self.change_mode)
+        ttk.Label(stats_panel,textvariable=self.stats,justify='left').pack(anchor='w')
+        ttk.Label(ai_panel,text='KI / Verhalten',font=('Segoe UI',13,'bold')).pack(anchor='w',pady=(8,8))
+        ttk.Label(ai_panel,textvariable=self.notes,wraplength=round(295*scale),justify='left').pack(anchor='w')
+        ttk.Label(ai_panel,textvariable=self.context,wraplength=round(295*scale),justify='left').pack(anchor='w',pady=14)
         ttk.Button(right,text='Dieses Monster als PNG-Set',command=self.export).pack(fill='x',pady=4)
         ttk.Button(right,text='HD-Paket erstellen',command=self.build_pack).pack(fill='x',pady=4)
         ttk.Button(right,text='Arbeitsordner öffnen',command=lambda:os.startfile(self.workspace.folder)).pack(fill='x',pady=4)
@@ -167,6 +181,9 @@ class MonsterWorkshop:
     def change_variant(self,*_):
         monster=next(m for m in self.monsters if m['type']==self.entry['type'])
         self.entry=dict(monster['variants'][self.variants.current()],_chosen=True);self.spawn()
+    def change_mode(self,*_):
+        self.still.set(False);self.paused.set(False);self.snapshot={'actors':[]}
+        self.send('quest',value=1 if self.preview_mode.get()=='New Game+' else 0)
     def save_name(self):
         self.workspace.data.setdefault('monster_names',{})[code(self.entry['type'])]=self.name.get().strip()
         self.workspace.save();self.refresh_monsters();self.status.set('Dein Name ist gespeichert. Der Monster-Code bleibt gleich.')
@@ -215,9 +232,16 @@ class MonsterWorkshop:
     def update_details(self):
         live=self.snapshot.get('live_stats',{});stats=combat_stats(self.rom,self.entry,live)
         value=lambda key:stats[key] if stats[key] is not None else '—'
+        normal=stats['profiles']['normal'];plus=stats['profiles']['new_game_plus']
+        fmt=lambda number:'—' if number is None else str(number)
+        delta=plus['hp']-normal['hp'] if plus['hp'] is not None and normal['hp'] is not None else None
+        self.comparison.item('hp',values=('Gesundheit',fmt(normal['hp']),fmt(plus['hp'])+(f' (+{delta})' if delta else '')))
+        self.comparison.item('contact',values=('Kontaktschaden',fmt(normal['contact_damage']),fmt(plus['contact_damage'])))
+        live_mode='New Game+' if stats['live_quest'] else 'Normal' if stats['live_quest']==0 else '—'
         self.stats.set(f'{code(self.entry["type"])} · V-{self.entry.get("variant",0):02X}\n\n'
-            f'Gesundheit aktuell: {value("current_hp")}\nGesundheit Basis: {value("base_hp")}\n(interne Schadenseinheiten)\n\n'
-            f'Stärke / Kontaktschaden: {value("contact_damage")}\n(Lebenspunkte des Spielers)\n\n'
+            f'Live-Szene: {live_mode}\nGesundheit aktuell: {value("current_hp")}\nGrundwert: {value("base_hp")}\n'
+            f'Raumzuschlag Normal / NG+: {normal["room_bonus"]} / {plus["room_bonus"]+plus["quest_bonus"]}\n'
+            'HP: interne Schadenseinheiten\nKontakt: Spieler-Lebenspunkte\n\n'
             f'Trefferbox: {value("hitbox_width")} × {value("hitbox_height")} px\nZustand: {value("state")}\n'
             f'Position: {value("x")} / {value("y")}\nMotor vX / vY: '+
             (f'{stats["speed_x"]:.2f} / {stats["speed_y"]:.2f}' if stats['speed_x'] is not None else '—'))

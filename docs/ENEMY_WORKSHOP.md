@@ -40,17 +40,57 @@ PNG-Speichervorgang bleibt das letzte gültige Bild sichtbar.
 
 ## Werte und KI
 
-Rechts stehen die laufende Gesundheit, der Basiswert aus der ROM,
-Kontaktschaden, Trefferbox, Zustand, Position und native Geschwindigkeitswerte.
-Gesundheit verwendet interne Schadenseinheiten; Kontaktschaden zählt
-Spieler-Lebenspunkte. Die gespeicherte Geschwindigkeit kann am Boden weiter
-nach unten zeigen, obwohl die Kollision die tatsächliche Bewegung verhindert.
+Im rechten Reiter **Werte** stehen **Normal** und **New Game+** nebeneinander.
+Die Tabelle vergleicht Gesundheit beim Spawn und Kontaktschaden. **Vorschau**
+wechselt den echten nativen Durchgang und startet das Monster neu. Die Live-Werte
+zeigen den gerade laufenden Durchgang und die verbleibende Gesundheit.
+**KI / Hinweise** enthält die Verhaltenserklärung und offene Kontexte.
 
-Basisgesundheit: ROM `01:AC00 + Typ*2`; aktueller Wert: Actor `+06`.
-Initialisierung: `00:D74E..D75C`. Kontaktschaden: Byte-Tabelle `01:AF00 + Typ`,
-angewendet durch `00:DD0A..DD21`. Die laufende Trefferbox kommt aus `+28/+2A`.
-Bosskontakt nutzt `00:DE14..DE33`; bei einem abweichenden sichtbaren Haupttyp
-wird ohne geprüfte Zuordnung kein Schadenwert behauptet.
+Beispiel M-0012 im frühen Raum: Normal **48**, New Game+ **64** Gesundheit;
+Kontaktschaden jeweils **3**. Gesundheit zählt interne Schadenseinheiten,
+Kontaktschaden Spieler-Lebenspunkte. Nicht alle Werte werden pauschal erhöht.
+
+Originalberechnung: Grundwert aus `01:AC00 + Typ*2` plus Raumzuschlag aus
+`01:A88F + Raum`; New Game+ addiert dazu **16**. Die Gesundheit wird bei
+`32767` begrenzt. Spätere Räume haben schon im Normalspiel einen Zuschlag von
+16, beispielsweise 64 → 80 statt 48 → 64. Die Werkstatt verwendet den tatsächlich
+geladenen Grafikkontext. Bei ungeprüfter Bossgesundheit bleibt die Anzeige leer.
+
+Beleg: `00:D3FA..D40E` berechnet aus Questflag `0088` die Schwierigkeit `0084`;
+`00:D74E..D75C` addiert sie zur Spawn-Gesundheit. Der aktuelle Wert steht in
+Actor `+06`. Kontaktschaden kommt aus der Byte-Tabelle `01:AF00 + Typ`, angewendet
+von `00:DD0A..DD21`; diese Berechnung erhöht ihn nicht für New Game+.
+Bosskontakt nutzt `00:DE14..DE33`; bei abweichendem sichtbarem Haupttyp wird ohne
+geprüfte Zuordnung kein Schadenwert behauptet.
+
+Die laufende Trefferbox kommt aus `+28/+2A`. Die gespeicherte Geschwindigkeit
+kann am Boden weiter nach unten zeigen, obwohl die Kollision Bewegung verhindert.
+
+### Grundlage für spätere eigene Spielmodi
+
+`tools/monster_balance.py` trennt Originalprofile und eine zusätzliche
+Überschreibungsebene. `resolve_mode` berechnet: Original → gewähltes Basisprofil
+→ Werte für den jeweiligen Monster-Code. Die Originaldaten werden nicht verändert.
+Das vorbereitete Format sieht beispielsweise so aus:
+
+```json
+{
+  "version": 1,
+  "name": "Mein späterer Modus",
+  "base_profile": "new_game_plus",
+  "overrides": {
+    "M-0012": {"hp": 80, "contact_damage": 4}
+  }
+}
+```
+
+Ohne Eintrag übernimmt ein Monster die Werte des Basisprofils. Eine Überschreibung
+ersetzt den fertigen Startwert; Raum- und Questzuschläge werden nicht erneut addiert.
+Bisher vorbereitet
+sind `hp` (0–32767, interne Einheiten) und `contact_damage` (0–255). Ungültige
+Felder, Codes und Werte werden abgewiesen. Das ist zunächst eine geprüfte
+Datengrundlage; Moduseditor, Laden einer solchen Datei und Anwendung im eigentlichen
+Spiel folgen später. Die Vorschau verwendet jetzt nur die Originaldurchgänge.
 
 Geprüfte Aktionsauslöser:
 

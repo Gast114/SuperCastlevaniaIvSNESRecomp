@@ -36,7 +36,7 @@ class NativeSession:
         self.catalog=self.read_catalog()+boss_profiles(self)
         self.direction=-1
         self.elapsed=0
-        self.arena_enabled=False;self.arena_target=96
+        self.arena_enabled=False;self.arena_target=96;self.quest=0
 
     def word(self,bank,address):
         offset=bank*0x8000+(address&0x7fff)
@@ -148,12 +148,14 @@ class NativeSession:
                 f'mainmemory.read_u16_le({self.target}+0x28),mainmemory.read_u16_le({self.target}+0x2a),'
                 f'mainmemory.read_u16_le({self.target}+0x18),mainmemory.read_u16_le({self.target}+0x1a),'
                 f'mainmemory.read_u16_le({self.target}+0x1c),mainmemory.read_u16_le({self.target}+0x1e),'
-                f'mainmemory.read_u16_le({self.target}+0x10)')['values']
+                f'mainmemory.read_u16_le({self.target}+0x10),mainmemory.read_u16_le(0x84),'
+                f'mainmemory.read_u16_le(0x88)')['values']
             values=list(map(int,values))
             signed=lambda v:v-65536 if v>=32768 else v
             result['live_stats']=dict(hp=values[0],state=values[1],x=values[2],y=values[3],half_width=values[4],half_height=values[5],
                                       speed_x=signed(values[7])+values[6]/65536,speed_y=signed(values[9])+values[8]/65536,
-                                      actor_type=values[10],present=values[10]==self.entry.get('main_type',self.entry['type']))
+                                      actor_type=values[10],present=values[10]==self.entry.get('main_type',self.entry['type']),
+                                      difficulty=values[11],quest=values[12],source_room=self.entry['room'])
             if self.arena_enabled and not self.entry.get('boss') and values[10]>0x8d:
                 result['context_error']=f'M-{self.entry["type"]:04X}: Grafik-/Szenenkontext noch nicht stabil. Bitte ein anderes Monster wählen.'
                 result['live_stats']={'present':False}
@@ -205,7 +207,7 @@ class NativeSession:
             # Use its real room18 placement (05:9128) for the graphics loader.
             entry=dict(entry,room=18,x=248,y=184,flags=0xf8,record=0x9128)
         self.command('loadfile',self.base)
-        self.write({0x86:entry['room'],0x70:3})
+        self.write({0x86:entry['room'],0x70:3,0x88:self.quest})
         if self.arena_enabled:
             # Stop at the first playable field, before room-specific exits can
             # send the inherited player position into a neighbouring room.
