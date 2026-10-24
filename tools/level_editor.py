@@ -11,7 +11,8 @@ import tkinter as tk
 from tkinter import ttk,filedialog,messagebox
 from PIL import Image,ImageDraw,ImageTk
 from level_project import Project,paint,room
-from level_assets import Assets,ensure_room,collision_value
+from level_tiles import EMPTY,bind,resolve,sources,SOURCE_COUNT,source_name
+from level_assets import Assets,ensure_room,ensure_source,collision_value
 from level_playtest import Playtest
 from enemy_workshop_native import NativeSession,ROOT
 from monster_model import definitions
@@ -21,11 +22,14 @@ class Editor:
     def __init__(self,root,project=None):
         self.root=root;self.project=project or Project();self.room_id=self.project.data['rooms'][0]['id']
         self.assets={};self.events=queue.Queue();self.workers=[];self.playtest=None;self.closing=False;self.render_pending=False;self.play_pending=False;self.generation=0;self.tick_id=None;self.draw_id=None
-        self.brush=[0x800];self.brush_collision=[0];self.brush_width=1;self.selection=None;self.selected_object=None;self.start=None;self.drag=None;self.clipboard=None
+        self.brush=[EMPTY];self.brush_collision=[0];self.brush_width=1;self.selection=None;self.selected_object=None;self.start=None;self.drag=None;self.clipboard=None
+        self.loading_assets=set();self.failed_assets=set();self.empty_tile=Image.new('RGBA',(8,8));self.missing_tile=Image.new('RGBA',(8,8),'#74596d')
         self.zoom=tk.DoubleVar(value=2);self.layer=tk.StringVar(value='front');self.tool=tk.StringVar(value='Zeichnen')
         self.show_back=tk.BooleanVar(value=True);self.show_front=tk.BooleanVar(value=True);self.show_collision=tk.BooleanVar(value=False)
         self.auto_collision=tk.BooleanVar(value=True);self.grid=tk.BooleanVar(value=True);self.collision=tk.IntVar(value=1);self.palette=tk.IntVar(value=2)
         self.status=tk.StringVar(value='Grafiksatz wird vorbereitet …');self.origin_room=tk.IntVar(value=0);self.filter=tk.StringVar()
+        self.source_room=tk.IntVar(value=self.current()['tileset']);self.source_layer=tk.StringVar(value='front')
+        self.source_choice=tk.StringVar(value=f'{self.source_room.get()} · {source_name(self.source_room.get())}')
         self.name=tk.StringVar();self.width=tk.IntVar();self.height=tk.IntVar();self.collision_mode=tk.StringVar();self.props={k:tk.StringVar() for k in ('x','y','variant','target_x','target_y','target','trigger','plane')}
         self.ui=max(1.,min(1.7,root.winfo_screenwidth()/1920));root.tk.call('tk','scaling',96/72*self.ui)
         root.title('Castlevania IV · Level-Editor');root.geometry(f'{min(round(1680*self.ui),root.winfo_screenwidth()-80)}x{min(round(1020*self.ui),root.winfo_screenheight()-100)}')
@@ -34,20 +38,20 @@ class Editor:
         for text,fn in [('Neu',self.new),('Öffnen',self.open),('Speichern',self.save),('Speichern unter',lambda:self.save(True)),('↶ Rückgängig',self.undo),('↷ Wiederholen',self.redo),('▶ Spieltest',self.test),('■ Test beenden',self.stop_test)]:ttk.Button(toolbar,text=text,command=fn).pack(side='left',padx=3)
         controls=ttk.Frame(root,padding=(8,0));controls.pack(fill='x')
         for text in ('Auswahl','Zeichnen','Fläche','Kollision','Monster','Start','Ausgang'):ttk.Radiobutton(controls,text=text,variable=self.tool,value=text).pack(side='left',padx=3)
-        ttk.Label(controls,text='Ebene').pack(side='left',padx=(12,3));box=ttk.Combobox(controls,textvariable=self.layer,values=('front','back'),state='readonly',width=7);box.pack(side='left');box.bind('<<ComboboxSelected>>',lambda e:self.palette_changed())
+        ttk.Label(controls,text='Zielebene').pack(side='left',padx=(12,3));box=ttk.Combobox(controls,textvariable=self.layer,values=('front','back'),state='readonly',width=7);box.pack(side='left');box.bind('<<ComboboxSelected>>',lambda e:self.palette_changed())
         ttk.Label(controls,text='Zoom').pack(side='left',padx=(12,3));z=ttk.Combobox(controls,textvariable=self.zoom,values=(.5,1,2,3,4),state='readonly',width=4);z.pack(side='left');z.bind('<<ComboboxSelected>>',lambda e:self.schedule())
         options=ttk.Frame(root,padding=8);options.pack(fill='x')
         for text,var in [('Vordergrund',self.show_front),('Hintergrund',self.show_back),('Kollision anzeigen',self.show_collision),('Raster',self.grid)]:ttk.Checkbutton(options,text=text,variable=var,command=self.schedule).pack(side='left',padx=5)
         ttk.Checkbutton(options,text='Kollision beim Zeichnen übernehmen',variable=self.auto_collision).pack(side='left',padx=8)
         ttk.Radiobutton(options,text='Fest',variable=self.collision,value=1).pack(side='left');ttk.Radiobutton(options,text='Frei',variable=self.collision,value=0).pack(side='left')
-        ttk.Label(options,text='Kachelpalette').pack(side='left',padx=(10,3));pal=ttk.Combobox(options,textvariable=self.palette,values=tuple(range(8)),state='readonly',width=3);pal.pack(side='left');pal.bind('<<ComboboxSelected>>',lambda e:self.palette_changed())
+        ttk.Label(options,text='Kachelpalette').pack(side='left',padx=(10,3));self.palette_box=ttk.Combobox(options,textvariable=self.palette,values=tuple(range(8)),state='readonly',width=3);self.palette_box.pack(side='left');self.palette_box.bind('<<ComboboxSelected>>',lambda e:self.palette_changed())
         panes=ttk.Panedwindow(root,orient='horizontal');panes.pack(fill='both',expand=True,padx=8)
         left=ttk.Frame(panes,width=230);center=ttk.Frame(panes);right=ttk.Frame(panes,width=330)
         panes.add(left,weight=0);panes.add(center,weight=1);panes.add(right,weight=0)
         ttk.Label(left,text='Räume',font=('Segoe UI',14,'bold')).pack(anchor='w')
         self.rooms=ttk.Treeview(left,show='tree',height=9);self.rooms.pack(fill='both',expand=True);self.rooms.bind('<<TreeviewSelect>>',self.choose_room)
         for text,fn in [('Neuer Raum',self.add_room),('Raum duplizieren',lambda:self.add_room(True)),('Als Startraum',self.set_start)]:ttk.Button(left,text=text,command=fn).pack(fill='x',pady=2)
-        ttk.Label(left,text='Originalraum / Grafiksatz 0–67').pack(anchor='w',pady=(10,2));ttk.Spinbox(left,from_=0,to=67,textvariable=self.origin_room,width=8).pack(fill='x')
+        ttk.Label(left,text='Originalkarte: Abschnitt 0–67').pack(anchor='w',pady=(10,2));ttk.Spinbox(left,from_=0,to=67,textvariable=self.origin_room,width=8).pack(fill='x')
         ttk.Button(left,text='Originalkarte importieren',command=self.import_original).pack(fill='x',pady=3)
         ttk.Label(left,text='Raumeigenschaften').pack(anchor='w',pady=(12,3))
         for text,var in [('Name',self.name),('Breite in Pixeln',self.width),('Höhe in Pixeln',self.height)]:ttk.Label(left,text=text).pack(anchor='w');ttk.Entry(left,textvariable=var).pack(fill='x')
@@ -58,6 +62,11 @@ class Editor:
         self.canvas.configure(xscrollcommand=sx.set,yscrollcommand=sy.set);sy.pack(side='right',fill='y');sx.pack(side='bottom',fill='x');self.canvas.pack(fill='both',expand=True)
         self.canvas.bind('<Configure>',lambda e:self.schedule());self.canvas.bind('<Button-1>',self.press);self.canvas.bind('<B1-Motion>',self.motion);self.canvas.bind('<ButtonRelease-1>',self.release);self.canvas.bind('<Button-3>',self.pick)
         self.canvas.bind('<MouseWheel>',self.wheel);self.canvas.bind('<Button-2>',lambda e:self.canvas.scan_mark(e.x,e.y));self.canvas.bind('<B2-Motion>',self.pan)
+        source_box=ttk.LabelFrame(right,text='Grafiken aus allen Abschnitten',padding=6);source_box.pack(fill='x',pady=(0,5))
+        ttk.Label(source_box,text='Quelle').grid(row=0,column=0,sticky='w');self.source_picker=ttk.Combobox(source_box,textvariable=self.source_choice,values=tuple(f'{n} · {source_name(n)}' for n in range(SOURCE_COUNT)),width=18,state='readonly');self.source_picker.grid(row=0,column=1,sticky='ew');self.source_picker.bind('<<ComboboxSelected>>',self.source_changed)
+        source_layer=ttk.Combobox(source_box,textvariable=self.source_layer,values=('front','back'),width=7,state='readonly');source_layer.grid(row=0,column=2,padx=4);source_layer.bind('<<ComboboxSelected>>',self.source_changed)
+        ttk.Label(source_box,text='Quelle frei wählen, dann in jede Zielebene zeichnen.',wraplength=round(300*self.ui)).grid(row=1,column=0,columnspan=3,sticky='w')
+        ttk.Button(source_box,text='Alle Grafikquellen vorbereiten',command=lambda:self.load_assets(range(SOURCE_COUNT))).grid(row=2,column=0,columnspan=3,sticky='ew',pady=(4,0))
         self.tabs=ttk.Notebook(right);self.tabs.pack(fill='both',expand=True)
         self.block_canvas=self.palette_canvas('Blöcke 32px');self.tile_canvas=self.palette_canvas('Kacheln 8px')
         self.block_canvas.bind('<Button-1>',self.choose_block);self.tile_canvas.bind('<Button-1>',self.choose_tile)
@@ -81,7 +90,7 @@ class Editor:
         raw=NativeSession.__new__(NativeSession);raw.bytes=(ROOT/'Super Castlevania IV (USA).sfc').read_bytes();catalog=raw.read_catalog()
         from enemy_catalog_profiles import boss_profiles
         self.catalog=catalog+boss_profiles(raw);self.definitions=definitions(self.catalog,raw.bytes);self.filter_monsters()
-        self.refresh_rooms();self.load_asset(self.current()['tileset']);self.tick_id=root.after(60,self.tick)
+        self.refresh_rooms();self.load_asset(self.source_room.get());self.tick_id=root.after(60,self.tick)
 
     def current(self):return self.project.get(self.room_id)
     def palette_canvas(self,title):
@@ -97,8 +106,33 @@ class Editor:
             except Exception as e:self.events.put(('error',str(e)))
         t=threading.Thread(target=work,daemon=True);self.workers.append(t);t.start()
     def load_asset(self,n):
-        if n in self.assets:self.palette_changed();return
-        self.status.set(f'Original-Grafiksatz R-{n:02d} wird einmalig vorbereitet …');self.background(lambda:('asset',n,ensure_room(n)))
+        self.load_assets([n])
+    def load_assets(self,numbers):
+        missing=sorted(set(numbers)-self.assets.keys()-self.loading_assets-self.failed_assets)
+        if not missing:self.palette_changed();return
+        self.loading_assets.update(missing);self.status.set('Grafikquellen werden einmalig vorbereitet: '+', '.join(source_name(n) for n in missing))
+        def prepare():
+            for n in missing:
+                if self.closing:break
+                try:self.events.put(('ok',('assets',[(n,ensure_source(n))],[])))
+                except Exception as exc:self.events.put(('ok',('assets',[],[(n,str(exc))])))
+            return 'sources_done',
+        self.background(prepare)
+    def source_changed(self,e=None):
+        if e and e.widget==self.source_picker:self.source_room.set(int(self.source_choice.get().split(' · ')[0]))
+        self.source_choice.set(f'{self.source_room.get()} · {source_name(self.source_room.get())}')
+        n=self.source_room.get();self.failed_assets.discard(n);self.load_asset(n)
+    def tile_image(self,value,default_source,default_layer):
+        ref=resolve(value,default_source,default_layer)
+        if ref is None:return self.empty_tile
+        n,layer,word=ref;asset=self.assets.get(n)
+        return asset.tile(word,layer) if asset else self.missing_tile
+    def tile_collision(self,value,default_source,default_layer):
+        ref=resolve(value,default_source,default_layer)
+        if ref is None:return 0
+        n,_,word=ref;asset=self.assets.get(n)
+        if not asset or asset.meta['ppu']['bgmode']&7==7:return 0
+        return collision_value(word,asset.meta['limits'])
     def tick(self):
         self.tick_id=None
         if self.closing:return
@@ -106,8 +140,14 @@ class Editor:
             while True:
                 kind,value=self.events.get_nowait()
                 if kind=='error':self.play_pending=False;self.status.set(value);messagebox.showerror('Level-Editor',value,parent=self.root)
-                elif value[0]=='asset':
-                    self.assets[value[1]]=Assets(value[2]);self.palette_changed()
+                elif value[0]=='assets':
+                    for n,path in value[1]:self.loading_assets.discard(n);self.assets[n]=Assets(path)
+                    for n,error in value[2]:self.loading_assets.discard(n);self.failed_assets.add(n)
+                    if any(n==self.source_room.get() for n,path in value[1]):self.palette_changed()
+                    else:self.schedule()
+                    if value[2]:self.status.set(' · '.join(f'{source_name(n)}: {error}' for n,error in value[2]))
+                elif value[0]=='sources_done' and not self.loading_assets and not self.failed_assets:
+                    self.status.set('Grafikquellen bereit · Quelle und Zielebene frei kombinieren · F5 testen'+(' · '+self.current()['source_note'] if self.current().get('source_note') else ''))
                 elif value[0]=='import':
                     if value[2]!=self.generation:continue
                     self.project.begin('Originalkarte importieren');r=value[1];self.project.data['rooms'].append(r);self.project.commit();self.room_id=r['id'];self.refresh_rooms();self.load_asset(r['tileset'])
@@ -120,9 +160,9 @@ class Editor:
         if not any(r['id']==self.room_id for r in self.project.data['rooms']):self.room_id=self.project.data['rooms'][0]['id']
         for r in self.project.data['rooms']:self.rooms.insert('','end',iid=r['id'],text=('★ ' if r['id']==self.project.data['start_room'] else '')+r['name'])
         self.target_box.configure(values=tuple(r['id']+' · '+r['name'] for r in self.project.data['rooms']))
-        self.rooms.selection_set(self.room_id);self.update_room();self.schedule()
+        self.rooms.selection_set(self.room_id);self.update_room();self.load_assets(sources(self.current()));self.schedule()
     def choose_room(self,e=None):
-        if self.rooms.selection():self.room_id=self.rooms.selection()[0];self.selected_object=None;self.selection=None;self.update_room();self.load_asset(self.current()['tileset']);self.schedule()
+        if self.rooms.selection():self.room_id=self.rooms.selection()[0];self.selected_object=None;self.selection=None;self.update_room();self.load_assets(sources(self.current()));self.schedule()
     def update_room(self):
         r=self.current();self.name.set(r['name']);self.width.set(r['width']*8);self.height.set(r['height']*8);self.collision_mode.set(('0 · Vordergrund','1 · Beide gemeinsam','2 · Vordergrund (nativ)','3 · Zwei Spielebenen')[r.get('collision_mode',0)])
     def add_room(self,duplicate=False):
@@ -151,8 +191,6 @@ class Editor:
         self.render_pending=False;self.draw_id=None
         if self.closing:return
         r=self.current();z=self.zoom.get();self.canvas.configure(scrollregion=(0,0,r['width']*8*z,r['height']*8*z))
-        asset=self.assets.get(r['tileset'])
-        if not asset:return
         x0=max(0,int(self.canvas.canvasx(0)/z)//8);y0=max(0,int(self.canvas.canvasy(0)/z)//8)
         nx=min(r['width']-x0,int(self.canvas.winfo_width()/z/8)+2);ny=min(r['height']-y0,int(self.canvas.winfo_height()/z/8)+2)
         if nx<=0 or ny<=0:return
@@ -160,7 +198,7 @@ class Editor:
         for layer,shown in [('back',self.show_back.get()),('front',self.show_front.get())]:
             if shown:
                 for yy in range(ny):
-                    for xx in range(nx):image.alpha_composite(asset.tile(r['layers'][layer][(y0+yy)*r['width']+x0+xx],layer),(xx*8,yy*8))
+                    for xx in range(nx):image.alpha_composite(self.tile_image(r['layers'][layer][(y0+yy)*r['width']+x0+xx],r['tileset'],layer),(xx*8,yy*8))
         if self.show_collision.get():
             d=ImageDraw.Draw(image,'RGBA')
             for yy in range(ny):
@@ -183,27 +221,30 @@ class Editor:
             x1,y1,x2,y2=self.selection;self.canvas.create_rectangle(x1*8*z,y1*8*z,(x2+1)*8*z,(y2+1)*8*z,outline='#f6e58d',dash=(5,3),width=2)
         self.root.title(('● ' if self.project.dirty else '')+'Castlevania IV · '+self.project.data['name'])
     def palette_changed(self):
-        asset=self.assets.get(self.current()['tileset'])
+        asset=self.assets.get(self.source_room.get())
         if not asset:return
-        image=Image.new('RGBA',(256,1024),'#252c38')
-        for n in range(256):
-            for i,w in enumerate(asset.block(n,self.layer.get())):image.alpha_composite(asset.tile(w,self.layer.get()),((n%8)*32+(i%4)*8,(n//8)*32+(i//4)*8))
-        self.block_photo=ImageTk.PhotoImage(image.resize((round(256*self.ui),round(1024*self.ui)),Image.Resampling.NEAREST));self.block_canvas.delete('all');self.block_canvas.create_image(0,0,image=self.block_photo,anchor='nw');self.block_canvas.configure(scrollregion=(0,0,256*self.ui,1024*self.ui))
-        image=Image.new('RGBA',(320,1280),'#252c38')
-        for n in range(1024):image.alpha_composite(asset.tile(n|(self.palette.get()<<10),self.layer.get()).resize((20,20),Image.Resampling.NEAREST),((n%16)*20,(n//16)*20))
-        self.tile_photo=ImageTk.PhotoImage(image.resize((round(320*self.ui),round(1280*self.ui)),Image.Resampling.NEAREST));self.tile_canvas.delete('all');self.tile_canvas.create_image(0,0,image=self.tile_photo,anchor='nw');self.tile_canvas.configure(scrollregion=(0,0,320*self.ui,1280*self.ui))
+        source_layer=self.source_layer.get();height=asset.block_count//8*32;self.palette_box.configure(state='disabled' if asset.meta['ppu']['bgmode']&7==7 else 'readonly')
+        image=Image.new('RGBA',(256,height),'#252c38')
+        for n in range(asset.block_count):
+            for i,w in enumerate(asset.block(n,source_layer)):image.alpha_composite(asset.tile(w,source_layer),((n%8)*32+(i%4)*8,(n//8)*32+(i//4)*8))
+        self.block_photo=ImageTk.PhotoImage(image.resize((round(256*self.ui),round(height*self.ui)),Image.Resampling.NEAREST));self.block_canvas.delete('all');self.block_canvas.create_image(0,0,image=self.block_photo,anchor='nw');self.block_canvas.configure(scrollregion=(0,0,256*self.ui,height*self.ui))
+        height=asset.tile_count//16*20;image=Image.new('RGBA',(320,height),'#252c38')
+        for n in range(asset.tile_count):image.alpha_composite(asset.tile(n|(self.palette.get()<<10),source_layer).resize((20,20),Image.Resampling.NEAREST),((n%16)*20,(n//16)*20))
+        self.tile_photo=ImageTk.PhotoImage(image.resize((round(320*self.ui),round(height*self.ui)),Image.Resampling.NEAREST));self.tile_canvas.delete('all');self.tile_canvas.create_image(0,0,image=self.tile_photo,anchor='nw');self.tile_canvas.configure(scrollregion=(0,0,320*self.ui,height*self.ui))
         self.status.set(self.current().get('source_note') or 'Bereit · Linksklick zeichnen · Rechtsklick aufnehmen · Mitteltaste verschieben · Strg+Mausrad zoomen · H/V spiegeln · F5 testen');self.schedule()
     def choose_block(self,e):
-        if self.current()['tileset'] not in self.assets:return
+        asset=self.assets.get(self.source_room.get())
+        if not asset:return
         x,y=self.block_canvas.canvasx(e.x)/self.ui,self.block_canvas.canvasy(e.y)/self.ui;n=int(y//32)*8+int(x//32)
-        if not 0<=n<256:return
-        self.brush=self.assets[self.current()['tileset']].block(n,self.layer.get());self.brush_width=4;self.recollision();self.tool.set('Zeichnen');self.status.set(f'Block {n:02X} · 32 × 32 Pixel')
+        if not 0<=n<asset.block_count:return
+        self.brush=[bind(w,self.source_room.get(),self.source_layer.get()) for w in asset.block(n,self.source_layer.get())];self.brush_width=4;self.recollision();self.tool.set('Zeichnen');self.status.set(f'Quelle {source_name(self.source_room.get())} / {self.source_layer.get()} · Block {n:03X} · 32 × 32 Pixel')
     def choose_tile(self,e):
-        if self.current()['tileset'] not in self.assets:return
+        asset=self.assets.get(self.source_room.get())
+        if not asset:return
         x,y=self.tile_canvas.canvasx(e.x)/self.ui,self.tile_canvas.canvasy(e.y)/self.ui;n=int(y//20)*16+int(x//20)
-        if not 0<=n<1024:return
-        self.brush=[n|(self.palette.get()<<10)];self.brush_width=1;self.recollision();self.tool.set('Zeichnen');self.status.set(f'Kachel {n:03X} · 8 × 8 Pixel')
-    def recollision(self):self.brush_collision=[collision_value(w,self.assets[self.current()['tileset']].meta['limits']) for w in self.brush]
+        if not 0<=n<asset.tile_count:return
+        self.brush=[bind(n|(self.palette.get()<<10),self.source_room.get(),self.source_layer.get())];self.brush_width=1;self.recollision();self.tool.set('Zeichnen');self.status.set(f'Quelle {source_name(self.source_room.get())} / {self.source_layer.get()} · Kachel {n:03X} · 8 × 8 Pixel')
+    def recollision(self):self.brush_collision=[self.tile_collision(w,self.current()['tileset'],self.layer.get()) for w in self.brush]
     def filter_monsters(self):
         self.monsters.delete(*self.monsters.get_children());term=self.filter.get().casefold()
         for m in self.definitions:
@@ -265,7 +306,7 @@ class Editor:
     def pick(self,e):
         x,y=self.coords(e);r=self.current()
         if 0<=x<r['width'] and 0<=y<r['height']:
-            self.brush=[r['layers'][self.layer.get()][y*r['width']+x]];self.brush_collision=[r['collision'][self.layer.get()][y*r['width']+x]];self.brush_width=1;self.tool.set('Zeichnen');self.status.set(f'Kachel aufgenommen: {self.brush[0]:04X}')
+            self.brush=[bind(r['layers'][self.layer.get()][y*r['width']+x],r['tileset'],self.layer.get())];self.brush_collision=[r['collision'][self.layer.get()][y*r['width']+x]];self.brush_width=1;self.tool.set('Zeichnen');self.status.set(f'Kachel mit Originalquelle aufgenommen: {self.brush[0]:08X}')
     def object(self):
         if not self.selected_object:return None
         kind,identifier=self.selected_object;return next((a for a in self.current()['actors' if kind=='actor' else 'doors'] if a['id']==identifier),None)
@@ -296,20 +337,25 @@ class Editor:
         elif self.selection:
             x1,y1,x2,y2=self.selection
             for y in range(y1,y2+1):
-                for x in range(x1,x2+1):paint(r,self.layer.get(),x,y,[0x800],[0])
+                for x in range(x1,x2+1):paint(r,self.layer.get(),x,y,[EMPTY],[0])
         self.project.commit();self.schedule()
     def copy(self):
         if not self.selection:return
         r=self.current();x1,y1,x2,y2=self.selection;w=x2-x1+1
-        self.clipboard=([r['layers'][self.layer.get()][y*r['width']+x] for y in range(y1,y2+1) for x in range(x1,x2+1)],
+        self.clipboard=([bind(r['layers'][self.layer.get()][y*r['width']+x],r['tileset'],self.layer.get()) for y in range(y1,y2+1) for x in range(x1,x2+1)],
                         [r['collision'][self.layer.get()][y*r['width']+x] for y in range(y1,y2+1) for x in range(x1,x2+1)],w)
         self.status.set(f'Ausschnitt {w*8} × {(y2-y1+1)*8} Pixel kopiert.')
     def paste(self):
         if self.clipboard:self.brush,self.brush_collision,self.brush_width=copy.deepcopy(self.clipboard);self.tool.set('Zeichnen');self.status.set('Ausschnitt mit Linksklick platzieren.')
     def flip(self,horizontal):
-        if self.current()['tileset'] not in self.assets:return
         w=self.brush_width;h=len(self.brush)//w;indices=[(y*w+(w-1-x) if horizontal else (h-1-y)*w+x) for y in range(h) for x in range(w)]
-        self.brush=[self.brush[i]^(0x4000 if horizontal else 0x8000) for i in indices];self.recollision()
+        values=[];collisions=[]
+        for i in indices:
+            old=self.brush[i];value=old^(0x4000 if horizontal else 0x8000) if old!=EMPTY else EMPTY
+            collision=self.brush_collision[i]
+            if collision==self.tile_collision(old,self.current()['tileset'],self.layer.get()):collision=self.tile_collision(value,self.current()['tileset'],self.layer.get())
+            values.append(value);collisions.append(collision)
+        self.brush,self.brush_collision=values,collisions
     def undo(self):self.project.undo();self.selected_object=None;self.refresh_rooms()
     def redo(self):self.project.redo();self.selected_object=None;self.refresh_rooms()
     def confirm(self):return not self.project.dirty or messagebox.askyesno('Ungespeicherte Änderungen','Ohne Speichern fortfahren?',parent=self.root)

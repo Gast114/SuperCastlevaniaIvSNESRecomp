@@ -18,6 +18,7 @@ from level_assets import Assets,ensure_room
 from level_demo import make_demo
 from level_project import Project,paint,room,validate
 from level_playtest import Playtest,compile_project
+from level_tiles import EMPTY
 
 
 def check(native=True):
@@ -35,7 +36,7 @@ def check(native=True):
     try:
         p=Project();r=p.data['rooms'][0];identifier=r['id']
         p.begin('paint');paint(r,'front',5,7,[0x123,0x456],[1,0],2);p.commit()
-        p.undo();assert p.get(identifier)['layers']['front'][7*r['width']+5]==0x800
+        p.undo();assert p.get(identifier)['layers']['front'][7*r['width']+5]==EMPTY
         p.redo();assert p.get(identifier)['collision']['front'][7*r['width']+5]==1
         p.resize(p.get(identifier),160,40,name='Changed');p.undo();assert p.get(identifier)['name']!='Changed'
         p.redo();assert p.get(identifier)['width']==160 and p.get(identifier)['name']=='Changed'

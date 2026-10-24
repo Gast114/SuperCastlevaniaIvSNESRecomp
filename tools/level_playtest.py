@@ -9,6 +9,7 @@ from enemy_resources import ordinary_plan,palette,write_bundle,ROM_SHA256
 from enemy_sprite_export import descriptor
 from level_assets import Assets,ensure_room
 from level_project import validate
+from level_graphics import compile_graphics
 
 
 def monster_plan(raw,placements,index):
@@ -53,16 +54,23 @@ def compile_project(data,destination,rom=None,build=None,quest=0):
     word=lambda address:int.from_bytes(raw[(address>>16)*0x8000+(address&0x7fff):(address>>16)*0x8000+(address&0x7fff)+2],'little')
     stop=word(0x00d81b)
     while word(0x050000|stop)!=65535:stop+=6
-    out=bytearray(b'CV4LVL1\0')+struct.pack('<HHH',len(data['rooms']),next(i for i,r in enumerate(data['rooms']) if r['id']==data['start_room']),stop)
-    for r in data['rooms']:
+    mixed=any(value>65535 for r in data['rooms'] for layer in ('front','back') for value in r['layers'][layer])
+    out=bytearray(b'CV4LVL2\0' if mixed else b'CV4LVL1\0')+struct.pack('<HHH',len(data['rooms']),next(i for i,r in enumerate(data['rooms']) if r['id']==data['start_room']),stop)
+    if mixed:
+        atlas,maps=compile_graphics(data,rom,build);out+=struct.pack('<I',len(atlas))+b''.join(atlas)
+    for room_index,r in enumerate(data['rooms']):
         asset=templates[r['tileset']]
-        if not asset.meta['supported'] or any(x.get('big') for x in asset.meta['ppu']['layers'][:2]):raise ValueError('Dieser Grafiksatz braucht noch einen eigenen Kartenmodus.')
+        if not asset.meta['supported'] or any(x.get('big') for x in asset.meta['ppu']['layers'][:2]):
+            if not mixed:raise ValueError('Dieser Grafiksatz braucht noch einen eigenen Kartenmodus.')
+            asset=Assets(ensure_room(0,rom,build))
         bases=[x['tiles'] for x in asset.meta['ppu']['layers'][:2]];colors=bytearray(asset.video[0x10000:0x10200])
         for bank,value in bank_data.items():colors[256+bank*32:256+(bank+1)*32]=value
         out+=struct.pack('<11H',r['width'],r['height'],r['tileset'],*r['spawn'],*bases,asset.meta['ppu']['bgmode'],r.get('collision_mode',0),len(r['actors']),len(r['doors']))
         out+=asset.video[:0xd400]+colors
         for kind in ('layers','collision'):
-            for layer in ('front','back'):out+=struct.pack(f'<{r["width"]*r["height"]}H',*r[kind][layer])
+            for layer_index,layer in enumerate(('front','back')):
+                values=maps[room_index][layer_index] if kind=='layers' and mixed else r[kind][layer]
+                out+=struct.pack(f'<{len(values)}'+('I' if kind=='layers' and mixed else 'H'),*values)
         for a in r['actors']:
             t=a['type'];word=lambda addr:int.from_bytes(raw[0x8000+(addr&0x7fff):0x8000+(addr&0x7fff)+2],'little')
             hit=word(0xab00+t*2);bonus=raw[0x8000+((0xa88f+r['tileset'])&0x7fff)]+16*quest

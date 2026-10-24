@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import uuid
 from enemy_resources import ROM_SHA256
+from level_tiles import EMPTY,valid
 
 LAYERS=('front','back')
 MAX_CELLS=262144
@@ -12,12 +13,12 @@ MAX_CELLS=262144
 def room(name='Neuer Raum',width=128,height=32,tileset=0):
     identifier='R-'+uuid.uuid4().hex[:8].upper()
     return dict(id=identifier,name=name,width=width,height=height,tileset=tileset,spawn=[64,120],collision_mode=3,
-        layers={k:[0x800]*(width*height) for k in LAYERS},
+        layers={k:[EMPTY]*(width*height) for k in LAYERS},
         collision={k:[0]*(width*height) for k in LAYERS},actors=[],doors=[])
 
 
 def validate(data):
-    if data.get('version')!=1 or data.get('rom_sha256')!=ROM_SHA256:raise ValueError('Projektversion oder Original-ROM passt nicht.')
+    if data.get('version') not in (1,2) or data.get('rom_sha256')!=ROM_SHA256:raise ValueError('Projektversion oder Original-ROM passt nicht.')
     rows=data.get('rooms',[])
     if not 1<=len(rows)<=64:raise ValueError('Ein Projekt benötigt 1 bis 64 Räume.')
     ids={r['id'] for r in rows}
@@ -32,7 +33,8 @@ def validate(data):
         for key in LAYERS:
             for field in ('layers','collision'):
                 a=r[field][key]
-                if len(a)!=w*h or any(type(v) is not int or not 0<=v<=65535 for v in a):raise ValueError('Ungültige Karten- oder Kollisionsdaten.')
+                check=valid if field=='layers' and data['version']>=2 else lambda v:type(v) is int and 0<=v<=65535
+                if len(a)!=w*h or not all(check(v) for v in a):raise ValueError('Ungültige Karten- oder Kollisionsdaten.')
         for xy in [r['spawn']]+[[a['x'],a['y']] for a in r['actors']]:
             if len(xy)!=2 or any(type(v) is not int for v in xy) or not 0<=xy[0]<w*8 or not 0<=xy[1]<h*8:raise ValueError('Startpunkt/Gegner liegt außerhalb des Raums.')
         if len(r['actors'])>128 or len(r['doors'])>64:raise ValueError('Zu viele Gegner oder Ausgänge in einem Raum.')
@@ -55,7 +57,8 @@ def validate(data):
 
 class Project:
     def __init__(self,data=None):
-        r=room();self.data=validate(copy.deepcopy(data) if data else dict(version=1,rom_sha256=ROM_SHA256,name='Mein Castlevania-Level',start_room=r['id'],rooms=[r]))
+        r=room();self.data=validate(copy.deepcopy(data) if data else dict(version=2,rom_sha256=ROM_SHA256,name='Mein Castlevania-Level',start_room=r['id'],rooms=[r]))
+        self.data['version']=2
         self.path=None;self.undo_stack=[];self.redo_stack=[];self.dirty=False;self.transaction=None
 
     @classmethod
@@ -104,7 +107,7 @@ class Project:
         if collision_mode is not None:r['collision_mode']=collision_mode
         for kind in ('layers','collision'):
             for key in LAYERS:
-                out=[0x800 if kind=='layers' else 0]*(width*height)
+                out=[EMPTY if kind=='layers' else 0]*(width*height)
                 for y in range(min(height,r['height'])):
                     n=min(width,r['width']);out[y*width:y*width+n]=r[kind][key][y*r['width']:y*r['width']+n]
                 r[kind][key]=out

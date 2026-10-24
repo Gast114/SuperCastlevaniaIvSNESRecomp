@@ -6,6 +6,18 @@ Stand: 22. Oktober 2026.
 
 ## Level-Editor: eigene Räume bauen
 
+**Grafiken frei mischen:** Rechts unter **Grafiken aus allen Abschnitten**
+eine Quelle R-00 bis R-67 wählen, daneben deren Vorder-/Hintergrund.
+Einen Block oder eine Kachel wählen und in deine Karte zeichnen. Oben ist
+**Zielebene** die Ebene deines eigenen Raums. Quelle und Ziel sind unabhängig.
+Auch kleine Ausschnitte aus verschiedenen Levels lassen sich zusammen verwenden.
+Originalfarben bleiben erhalten. **Auswahl → Strg+C/V** funktioniert auch
+zwischen Räumen und Ebenen. **Alle Grafikquellen vorbereiten** lädt den Vorrat
+einmalig; die Quellen sind auf diesem Rechner bereits vorbereitet.
+Mode7-Grafiken gibt es ebenfalls, als statische Bausteine ohne die ursprüngliche
+Rotation/Animation. Beide Wege bleiben gleich wichtig: alte Levels umbauen
+und neue Levels von Grund auf erstellen.
+
 `Level_Editor_starten.cmd` doppelklicken. Eine bearbeitbare Testwelt mit zwei
 Räumen, Boden, Plattform und M-0012 wird einmalig angelegt.
 

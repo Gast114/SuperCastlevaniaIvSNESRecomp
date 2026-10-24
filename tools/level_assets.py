@@ -1,5 +1,7 @@
 """Native room assets and exact 32px blocks for the visual level editor."""
 import json
+import copy
+import hashlib
 from pathlib import Path
 import struct
 import threading
@@ -10,6 +12,25 @@ from level_project import room
 
 CACHE=ROOT/'artwork-local/level-editor/rooms'
 _locks={}
+
+
+def ensure_source(number,rom=None,build=None):
+    if type(number) is not int:raise ValueError('Ungültige Grafikquelle.')
+    if number!=68:return ensure_room(number,rom,build)
+    # This scene changes to Mode7 after its ordinary room setup. Reuse the
+    # proved native boss texture capture, not the initial Mode1 room picture.
+    library=ROOT/'artwork-local/enemy-library/resources';manifest=library/'palettes.json'
+    if not manifest.is_file():raise ValueError('Mode7-Grafiken: zuerst die Monsterressourcen über den Editor-Start vorbereiten.')
+    record=next((p for p in json.loads(manifest.read_text())['profiles'] if p['key']=='boss-81-v00'),None)
+    if not record:raise ValueError('Der vorbereitete Mode7-Grafikkontext fehlt.')
+    video=Path(record['source']).read_bytes()
+    if len(video)!=0x10420:raise ValueError('Unvollständiger Mode7-Grafikkontext.')
+    with _locks.setdefault(68,threading.Lock()):
+        folder=CACHE/'68';file=folder/'room.json';digest=hashlib.sha256(video).hexdigest()
+        if file.is_file() and json.loads(file.read_text()).get('source_sha256')==digest:return folder
+        base=ensure_room(0,rom,build);data=copy.deepcopy(json.loads((base/'room.json').read_text()))
+        data.update(room=23,graphics_source=68,source_sha256=digest,supported=False,width=1024,height=1024,camera=[0,0]);data['ppu']['bgmode']=7
+        folder.mkdir(parents=True,exist_ok=True);(folder/'video.bin').write_bytes(video);(folder/'ram.bin').write_bytes((base/'ram.bin').read_bytes());file.write_text(json.dumps(data,indent=2));return folder
 
 
 def collision_value(tile,limits):
@@ -63,12 +84,18 @@ class Assets:
     def tile(self,word,layer='front'):
         key=(word,layer)
         if key in self.cache:return self.cache[key]
-        spec=self.meta['ppu']['layers'][0 if layer=='front' else 1];base=(spec['tiles']+(word&1023)*16)&32767
-        palette=(word>>10&7)*16;pixels=[]
+        mode=self.meta['ppu']['bgmode']&7;index=0 if layer=='front' else 1
+        spec=self.meta['ppu']['layers'][index];bpp=2 if mode==0 else 8 if mode==3 and index==0 else 4
+        base=(spec['tiles']+(word&1023)*(bpp*4))&32767
+        palette=0 if bpp==8 or mode==7 else (word>>10&7)*(1<<bpp)+(32*index if mode==0 else 0);pixels=[]
         for y in range(8):
-            a=self.vram[(base+y)&32767];b=self.vram[(base+y+8)&32767]
             for x in range(8):
-                bit=7-x;v=((a>>bit)&1)|(((a>>(bit+8))&1)<<1)|(((b>>bit)&1)<<2)|(((b>>(bit+8))&1)<<3)
+                bit=7-x
+                if mode==7:v=self.vram[((word&255)*64+y*8+x)&32767]>>8
+                else:
+                    v=0
+                    for pair in range(bpp//2):
+                        a=self.vram[(base+pair*8+y)&32767];v|=(((a>>bit)&1)|(((a>>(bit+8))&1)<<1))<<(pair*2)
                 c=self.colors[palette+v];expand=lambda n:(n<<3)|(n>>2)
                 pixels.append((expand(c&31),expand(c>>5&31),expand(c>>10&31),255 if v else 0))
         image=Image.new('RGBA',(8,8));image.putdata(pixels)
@@ -77,8 +104,17 @@ class Assets:
         self.cache[key]=image;return image
 
     def block(self,index,layer='front'):
+        if self.meta['ppu']['bgmode']&7==7:
+            x,y=(index%32)*4,(index//32)*4
+            return [self.vram[(y+dy)*128+x+dx]&255 for dy in range(4) for dx in range(4)]
         address=0x6000 if layer=='front' else 0xc000
         return list(struct.unpack_from('<16H',self.ram,address+(index&255)*32))
+
+    @property
+    def block_count(self):return 1024 if self.meta['ppu']['bgmode']&7==7 else 256
+
+    @property
+    def tile_count(self):return 256 if self.meta['ppu']['bgmode']&7==7 else 1024
 
     def import_room(self):
         if not self.meta['supported']:raise ValueError('Mode7-Räume benötigen einen eigenen Kartenmodus und sind noch nicht importierbar.')

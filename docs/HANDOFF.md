@@ -6,6 +6,45 @@ unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
 ## Level-Editor mit nativem Spieltest (24.10.)
 
+**Neuester Ausbau: freie Grafikquellen (Vorrang vor älteren Formatdetails unten).**
+Nutzer will bestehende/neueLevels gleichwertig bearbeiten und innerhalb eines
+Raums Grafiken aus allenAbschnitten frei kombinieren. Quellen unabhängig von
+Zielraum undZielebene:69Einträge, R00..67 plus spätererMode7-KontextR23.
+Alle69Quellen erfolgreich lokal vorbereitet; rooms/sources.json bestätigt dies.
+Mode7 auchR21/22/27; seine1024Mapblöcke und256Texturkacheln sind statisch nutzbar.
+Vertikaler/Mode7-Kartenimport undSkriptmechaniken bleiben gesondert offen.
+
+tools/level_tiles.py: Projektv2 mit32bitZellen. Low16=nativesKachelwort,
+Bits16..22=Quell-ID+1,Bit23=QuelleBG2,EMPTY01000000. Quellen0..68.
+Legacy16bitZellen werden weiter relativ zumRaum gelesen; Copy/Pick binden sie
+vorTransport explizit. Flip erhält Quelle/Farben undmanuelleKollision.
+Project liestv1 undv2, speichertv2;Kollision bleibt16bit. KeinPixelmaterial inGit.
+
+tools/level_graphics.py: Pixelatlas ausbenutztenOriginalkacheln, RGB555+Opacity,
+dedupliziert nachPixeldaten; ursprünglicheBG-Priorität proZelle. BG-Grafiken
+unterliegen damit nichtmehr demgemeinsamenSNES-Kachel-/8Palettenbudget.
+CV4LVL2 ergänztAtlas und32bitKarten;altesCV4LVL1 unverändertlesbar. Vollständige
+Validierung inklAtlasindizes vorAktivierung. MaximalesPaket512MB/1048576Tiles.
+Cv4LevelTrack/RenderLine komponieren nachnativemPPU-Lauf: BG1/2nativeDummytile0
+transparent, eigenePixel unterBeachtung vonLayer-Screens/Windows, Priorität,
+OBJ/HUD,ColorMath undHelligkeit. Kollision undnativeMonster laufenwievorher.
+Grafikrenderer nurimexplizitenProjektspieltest;keinSubmodulgeändert,keinNormalspielpfad.
+
+Grafikpicker bietetQuellabschnitt/-ebene unabhängig vomZiel. Hintergrundquelle
+kann z.B.imVordergrund platziertwerden. Vorbereitung seriell undabbrechbar beim
+Schließen; fertigeQuellen werden sofort imUI freigegeben. prepare_level_sources.py
+bereitetalleQuellen vor. ensure_source68 verwendetechtenvorbereitetenMode7-Boss81-
+Videokontext, daR23 initialnochMode1 zeigt;kein zusätzlicherQuelllevelstart nötig.
+
+Tests:test_level_editor.py weiterhinbestanden(check-dtpo2zjp). NeuerTest
+test_level_tiles.py bestanden(mixed-check-14palfwo):69Referenzen/beideEbenen,
+JSONv1/v2,TkQuellwahl/69Quellenvorbereitung/Mode7Picker,BG2→BG1,Kopie/Flip/Save,Mode7rawbyte-Abgleich,
+3584exakteRasterpixel mit17Quell-/Palettenkombinationen,Transparenz,NativeOBJ
+vor/hinterfremderGrafik,RaumwechselundatomareAtlasfehler. KeineBildbetrachter.
+Alle69Quellen einschließlichPlausibilitätsprüfung aufFarb-/Grafikdaten bereit;
+initialeVorbereitung294s. BeideBuildvarianten erfolgreich. EinschränkungenzuBossadaptern,MonsterOBJ-Budget
+undKampagnenexport geltenweiter;freieBG-Grafiken sinddavonunabhängig.
+
 Nutzerwunsch: eigener Level-Editor im Stil von Lunar Magic. Neue separate
 Tk-Anwendung tools/level_editor.py, Start Level_Editor_starten.cmd. Zwei
 Grafikebenen, 32px/8px-Palette, Kollision, Bereichskopie, Spiegelung, Undo/Redo,

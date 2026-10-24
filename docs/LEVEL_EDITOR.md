@@ -2,6 +2,7 @@
 
 Erste benutzbare Fassung vom 24.10.2026. Der Editor ist eine separate Anwendung
 mit Karte und Werkzeugen, angelehnt an den Arbeitsablauf von Lunar Magic.
+Beim Ausbau sind bestehende Levels umbauen und neue Levels erstellen gleich wichtig.
 
 ## Start und erster Versuch
 
@@ -25,6 +26,36 @@ sonst automatisch ohne Ton. Run-ahead und Rewind sind nur für diese private
 Testinstanz deaktiviert, weil sie den Projektzustand noch nicht mitspeichern.
 
 ## Karte bearbeiten
+
+### Grafiken frei aus allen Abschnitten mischen
+
+Rechts unter **Grafiken aus allen Abschnitten** die gewünschte **Quelle**
+wählen: R-00 bis R-67, dazu der später geladene Mode7-Grafiksatz aus R-23.
+Daneben die Vorder- oder Hintergrundgrafiken dieser Quelle auswählen.
+Dann einen Block oder eine Kachel anklicken und in die Karte zeichnen.
+Oben legt **Zielebene** fest, wo du zeichnest. Die Quell- und Zielebene
+dürfen verschieden sein: etwa ein Hintergrunddetail aus R-15 im Vordergrund
+eines Raums mit Grafiken aus R-01.
+
+Ein Raum ist nicht mehr an den Grafiksatz seines Herkunftslevels gebunden.
+Du kannst einzelne Kacheln, ganze Blöcke und kleine Ausschnitte aus beliebig
+vielen Quellen kombinieren. Jedes Teil behält seine Grafik, Originalfarben,
+Transparenz und Priorität. Die native Begrenzung auf acht Hintergrundpaletten
+oder einen gemeinsamen Kachelbestand beschränkt diese gemischten Karten nicht.
+Die Kollision wird unabhängig gespeichert; beim Zeichnen lässt sie sich aus
+der Quelle übernehmen oder anschließend selbst ändern.
+
+Bereiche mit **Auswahl → Strg+C/V** auch zwischen Räumen oder Ebenen kopieren.
+Ihre Herkunft bleibt dabei erhalten, ebenso beim Spiegeln, Speichern und Laden.
+Auch ältere Projektdateien bleiben lesbar. **Alle Grafikquellen vorbereiten**
+legt den vollständigen lokalen Vorrat einmalig an; spätere Zugriffe nutzen ihn.
+
+Grafiken aus vertikalen und Mode7-Abschnitten sind als Bausteine verfügbar,
+auch wenn der komplette Kartenimport dieses Abschnitts noch fehlt. Mode7
+wird hier als statisches Bildmaterial übernommen; Rotationen und andere
+geskriptete Abläufe werden damit nicht automatisch zu platzierbaren Objekten.
+
+### Werkzeuge
 
 - Links Raum auswählen, neu anlegen oder duplizieren. **Als Startraum** legt
   fest, welcher Raum beim nächsten Spieltest beginnt.
@@ -75,8 +106,9 @@ Spezial-/Dekorobjekte erscheint ein Hinweis.
 
 ## Grenzen dieser Fassung
 
-- Vertikale Originalkarten und Mode7-Räume lassen sich noch nicht importieren.
-  Eigene hohe Mode1-Räume sind bereits spielbar.
+- Vertikale Originalkarten und Mode7-Räume lassen sich noch nicht vollständig
+  als Karte importieren. Ihre Grafiken stehen in der freien Quellauswahl bereit.
+  Eigene hohe Räume und gemischte Grafiken sind bereits spielbar.
 - Geskriptete Tore, Brückenanimationen, Treppenverbindungen, bewegte
   Levelobjekte und Boss-Abschlüsse brauchen eigene Werkzeuge und Adapter.
 - Boss-Codes können als Planungsmarker gespeichert werden. Ein Projekt mit
@@ -102,3 +134,9 @@ Bewegung, einen fremden Monster-Code, Raumwechsel, zwei getrennte Spielebenen,
 Kamera/Ringpuffer, atomare Fehlerbehandlung und das Schließen während Teststart.
 Der Rasterabgleich liest Bildpixel programmgesteuert; es wird kein Bildbetrachter
 geöffnet. Beide Buildvarianten werden mit dem inaktiven Standardpfad gebaut.
+
+`tools/test_level_tiles.py` prüft die Quellen im Projektformat, den freien
+Grafikpicker, Kopieren zwischen Räumen/Ebenen, Mode7-Dekodierung, unabhängige
+Farben, Transparenz und native Sprite-Priorität. Im Spieltest werden 17
+Quell-/Palettenkombinationen und ein Raumwechsel geprüft. Ungültige Verweise
+in Grafikpaketen werden ohne Änderung der aktiven Szene abgewiesen.

@@ -257,6 +257,7 @@ void GameDrawPpuFrame(void)
     Cv4LevelBeforeDraw(g_ppu);
     if(Cv4EnemyWorkshop())Cv4EnemyBegin(g_ppu,g_ram);
     Cv4HdRenderBegin(g_ppu);
+    Cv4LevelTrack(g_ppu);
     Cv4WorkshopCaptureBegin(g_ppu,g_ram);
 
     /* Re-arm HDMA from the last $420C (HDMAEN) the guest wrote — typically
@@ -299,6 +300,7 @@ void GameDrawPpuFrame(void)
         if (water_edge) g_ppu->vScroll[1] = 0;
         Cv4HdRecordLine(g_ppu, line);
         ppu_runLine(g_ppu, line);
+        Cv4LevelRenderLine(g_ppu,line);
         Cv4WorkshopCaptureLine(g_ppu,line);
         Cv4HdRenderLine(g_ppu, line);
         if (water_edge) g_ppu->vScroll[1] = bg2_v;

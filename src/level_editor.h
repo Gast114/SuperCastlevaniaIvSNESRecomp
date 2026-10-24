@@ -7,6 +7,8 @@ extern "C" {
 int Cv4LevelLoad(const char *path,char *result,size_t capacity);
 void Cv4LevelBeforeFrame(void);
 void Cv4LevelBeforeDraw(struct Ppu *ppu);
+void Cv4LevelTrack(struct Ppu *ppu);
+void Cv4LevelRenderLine(struct Ppu *ppu,int line);
 unsigned Cv4LevelRoom(void);
 void Cv4LevelReset(void);
 #ifdef __cplusplus
