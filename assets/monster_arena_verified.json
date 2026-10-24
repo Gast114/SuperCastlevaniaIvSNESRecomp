@@ -1,393 +1,1026 @@
 {
-  "schema": "sciv neutral monster arena observations v1",
+  "schema": "sciv neutral monster arena observations v2",
   "rom_sha256": "0ef6f4cce5a2273fa49fe1ce724e0048a8e39c91da6b00dbb693fe1ba909177d",
   "date": "2026-10-24",
   "images_opened": false,
-  "ordinary_profiles": 46,
-  "visible": 45,
+  "source_level_loads": 0,
+  "source_loader_forbidden": true,
+  "evidence": "artwork-local/enemy-workshop/neutral-check-vhjrkhtd/report.json",
+  "ordinary_profiles": 47,
+  "visible": 47,
+  "boss_profiles": 12,
+  "visible_bosses": 12,
   "limits": [
-    "A short visible probe does not prove every action, all projectiles, or long-term stability.",
-    "Bosses retain their experimental original scene contexts.",
-    "Default target96 activates type36; other initial visibility probes used target64."
+    "One native variant per selected monster code; not every variant or action.",
+    "Bounded native movement/start checks do not prove a full fight or every projectile.",
+    "Boss81 Mode7 body remains native; HD texture editing is not implemented.",
+    "Original palettes are prepared separately; preparation may capture a source context once.",
+    "Actual game-level placements and simultaneous mixed-family palette management are future work."
   ],
   "profiles": [
     {
       "type": 7,
       "code": "M-0007",
+      "variant": 0,
       "visible": true,
       "context_room": 44,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        1
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 8,
       "code": "M-0008",
+      "variant": 0,
       "visible": true,
       "context_room": 5,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        1,
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 9,
       "code": "M-0009",
+      "variant": 0,
       "visible": true,
       "context_room": 8,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 10,
       "code": "M-000A",
+      "variant": 0,
       "visible": true,
       "context_room": 5,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 4,
+      "states": [
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 11,
       "code": "M-000B",
+      "variant": 0,
       "visible": true,
       "context_room": 2,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 1,
+      "states": [
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 12,
       "code": "M-000C",
+      "variant": 0,
       "visible": true,
       "context_room": 1,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        1
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 13,
       "code": "M-000D",
+      "variant": 0,
       "visible": true,
       "context_room": 30,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        1
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 15,
       "code": "M-000F",
+      "variant": 0,
       "visible": true,
       "context_room": 36,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 16,
       "code": "M-0010",
+      "variant": 0,
       "visible": true,
       "context_room": 8,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 4,
+      "states": [
+        3,
+        4
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 17,
       "code": "M-0011",
+      "variant": 0,
       "visible": true,
       "context_room": 1,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 18,
       "code": "M-0012",
+      "variant": 0,
       "visible": true,
       "context_room": 1,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 48,
       "code": "M-0030",
+      "variant": 0,
       "visible": true,
       "context_room": 9,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        1,
+        3
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 49,
       "code": "M-0031",
+      "variant": 0,
       "visible": true,
-      "context_room": 18,
-      "probe_fields": 24,
-      "target_x": 64,
-      "native_record": "05:9128"
+      "context_room": 17,
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 5,
+      "states": [
+        2,
+        9
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 50,
       "code": "M-0032",
+      "variant": 0,
       "visible": true,
       "context_room": 5,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 1,
+      "states": [
+        0
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 51,
       "code": "M-0033",
+      "variant": 0,
       "visible": true,
       "context_room": 29,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 1,
+      "states": [
+        1
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 52,
       "code": "M-0034",
+      "variant": 0,
       "visible": true,
       "context_room": 12,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        1,
+        3
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 53,
       "code": "M-0035",
+      "variant": 0,
       "visible": true,
       "context_room": 9,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 8,
+      "states": [
+        1
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 54,
       "code": "M-0036",
+      "variant": 0,
       "visible": true,
       "context_room": 19,
-      "probe_fields": 80,
-      "target_x": 96,
-      "native_poses": [
-        39600,
-        39605,
-        39614,
-        39623,
-        39640,
-        39653
-      ]
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 6,
+      "states": [
+        2,
+        3
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 62,
       "code": "M-003E",
+      "variant": 0,
       "visible": true,
       "context_room": 10,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        1,
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 66,
       "code": "M-0042",
+      "variant": 0,
       "visible": true,
       "context_room": 33,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 6,
+      "states": [
+        2,
+        3
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 67,
       "code": "M-0043",
+      "variant": 0,
       "visible": true,
       "context_room": 8,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        1
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 75,
       "code": "M-004B",
+      "variant": 0,
       "visible": true,
       "context_room": 12,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 20,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 76,
       "code": "M-004C",
+      "variant": 0,
       "visible": true,
       "context_room": 14,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        2,
+        3
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 78,
       "code": "M-004E",
+      "variant": 0,
       "visible": true,
       "context_room": 2,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        2,
+        3
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 81,
       "code": "M-0051",
+      "variant": 0,
       "visible": true,
       "context_room": 14,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 7,
+      "total_samples": 24,
+      "pose_ids": 1,
+      "states": [
+        4,
+        6,
+        7,
+        8
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 82,
       "code": "M-0052",
+      "variant": 0,
       "visible": true,
       "context_room": 26,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        3,
+        4
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 84,
       "code": "M-0054",
+      "variant": 0,
       "visible": true,
       "context_room": 26,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        1,
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 86,
       "code": "M-0056",
+      "variant": 0,
       "visible": true,
       "context_room": 25,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 4,
+      "states": [
+        2,
+        8
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 87,
       "code": "M-0057",
+      "variant": 0,
       "visible": true,
       "context_room": 24,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        2,
+        4,
+        8
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 88,
       "code": "M-0058",
+      "variant": 0,
       "visible": true,
       "context_room": 24,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 6,
+      "states": [
+        4,
+        5
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 89,
       "code": "M-0059",
+      "variant": 0,
       "visible": true,
       "context_room": 35,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        1
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 90,
       "code": "M-005A",
+      "variant": 0,
       "visible": true,
       "context_room": 28,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 5,
+      "states": [
+        4,
+        6,
+        7,
+        8
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 91,
       "code": "M-005B",
+      "variant": 0,
       "visible": true,
       "context_room": 28,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 92,
       "code": "M-005C",
+      "variant": 0,
       "visible": true,
       "context_room": 32,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        1,
+        4
+      ],
+      "mode7_frames": 0
+    },
+    {
+      "type": 102,
+      "code": "M-0066",
+      "variant": 0,
+      "visible": true,
+      "context_room": 8,
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 7,
+      "states": [
+        1
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 105,
       "code": "M-0069",
+      "variant": 0,
       "visible": true,
       "context_room": 31,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 107,
       "code": "M-006B",
+      "variant": 0,
       "visible": true,
       "context_room": 38,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 4,
+      "states": [
+        1,
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 110,
       "code": "M-006E",
+      "variant": 0,
       "visible": true,
       "context_room": 10,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        1
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 111,
       "code": "M-006F",
+      "variant": 0,
       "visible": true,
       "context_room": 5,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        3,
+        4
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 112,
       "code": "M-0070",
+      "variant": 0,
       "visible": true,
       "context_room": 8,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 5,
+      "states": [
+        1,
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 113,
       "code": "M-0071",
+      "variant": 0,
       "visible": true,
       "context_room": 5,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        4
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 117,
       "code": "M-0075",
+      "variant": 0,
       "visible": true,
       "context_room": 36,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 2,
+      "states": [
+        1
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 118,
       "code": "M-0076",
+      "variant": 0,
       "visible": true,
       "context_room": 33,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 8,
+      "states": [
+        1,
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 120,
       "code": "M-0078",
+      "variant": 0,
       "visible": true,
       "context_room": 12,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 3,
+      "states": [
+        1,
+        2
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 123,
       "code": "M-007B",
+      "variant": 0,
       "visible": true,
       "context_room": 29,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 1,
+      "states": [
+        1
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 126,
       "code": "M-007E",
+      "variant": 0,
       "visible": true,
       "context_room": 60,
-      "probe_fields": 24,
-      "target_x": 64
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 4,
+      "states": [
+        1,
+        3
+      ],
+      "mode7_frames": 0
     },
     {
       "type": 127,
       "code": "M-007F",
-      "visible": false,
+      "variant": 0,
+      "visible": true,
       "context_room": 62,
-      "probe_fields": 24,
-      "target_x": 64,
-      "limitation": "Vertical room62 context is unstable after transfer; preview pauses and live values are hidden."
+      "runtime_room": 0,
+      "probe_fields": 96,
+      "matched_samples": 24,
+      "total_samples": 24,
+      "pose_ids": 9,
+      "states": [
+        2,
+        3
+      ],
+      "mode7_frames": 0
+    }
+  ],
+  "bosses": [
+    {
+      "type": 128,
+      "code": "M-0080",
+      "variant": 0,
+      "visible": true,
+      "context_room": 7,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 89,
+      "total_samples": 90,
+      "pose_ids": 9,
+      "states": [
+        1,
+        3
+      ],
+      "mode7_frames": 0
+    },
+    {
+      "type": 129,
+      "code": "M-0081",
+      "variant": 0,
+      "visible": true,
+      "context_room": 23,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 88,
+      "total_samples": 90,
+      "pose_ids": 5,
+      "states": [
+        3,
+        4,
+        10
+      ],
+      "mode7_frames": 43
+    },
+    {
+      "type": 131,
+      "code": "M-0083",
+      "variant": 0,
+      "visible": true,
+      "context_room": 9,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 90,
+      "total_samples": 90,
+      "pose_ids": 25,
+      "states": [
+        2,
+        3
+      ],
+      "mode7_frames": 0
+    },
+    {
+      "type": 132,
+      "code": "M-0084",
+      "variant": 0,
+      "visible": true,
+      "context_room": 20,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 90,
+      "total_samples": 90,
+      "pose_ids": 14,
+      "states": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        10
+      ],
+      "mode7_frames": 0
+    },
+    {
+      "type": 133,
+      "code": "M-0085",
+      "variant": 0,
+      "visible": true,
+      "context_room": 34,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 90,
+      "total_samples": 90,
+      "pose_ids": 6,
+      "states": [
+        1,
+        5
+      ],
+      "mode7_frames": 0
+    },
+    {
+      "type": 134,
+      "code": "M-0086",
+      "variant": 0,
+      "visible": true,
+      "context_room": 53,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 90,
+      "total_samples": 90,
+      "pose_ids": 12,
+      "states": [
+        2,
+        3
+      ],
+      "mode7_frames": 0
+    },
+    {
+      "type": 135,
+      "code": "M-0087",
+      "variant": 0,
+      "visible": true,
+      "context_room": 45,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 90,
+      "total_samples": 90,
+      "pose_ids": 9,
+      "states": [
+        1,
+        2,
+        4
+      ],
+      "mode7_frames": 0
+    },
+    {
+      "type": 136,
+      "code": "M-0088",
+      "variant": 0,
+      "visible": true,
+      "context_room": 64,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 90,
+      "total_samples": 90,
+      "pose_ids": 4,
+      "states": [
+        1,
+        2,
+        3
+      ],
+      "mode7_frames": 0
+    },
+    {
+      "type": 137,
+      "code": "M-0089",
+      "variant": 0,
+      "visible": true,
+      "context_room": 63,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 58,
+      "total_samples": 90,
+      "pose_ids": 7,
+      "states": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "mode7_frames": 0
+    },
+    {
+      "type": 138,
+      "code": "M-008A",
+      "variant": 0,
+      "visible": true,
+      "context_room": 41,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 89,
+      "total_samples": 90,
+      "pose_ids": 16,
+      "states": [
+        2,
+        4
+      ],
+      "mode7_frames": 0
+    },
+    {
+      "type": 139,
+      "code": "M-008B",
+      "variant": 0,
+      "visible": true,
+      "context_room": 65,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 90,
+      "total_samples": 90,
+      "pose_ids": 9,
+      "states": [
+        1,
+        2
+      ],
+      "mode7_frames": 0
+    },
+    {
+      "type": 140,
+      "code": "M-008C",
+      "variant": 0,
+      "visible": true,
+      "context_room": 59,
+      "runtime_room": 0,
+      "probe_fields": 360,
+      "matched_samples": 64,
+      "total_samples": 90,
+      "pose_ids": 32,
+      "states": [
+        1,
+        2
+      ],
+      "mode7_frames": 0
     }
   ]
 }

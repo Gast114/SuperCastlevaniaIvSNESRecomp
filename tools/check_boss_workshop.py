@@ -32,7 +32,8 @@ def summarize(entry,samples,fields):
         phases=sorted({s['globals'][0] for s in samples}),rooms=sorted({s['globals'][1] for s in samples}),
         surface_frames=len({s['surface_hash'] for s in samples if s['surface_opaque']}))
     failures=[]
-    if result['phases']!=[5] or result['rooms']!=[entry['room']]:failures.append('Unexpected room transition')
+    expected_room=0 if all(s.get('neutral',False) for s in samples) else entry['room']
+    if result['phases']!=[5] or result['rooms']!=[expected_room]:failures.append('Unexpected room transition')
     if not mains:failures.append('Native main slot never present')
     if not visible:failures.append('Native boss body never observed')
     if fields>=120 and result['poses']<2:failures.append('Native animation did not change pose')
@@ -59,7 +60,8 @@ def check(fields=360,types=None,output=None):
                 if snapshot.get('boss_surface'):
                     pixels=base64.b64decode(snapshot['boss_surface']);surface_hash=hashlib.sha256(pixels).hexdigest()
                     with Image.open(io.BytesIO(pixels)) as image:opaque=sum(image.getchannel('A').histogram()[1:])
-                samples.append(dict(field=field+4,globals=globals_,raw=raw,observed=snapshot['actors'],surface_hash=surface_hash,surface_opaque=opaque))
+                samples.append(dict(field=field+4,globals=globals_,raw=raw,observed=snapshot['actors'],surface_hash=surface_hash,surface_opaque=opaque,
+                                    neutral=bool(snapshot.get('neutral_scene'))))
             result=summarize(entry,samples,fields)
             failures=result['failures']
             report['failures'].extend(f'{entry["type"]:02X}: {f}' for f in failures)

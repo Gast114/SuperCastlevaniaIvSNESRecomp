@@ -44,6 +44,7 @@ def main():
     def passed(text):report['checks'].append(text);print('PASS:',text,flush=True)
     try:
         wait(lambda:bool(app.catalog) and bool(app.snapshot.get('actors')))
+        assert app.snapshot.get('neutral_scene') and app.snapshot['live_stats']['runtime_room']==0
         assert app.picker.exists('M-0012') and not app.picker.exists('M-0002')
         assert len([m for m in app.monsters if m['type']==18])==1
         assert not any('Skelett' in app.picker.item(i,'text') for i in app.picker.get_children())
@@ -121,17 +122,20 @@ def main():
         assert native!=preview(without,app.workspace,False,(512,448)).tobytes()
         assert native==preview(snapshot,app.workspace,True,(512,448)).tobytes()
         assert snapshot['arena']['boss'] and 'HD-Textur' in app.notes.get()
+        assert snapshot['neutral_scene'] and snapshot['live_stats']['runtime_room']==0
         assert app.trees['Noch zuordnen'].get_children()
         tick=snapshot['tick'];spin(.3);assert app.snapshot['tick']==tick
         passed('Mode7 boss body and OBJ parts render together in both views; pause holds the same native field')
         app.picker.selection_set('M-008B');app.choose()
         wait(lambda:app.snapshot.get('live_stats',{}).get('actor_type')==9 and app.snapshot.get('target')==0xd80,timeout=70)
         assert app.snapshot['live_stats']['present']
+        assert app.snapshot['neutral_scene'] and app.snapshot['live_stats']['runtime_room']==0
         app.preview_mode.set('New Game+');app.change_mode()
         wait(lambda:app.snapshot.get('live_stats',{}).get('quest')==1 and app.snapshot.get('target')==0xd80,timeout=70)
         app.preview_mode.set('Normal');app.change_mode()
         wait(lambda:app.snapshot.get('live_stats',{}).get('quest')==0 and app.snapshot.get('target')==0xd80,timeout=70)
-        passed('Boss alias uses its real main slot; Normal/NG+ switches restart the original boss scene')
+        assert app.snapshot['live_stats']['runtime_room']==0
+        passed('Boss alias uses its real main slot; Normal/NG+ switches keep the same neutral room')
         report['passed']=True
     finally:
         app.close();deadline=time.monotonic()+20

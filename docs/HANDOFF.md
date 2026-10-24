@@ -4,6 +4,65 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## Echter neutraler Spawn und portable Monsterressourcen (24.10.)
+
+**Aktuell, Vorrang vor älteren Kontextbeschreibungen unten:** Nutzer möchte
+keine Herkunftslevels pro Monster starten und künftig Monster/Bosse frei in
+anderen Levels einsetzen. Standard-Monsterwerkstatt lädt jetzt ausschließlich
+eine gemeinsame Basisszene und richtet darin neutralen Boden/Seitenwände ein.
+Kein Herkunftsraum, keine Ladephase3 und kein fremder Snapshot beim Live-Spawn.
+NativeSession.arena_enabled routet nach spawn_neutral; _spawn_original bleibt
+Offline-/altem internem Client vorbehalten, ohne bisherigen Arena-Sonderpfad.
+
+tools/enemy_resources.py entpackt native Grafiken direkt aus ROM. Codec
+02:864A..87C5: 1024Byte-Ring, Header ist komprimiertes Ende, LZ-Referenzen,
+Literal-/Zero-/Byte-/Zero-Literal-Runs. Originalpointer01:A900+t*3,
+Slotreservierung01:AA80+t, Relocation01:A8D4, VRAMziele01:A8EA, Lookup00:D7CC.
+AA80 ist Reservierung, nicht exakt entpackte Länge:11/12/56 teilen08:9F60,
+verwenden2/3/4KiB. Deklarierten Präfix verwenden, verbleibenden Tail nullen.
+Gemeinsame Ressourcen zusammenfassen; Plan mit first_slot unterstützt getrennte
+Reservierungen und weist >11native1KiB-Seiten ab. Feste Effekte mit CountFF
+bleiben im gemeinsamen Grundbestand. NativeSlots13A0 nur am Gruppenanfang setzen.
+
+src/enemy_resources.cpp: atomarer Grafikimport CV4OBJ1, nur OBJ6A00..7FFF,
+8/16px-Layout6000/7000, Palette separat, alleSpannen/Überlappungen vor Änderung
+prüfen. NativePalettequelle steht in$48, gewöhnlich2200; OBJ128..255 liegt
+darum bei2300..23FF. PPU-CGRAM und WRAM-Shadow gemeinsam aktualisieren.
+Keine Actor-/OAM-/CPU-/Leveldaten in diesen Bundles. Kein Gameplayhook im
+normalen Spiel; Lua-Befehl enemy_resources wird vom separaten Client verwendet.
+
+Farben einmalig aus vorhandenen belegten Kontexten: prepare_monster_resources.py
+mit --ensure im Launcher;95Paletten lokal vorbereitet. Fehlender Boss81-Kontext
+einmalig original erfasst, danach Cache mit SHA256/ROM-Bindung; Live-Spawn lädt
+nie ersatzweise ein Level. Customlibrary im Worker bis NativeSession durchgereicht.
+Bosse nutzen ihren Originalcontroller2A im neutralen Raum0, kein Herkunftsraum.
+44=PPU-Layer/ColorMath-Preset;46=HDMA-Preset, KEINE Raumskripte. 1200..127F sind
+Palette-Jobs; vor Spawn leeren, danach native Bossjobs erhalten. B8 für
+Bossauxdispatch bewahren. Originale Weltkoordinaten/Ursprung wegen fester
+Bossgrenzen behalten. Kollision einmal je Reset bauen, nicht pro Feld native
+Arbeitsdaten überschreiben. Kamera und geschütztes Spielerziel weiter halten.
+Mode7-81 nativ sichtbar; HD-Texturzuordnung bleibt offen.
+
+Live-Stats enthalten runtime_room=0 und neutral=true. Der Normal/NG+-Vergleich
+nutzt zur Vergleichbarkeit weiterhin den Originalzuschlag des Herkunftsraums;
+UI weist darauf hin. Tatsächlicher Testraum und Wertebezug sind getrennt.
+Keine neuen Plätze in tatsächlichen Spiellevels installiert. Nächste Schritte:
+Platzierungseditor, gemeinsame Grafik-/Palettenverwaltung bei Familienmix,
+Bossgrenzen/Spezialeffekte und globalenB8-/Levelabschluss pro Einsatz entkoppeln.
+
+Ohne Bildansicht geprüft: test_neutral_monsters.py sperrt _spawn_original,
+fremdeRaum-/Phase3-Schreibvorgänge sowie fremdeSnapshotloads. Alle47 normalen
+Codes je96Felder und12Bosse je360Felder sichtbar, Raum0/Phase5, keineZiel-HP-
+Verluste. Evidenz neutral-check-vhjrkhtd/report.json, kompakte Metadaten in
+assets/monster_arena_verified.json. Zusätzlich neuere Collision-once-Prüfung:
+81/8B/8C je480Felder, neutral-check-eh95eajn;7F360Felder samt exakter Hostimport-
+und PaletteShadow-Prüfung, neutral-check-ma03ae0q. Beide ohne Herkunftslevel.
+Nativer Tk-Test inklusive Original/HD, Sprung/Wurf/Tod und BossNormal/NG+:
+monster-check-pcbi29ys/report.json. Direkter Decoder bytegleich gegen
+vorher unabhängig erfasstes Original-VRAM für07/11/12/31/56/69/7F; Ressourcen-
+Unitprüfungen inkl. Palette-Warmcache. Release mit/ohneLua kompiliert.
+Keine Bilder angesehen, keine bestehenden Artist-PNGs geändert.
+
 ## Boss-Werkstatt: Grafikladen und stabile Originalszene (24.10.)
 
 Nutzer meldete fehlerhafte Bosse. Hauptursache: spawn_boss hatte $1A12 als

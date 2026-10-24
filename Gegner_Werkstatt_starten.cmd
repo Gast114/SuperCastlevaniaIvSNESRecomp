@@ -15,6 +15,8 @@ if errorlevel 1 goto failed
 if errorlevel 1 goto failed
 "%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\prepare_sprite_library.py" --ensure
 if errorlevel 1 goto failed
+"%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\prepare_monster_resources.py" --ensure
+if errorlevel 1 goto failed
 "%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\enemy_workshop.py" --prepare-library
 if errorlevel 1 goto failed
 "%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\monster_workshop.py"

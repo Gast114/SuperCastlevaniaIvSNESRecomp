@@ -38,6 +38,7 @@ class NativeSession:
         self.direction=-1
         self.elapsed=0
         self.arena_enabled=False;self.arena_target=96;self.quest=0
+        self.neutral_scene=False;self.resource_library=ROOT/'artwork-local/enemy-library';self.resource_plan=None
 
     def word(self,bank,address):
         offset=bank*0x8000+(address&0x7fff)
@@ -152,22 +153,29 @@ class NativeSession:
                 f'mainmemory.read_u16_le({self.target}+0x1c),mainmemory.read_u16_le({self.target}+0x1e),'
                 f'mainmemory.read_u16_le({self.target}+0x10),mainmemory.read_u16_le(0x84),'
                 f'mainmemory.read_u16_le(0x88),mainmemory.read_u16_le(0x1c),'
-                f'mainmemory.read_u16_le(0x1e),mainmemory.read_u16_le(0x54a)')['values']
+                f'mainmemory.read_u16_le(0x1e),mainmemory.read_u16_le(0x86)')['values']
             values=list(map(int,values))
             signed=lambda v:v-65536 if v>=32768 else v
             result['live_stats']=dict(hp=values[0],state=values[1],x=values[2],y=values[3],half_width=values[4],half_height=values[5],
                                       speed_x=signed(values[7])+values[6]/65536,speed_y=signed(values[9])+values[8]/65536,
                                       actor_type=values[10],present=values[10]==self.entry.get('main_type',self.entry['type']),
-                                      difficulty=values[11],quest=values[12],source_room=self.entry['room'])
+                                      difficulty=values[11],quest=values[12],source_room=self.entry['room'],
+                                      runtime_room=values[15],neutral=self.neutral_scene)
             if self.entry.get('boss'):
-                result['arena']={'floor':200-values[14],'target_x':values[15]-values[13],
-                                 'target_y':176-values[14],'boss':True}
+                origin=max(0,self.entry['x']-128)
+                result['arena']={'floor':(192 if self.neutral_scene else 200)-values[14],
+                                 'target_x':origin+(64 if self.direction<0 else 192)-values[13],
+                                 'target_y':(168 if self.neutral_scene else 176)-values[14],'boss':True}
                 if self.arena_enabled and self.entry['type']==0x81:
                     surface=self.folder/'boss-surface.png'
                     self.command('enemy_surface',surface)
                     # The exact field travels with its OBJ snapshot; reusing a
                     # mutable file path would mix two animation times in the UI.
                     result['boss_surface']=base64.b64encode(surface.read_bytes()).decode('ascii')
+            if self.neutral_scene:
+                result['neutral_scene']=True
+                result['resources']={'source':'original ROM + prepared palette','source_level_loaded':False,
+                    'obj_pages':self.resource_plan['pages'] if self.resource_plan else None}
             if self.arena_enabled and not self.entry.get('boss') and values[10]>0x8d:
                 result['context_error']=f'M-{self.entry["type"]:04X}: Grafik-/Szenenkontext noch nicht stabil. Bitte ein anderes Monster wählen.'
                 result['live_stats']={'present':False}
@@ -178,13 +186,20 @@ class NativeSession:
         # The original collision lookup 00:CF86 reads 64x64 8px cells
         # from 7E:4000 / 7E:A000. Tile 0=air, 1=solid. Both planes agree.
         # Bound each RPC below the Lua runtime's instruction limit.
-        for page in range(4):
-            self.lua.eval(f'for i={page*1024},{page*1024+1023} do '
-                'local solid=(i>=1024 or i%1024>=768 or i%32==0 or i%32==31) and 1 or 0 '
-                'mainmemory.write_u16_le(0x4000+i*2,solid) mainmemory.write_u16_le(0xa000+i*2,solid) end')
-        self.camera(0,0)
-        self.write({0x54a:self.arena_target,0x54e:168,0xbc:0x7fff,
-                    0x70:5,0x86:self.arena_room,0xb8:0,0x552:0,0x558:0,0x55a:0,0x55c:0,0x55e:0,0x13f4:16})
+        if not getattr(self,'arena_collision_ready',False):
+            for page in range(4):
+                self.lua.eval(f'for i={page*1024},{page*1024+1023} do '
+                    'local solid=(i>=1024 or i%1024>=768 or i%32==0 or i%32==31) and 1 or 0 '
+                    'mainmemory.write_u16_le(0x4000+i*2,solid) mainmemory.write_u16_le(0xa000+i*2,solid) end')
+            self.arena_collision_ready=True
+        boss=getattr(self,'entry',{}).get('boss',False)
+        origin=max(0,self.entry['x']-128) if boss else 0
+        self.camera(origin,0)
+        target=origin+(64 if self.direction<0 else 192) if boss else self.arena_target
+        values={0x54a:target,0x54e:168,0xbc:0x7fff,
+                0x70:5,0x86:self.arena_room,0x552:0,0x558:0,0x55a:0,0x55c:0,0x55e:0,0x13f4:16}
+        if not boss:values[0xb8]=0
+        self.write(values)
 
     def step(self,frames=1):
         if getattr(self,'entry',{}).get('boss'):
@@ -208,43 +223,72 @@ class NativeSession:
         x=max(0,x);y=max(0,y)
         self.write({0x1c:x,0x1e:y,0x1280:x,0x12c0:x,0x1298:y,0x12d8:y})
 
+    def enter_neutral(self,entry):
+        """Reset only the common stage, then install graphics without a room load."""
+        from enemy_resources import ordinary_plan,palette,write_bundle
+        plan=None if entry.get('boss') else ordinary_plan(self.bytes,entry)
+        bundle=write_bundle(self.folder/'monster-resources.bin',palette(self.resource_library,entry),
+                            plan,full_palette=bool(entry.get('boss')))
+        self.command('loadfile',self.base)
+        self.entry=entry;self.target=entry.get('main_slot',0x580) if entry.get('boss') else 0x580
+        self.neutral_scene=True;self.arena_room=0;self.elapsed=0
+        self.arena_collision_ready=False
+        self.lua.eval('for a=0x580,0xebf do mainmemory.write_u8(a,0) end '
+                      'for a=0x1200,0x127f do mainmemory.write_u8(a,0) end '
+                      'for a=0x13a0,0x13b5 do mainmemory.write_u8(a,255) end')
+        pointer=self.word(0,0xd81b)
+        for _ in range(1024):
+            if self.word(5,pointer)==0xffff:break
+            pointer+=6
+        else:raise RuntimeError('Neutrale Spawnliste hat keinen Abschluss.')
+        self.write({0x94:pointer,0x96:pointer,0x88:self.quest,0xb8:0,
+                    0x84:self.bytes[0x8000+((0xa88f+entry['room'])&0x7fff)]+16*self.quest})
+        self.resource_plan=plan
+        self.command('enemy_resources',bundle)
+        if self.resource_plan:
+            for block in self.resource_plan['blocks']:
+                self.write({0x13a0+block['slot']*2:block['pointer']&65535})
+        self.prepare_arena()
+
+    def spawn_neutral(self,entry,count=1):
+        if entry.get('boss'):
+            arena=self.arena_enabled;self.arena_enabled=False
+            try:spawn_boss(self,entry,neutral=True)
+            finally:self.arena_enabled=arena
+            return self.snapshot()
+        self.enter_neutral(entry)
+        t=entry['type'];hit=self.word(1,0xab00+t*2);difficulty=self.read(0x84)
+        for n in range(max(1,min(8,count))):
+            base=0x580+n*0x40
+            self.write({base+0x10:t,base+0x14:entry['variant'],base+0xa:160+n*30,base+0xe:128,
+                        base+2:0x8018 if entry['flags']&0x8000 else 0,
+                        base+0x28:hit&255,base+0x2a:hit>>8,
+                        base+0x26:self.resource_plan['tile_add'].get(t,0),
+                        base+6:min(0x7fff,self.word(1,0xac00+t*2)+difficulty),
+                        base+0x2e:self.word(1,0xad00+t*2)})
+        snapshot=self.step(4)
+        for _ in range(48):
+            if any(a['type']==t for a in snapshot['actors']):break
+            snapshot=self.step(1)
+        return snapshot
+
     def spawn(self,entry,count=1):
+        if self.arena_enabled:return self.spawn_neutral(entry,count)
+        self.neutral_scene=False
+        return self._spawn_original(entry,count)
+
+    def _spawn_original(self,entry,count=1):
         if entry.get('boss'):
             arena=self.arena_enabled;self.arena_enabled=False
             try:return spawn_boss(self,entry)
             finally:self.arena_enabled=arena
-        if self.arena_enabled and entry['type']==0x7f:
-            # Room62's tall scene needs its original camera-driven streaming
-            # to finish before replacing collision RAM with the neutral grid.
-            self.arena_enabled=False
-            try:self.spawn(entry,count)
-            finally:self.arena_enabled=True
-            self.arena_room=0
-            self.write({self.target+0xa:160,self.target+0xe:128})
-            return self.step(4)
-        if self.arena_enabled and entry['type']==0x31:
-            # The first $31 placement is inside room17's automatic transition.
-            # Use its real room18 placement (05:9128) for the graphics loader.
-            entry=dict(entry,room=18,x=248,y=184,flags=0xf8,record=0x9128)
         self.command('loadfile',self.base)
         self.write({0x86:entry['room'],0x70:3,0x88:self.quest})
-        if self.arena_enabled:
-            # Stop at the first playable field, before room-specific exits can
-            # send the inherited player position into a neighbouring room.
-            for _ in range(180):
-                play.advance(self.lua,1)
-                if self.read(0x70)==5 and self.read(0x3c)==0:break
-            else:raise RuntimeError('Der Grafikraum wurde nicht vollständig geladen.')
-            # Retain the loaded graphics, then use the quiet first-room script
-            # context. Later rooms have doors, auto-scroll and boss triggers.
-            self.arena_room=0;self.entry=entry
-            self.prepare_arena()
-        else:play.advance(self.lua,100)
+        play.advance(self.lua,100)
         x,y=entry['x'],entry['y']
         self.camera(x-160,y-176)
         self.write({0x54a:max(32,x-72),0x54e:y})
-        if self.arena_enabled:self.step(24)
-        else:play.advance(self.lua,32)
+        play.advance(self.lua,32)
         # The retail loader has supplied the room's actual graphics, palette,
         # collision data and $13A0 resource list. Initialize like $00:D6F0.
         group=self.word(1,0xa900+entry['type']*3)
@@ -257,12 +301,10 @@ class NativeSession:
         pointer=self.word(0,0xd81b+entry['room']*2)
         while self.word(5,pointer)!=0xffff:pointer+=6
         self.write({0x94:pointer,0x96:pointer})
-        # The workshop's neutral stage is centred on the native camera, not on
-        # a far-away level-record position which the retail culler would remove.
+        # Offline original-context extraction retains native world positions.
         self.camera(x-160,y-176)
         self.write({0x54a:x-64,0x54e:y})
         t=entry['type'];hit=self.word(1,0xab00+t*2)
-        if self.arena_enabled and t!=0x2a:x,y=160,128;self.prepare_arena()
         difficulty=self.read(0x84)
         for n in range(max(1,min(8,count))):
             base=0x580+n*0x40

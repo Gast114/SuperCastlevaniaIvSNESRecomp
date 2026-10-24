@@ -10,6 +10,10 @@ Stand: 22. Oktober 2026.
 Links einen **Code** wählen, zum Beispiel **M-0012**, dann **Spawnen / neu starten**.
 Einen eigenen Namen kannst du bei **Dein Name** eintragen und speichern.
 
+Beim Spawnen wird jetzt kein Herkunftslevel mehr gestartet. Monster und Bosse
+laufen im gemeinsamen neutralen Testraum. Die Originalfarben werden beim ersten
+Start einmalig vorbereitet und danach wiederverwendet.
+
 Original und Redesign laufen nebeneinander auf neutralem Boden. **Ziel links/rechts**
 beeinflusst die Original-KI. Rechts stehen Gesundheit, Kontaktschaden, Trefferbox
 und weitere Live-Werte. Unter Gehen, Springen, Angriff und Sterben findest du die
@@ -31,15 +35,15 @@ Arbeitsordner: `D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Gegner\We
 PNGs meist 387×387 Pixel: ganze transparente Leinwand behalten, nicht zuschneiden.
 Die ZIP entpacken und später im HD-Import als Gegnerprojekt verwenden.
 
-45 von 46 normalen Codes wurden in der neutralen Szene sichtbar geprüft.
-M-007F braucht noch einen stabilen Grafikkontext.
+Alle 47 aktuell auswählbaren normalen Codes wurden in der neutralen Szene sichtbar geprüft.
+Auch M-007F funktioniert jetzt ohne seinen bisherigen Level-Umweg.
 Die alte Skelett-Sammlung unter `Gegner\02_Skelette_Alle_Aktionen` bleibt erhalten.
 Weitere Hinweise: `docs\ENEMY_WORKSHOP.md`.
 
 ### Bosse in der Werkstatt
 
 Werkstatt schließen und über `Gegner_Werkstatt_starten.cmd` neu starten.
-**Bosse / Originalszene** einschalten und einen Boss-Code auswählen.
+**Bosse** einschalten und einen Boss-Code auswählen.
 Die Bossgrafiken werden vollständig geladen; Kamera und Spielerziel bleiben
 stabil. Beim ersten Start werden die alten Bossvorlagen automatisch aktualisiert.
 Deine schon bearbeiteten PNGs bleiben erhalten.
@@ -47,6 +51,10 @@ Deine schon bearbeiteten PNGs bleiben erhalten.
 Bei **M-0081** ist der große Mode7-Körper jetzt in Bewegung sichtbar.
 Sein HD-Körperbild ist noch nicht austauschbar; die anderen PNG-Teile schon.
 Einzelne Bossaktionen sind noch nicht zugeordnet und stehen bei **Noch zuordnen**.
+
+Monster später in anderen Levels zu verwenden, ist durch diese Trennung
+vorbereitet. Ein Platzierungseditor und der Einbau in die Spiellevels folgen
+separat; deine bestehenden Level wurden dafür noch nicht geändert.
 
 ## Menügröße auf deinem 4K-Bildschirm
 

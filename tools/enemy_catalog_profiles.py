@@ -78,6 +78,8 @@ def hold_boss_stage(session,entry):
     Call immediately before every native step batch, like the ordinary
     workshop's hero-position controls. This does not alter any boss field.
     """
+    if getattr(session,'neutral_scene',False):
+        session.prepare_arena();return
     # Boss motion must not teleport its target or drag the arena camera along.
     # The original AI uses world positions and its own collision/scene data.
     origin=max(0,entry['x']-128)
@@ -87,7 +89,7 @@ def hold_boss_stage(session,entry):
                    0x70:5,0x86:entry['room']})
 
 
-def spawn_boss(session,entry):
+def spawn_boss(session,entry,neutral=False):
     """Start a retail boss through its own asset-loading controller.
 
     Uses an isolated NativeSession. Executes the original graphics loader and
@@ -96,22 +98,22 @@ def spawn_boss(session,entry):
     initializer; neither is a complete standalone profile yet.
     """
     import sciv_play as play
-    session.command('loadfile',session.base)
-    session.write({0x86:entry['room'],0x70:3,0x88:session.quest})
-    for _ in range(900):
-        play.advance(session.lua,1)
-        if session.read(0x70)==5 and session.read(0x3c)==0:break
-    else:raise RuntimeError('Der Boss-Grafikraum wurde nicht vollständig geladen.')
-    pointer=session.word(0,0xd81b+entry['room']*2)
-    for _ in range(1024):
-        if session.word(5,pointer)==0xffff:break
-        pointer+=6
-    else:raise RuntimeError('Bossraum hat keinen gültigen Spawn-Abschluss.')
-    # Stop the level streamer before it creates its own boss controller. The
-    # old generic spawn primed a second one while graphics were still loading.
-    session.write({0x94:pointer,0x96:pointer})
-    session.lua.eval('for a=0x580,0xebf do mainmemory.write_u8(a,0) end')
-    session.entry=entry;session.target=entry.get('main_slot',0x580);session.elapsed=0
+    if neutral:session.enter_neutral(entry)
+    else:
+        session.command('loadfile',session.base)
+        session.write({0x86:entry['room'],0x70:3,0x88:session.quest})
+        for _ in range(900):
+            play.advance(session.lua,1)
+            if session.read(0x70)==5 and session.read(0x3c)==0:break
+        else:raise RuntimeError('Der Boss-Grafikraum wurde nicht vollständig geladen.')
+        pointer=session.word(0,0xd81b+entry['room']*2)
+        for _ in range(1024):
+            if session.word(5,pointer)==0xffff:break
+            pointer+=6
+        else:raise RuntimeError('Bossraum hat keinen gültigen Spawn-Abschluss.')
+        session.write({0x94:pointer,0x96:pointer})
+        session.lua.eval('for a=0x580,0xebf do mainmemory.write_u8(a,0) end')
+        session.entry=entry;session.target=entry.get('main_slot',0x580);session.elapsed=0
     # Allow the room's palette/VRAM work to settle before running state0 once.
     session.step(24)
     session.write({0x590:0x2a,0x594:entry['controller_variant'],0x58a:entry['x'],0x58e:entry['y'],0x592:0})

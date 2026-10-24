@@ -89,7 +89,7 @@ class MonsterWorkshop:
         scrollbar=ttk.Scrollbar(left,command=self.picker.yview);self.picker.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side='right',fill='y');self.picker.pack(fill='both',expand=True)
         self.picker.bind('<<TreeviewSelect>>',self.choose)
-        ttk.Checkbutton(left,text='Bosse / Originalszene',variable=self.show_bosses,command=self.refresh_monsters).pack(anchor='w',pady=6)
+        ttk.Checkbutton(left,text='Bosse',variable=self.show_bosses,command=self.refresh_monsters).pack(anchor='w',pady=6)
         ttk.Label(left,text='Dein Name').pack(anchor='w');ttk.Entry(left,textvariable=self.name).pack(fill='x')
         ttk.Button(left,text='Namen speichern',command=self.save_name).pack(fill='x',pady=5)
         ttk.Label(left,text='Variante').pack(anchor='w')
@@ -156,7 +156,7 @@ class MonsterWorkshop:
         ttk.Button(right,text='HD-Paket erstellen',command=self.build_pack).pack(fill='x',pady=4)
         ttk.Button(right,text='Arbeitsordner öffnen',command=lambda:os.startfile(self.workspace.folder)).pack(fill='x',pady=4)
         ttk.Label(outer,textvariable=self.status,wraplength=round(1400*scale)).pack(anchor='w',pady=(8,0))
-        self.worker=Worker(self.commands,self.events,rom,build,arena=True);self.worker.start()
+        self.worker=Worker(self.commands,self.events,rom,build,arena=True,library=library);self.worker.start()
         root.protocol('WM_DELETE_WINDOW',self.close);root.after(50,self.tick)
 
     def send(self,kind,**values):self.commands.put(dict(kind=kind,**values))
@@ -240,6 +240,7 @@ class MonsterWorkshop:
         live_mode='New Game+' if stats['live_quest'] else 'Normal' if stats['live_quest']==0 else '—'
         self.stats.set(f'{code(self.entry["type"])} · V-{self.entry.get("variant",0):02X}\n\n'
             f'Live-Szene: {live_mode}\nGesundheit aktuell: {value("current_hp")}\nGrundwert: {value("base_hp")}\n'
+            'Werte mit Originalzuschlag des Herkunftsraums\n'
             f'Raumzuschlag Normal / NG+: {normal["room_bonus"]} / {plus["room_bonus"]+plus["quest_bonus"]}\n'
             'HP: interne Schadenseinheiten\nKontakt: Spieler-Lebenspunkte\n\n'
             f'Trefferbox: {value("hitbox_width")} × {value("hitbox_height")} px\nZustand: {value("state")}\n'
@@ -247,8 +248,8 @@ class MonsterWorkshop:
             (f'{stats["speed_x"]:.2f} / {stats["speed_y"]:.2f}' if stats['speed_x'] is not None else '—'))
         self.notes.set(ai_notes(self.entry))
         self.context.set(self.snapshot['context_error'] if self.snapshot.get('context_error') else
-            'Boss: feste Testkamera und geschütztes Spielerziel im ursprünglichen Kollisionsraum.' if self.entry.get('boss') else
-            'Neutrale Arena: flacher Boden und Seitenwände. Ziel links/rechts versetzt das Spielerziel für die Original-KI.\n\n'
+            'Boss im neutralen Testraum: Grafiken und Original-KI werden ohne Herkunftslevel gestartet. Feste Testkamera und geschütztes Spielerziel.' if self.entry.get('boss') else
+            'Neutraler Testraum ohne Herkunftslevel: flacher Boden und Seitenwände. Ziel links/rechts versetzt das Spielerziel für die Original-KI.\n\n'
             'Grau deaktivierte Aktionen sind noch ungeprüft. Springen und Angriff fehlen bei manchen Monstern tatsächlich; eine leere Gruppe behauptet das nicht.')
         supported=actions(self.entry)
         for group,button in self.buttons.items():

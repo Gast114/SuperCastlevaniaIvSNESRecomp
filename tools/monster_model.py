@@ -46,7 +46,7 @@ def ai_notes(entry):
         if t in (0x11,0x69):text+=' Diese Variante verursacht Kontaktschaden und hat keine eigene Wurfaktion.'
         return text
     if entry.get('boss'):
-        text='Originale Boss-KI mit ihrer ursprünglichen Kollision, fester Kamera und geschütztem Spielerziel. Körper, Geschosse und Hilfsteile bleiben zusammen. Die einzelnen Angriffs- und Todeszustände sind noch nicht vollständig zugeordnet.'
+        text='Originale Boss-KI im neutralen Testraum, mit fester Kamera und geschütztem Spielerziel. Körper, Geschosse und Hilfsteile bleiben zusammen. Manche Routinen haben feste Bewegungsgrenzen. Die einzelnen Angriffs- und Todeszustände sind noch nicht vollständig zugeordnet.'
         if t==0x81:text+=' Der Mode7-Körper wird nativ in beiden Ansichten gezeigt; seine HD-Textur kann noch nicht ersetzt werden. OBJ-Teile sind bearbeitbar.'
         return text
     return 'Die Original-KI läuft in der Testszene. Die genaue Bedeutung ihrer Zustände und getrennte Sprung-/Angriffsauslöser sind für diesen Code noch nicht geprüft. „Natürlich“ zeigt den echten Ablauf.'

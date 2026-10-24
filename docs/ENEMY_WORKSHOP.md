@@ -11,6 +11,8 @@ neu geladen.
    gehören unter denselben Code. Im Feld **Dein Name** kannst du selbst einen
    Namen vergeben und speichern.
 2. **Spawnen / neu starten** setzt das Monster in die neutrale Testszene.
+   Das Herkunftslevel wird dabei nicht gestartet. Grafiken, Farben und Original-KI
+   werden unabhängig davon bereitgestellt.
    **Ziel links/rechts** versetzt das Spielerziel, auf das die Original-KI
    reagiert. Die Vorschau zeigt einen flachen Boden mit echten Kollisionen.
 3. Die Reiter **Gehen / Bewegen**, **Springen**, **Angriff** und **Sterben**
@@ -53,8 +55,10 @@ Kontaktschaden Spieler-Lebenspunkte. Nicht alle Werte werden pauschal erhöht.
 Originalberechnung: Grundwert aus `01:AC00 + Typ*2` plus Raumzuschlag aus
 `01:A88F + Raum`; New Game+ addiert dazu **16**. Die Gesundheit wird bei
 `32767` begrenzt. Spätere Räume haben schon im Normalspiel einen Zuschlag von
-16, beispielsweise 64 → 80 statt 48 → 64. Die Werkstatt verwendet den tatsächlich
-geladenen Grafikkontext. Bei ungeprüfter Bossgesundheit bleibt die Anzeige leer.
+16, beispielsweise 64 → 80 statt 48 → 64. Der Wertevergleich verwendet weiterhin
+den Originalzuschlag des Herkunftsraums; dieser wird dafür nicht geladen. Der
+neutrale Testraum und das Werteprofil sind getrennt. Bei ungeprüfter
+Bossgesundheit bleibt die Anzeige leer.
 
 Beleg: `00:D3FA..D40E` berechnet aus Questflag `0088` die Schwierigkeit `0084`;
 `00:D74E..D75C` addiert sie zur Spawn-Gesundheit. Der aktuelle Wert steht in
@@ -117,18 +121,20 @@ Originalabläufen und belegten ROM-Posen. Der aktuelle Umfang steht in
 eines vollständigen Aktionskatalogs. Die Monsteransicht trennt Körper, Geschosse und
 Umgebungsobjekte; die frühere gemischte Sprite-Auswahl ist nicht mehr der Start.
 
-Im kurzen neutralen Test wurden 45 von 46 normalen Monster-Codes sichtbar.
-M-007F braucht noch eine stabile Übernahme seines vertikalen Grafikkontexts.
-Ungültige Werte werden dort ausgeblendet und die Szene angehalten. Die Angriffs-
+Im kurzen neutralen Start-/Bewegungstest wurden alle 47 normalen Monster-Codes
+sichtbar, einschließlich M-007F. Das direkte Laden seiner Ressourcen umgeht den
+bisher instabilen vertikalen Herkunftskontext. Die Angriffs-
 und Sprungauslöser der weiteren Familien sowie ihre Geschosszuordnungen müssen
 noch einzeln geprüft werden. Neue Todesposen werden bei **Sterben** gespeichert.
 
-**Bosse / Originalszene** blendet zwölf vorbereitete Bossprofile ein. Sie laufen
-mit Original-KI und ihrer ursprünglichen Kollision. Die Werkstatt hält die Kamera
+**Bosse** blendet zwölf vorbereitete Bossprofile ein. Sie laufen ebenfalls im
+neutralen Testraum, ohne ihr Herkunftslevel zu laden. Ihre Originalcontroller
+laden nur die benötigten Bossressourcen. Die Werkstatt hält die Kamera
 und schützt das Spielerziel vor Tod und unbeabsichtigtem Raumwechsel. Beim Spawn
 wartet sie auf vollständige Grafikübertragung und das erste sichtbare Teil.
-Die Figur wird nicht mehr vom Vorschaurahmen verfolgt; Körper und Geschosse
-bleiben dadurch im selben Raumbezug.
+Die Figur wird nicht vom Vorschaurahmen verfolgt; Körper und Geschosse bleiben
+im selben Raumbezug. Manche Bossroutinen verwenden feste Weltkoordinaten oder
+Bewegungsgrenzen; die Werkstatt berücksichtigt ihren ursprünglichen Ursprung.
 
 M-0081 zeichnet seinen großen Körper als Mode7-Hintergrund. Dieser Körper ist
 jetzt in beiden Ansichten in echter Bewegung sichtbar. Seine HD-Texturzuordnung
@@ -141,19 +147,51 @@ Vorhandene Zeichnungen und Original-PNGs werden erhalten. Alte Bosszuordnungen
 bleiben im internen Verlauf, werden aber nicht erneut als aktuelle Vorlagen
 übernommen. Bossprofile versprechen keinen vollständigen Angriff-/Todeskatalog.
 
+## Grundlage für Monster in anderen Levels
+
+Grafikressourcen sind jetzt vom Herkunftslevel getrennt. `enemy_resources.py`
+plant die benötigten Grafikplätze einer Monsterfamilie samt bekannten Kindern,
+teilt gleiche Ressourcen und weist eine Überschreitung des nativen Speichers ab.
+Der native Import übernimmt ausschließlich deklarierte Grafik- und Farbbereiche.
+Damit muss ein späterer Level-Spawner keine fremde Levelszene laden.
+
+Ein Platzierungseditor oder Änderungen an den bestehenden Spiellevels gehören
+noch nicht dazu. Für gleichzeitig gemischte Familien müssen Grafikplätze und
+Paletten gemeinsam verwaltet werden. Bei Bossen müssen außerdem feste
+Bewegungsgrenzen, Spezialeffekte, die gemeinsame Bosssteuerung und der
+Levelabschluss pro Verwendung geprüft werden. Normale Monster und Bosse in
+anderen Levels sind das Ziel dieser Trennung, kein bereits vollständiger Editor.
+
 ## Getrennte Laufzeit und technische Prüfung
 
 Die eigene Lua-EXE und ihre Spielstände liegen unter
 `artwork-local/enemy-workshop/session-*`. Die ROM und die Spielstände des
-normalen Spiels werden nicht geändert. Die neutrale Szene ersetzt beide
-privaten 64×64-Kollisionskarten durch Luft, Boden und Seitenwände; die
-ursprüngliche Kollisionsroutine `00:CF86` bleibt aktiv. Normale Szenenskripte
-werden auf den ruhigen ersten Raum begrenzt, Grafiken vorher nativ geladen.
-M-0031 nutzt die originale Platzierung `05:9128` in Raum 18, weil sein erster
-Raum einen automatischen Übergang startet.
+normalen Spiels werden nicht geändert. Die Engine startet einmal mit einer
+gemeinsamen Basisszene. Beim Spawn wird diese zurückgesetzt und zum neutralen
+Raum eingerichtet: beide privaten 64×64-Kollisionskarten bekommen Luft, Boden
+und Seitenwände. Die ursprüngliche Kollisionsroutine `00:CF86` bleibt aktiv.
+Die Herkunftsszene eines Monsters wird nicht gestartet. Auch M-0031 und M-007F
+brauchen dafür keine Sonderumwege über ihre Levels mehr.
 
-Die neutrale Kollisionskarte gilt für gewöhnliche Monster. Bosse behalten ihren
-Originalraum. Controller `02:9346` lädt dessen Grafik und wartet in `02:93B6`
+Normale Grafiken werden direkt aus der ROM entpackt (`02:864A..87C5`): Zeiger
+`01:A900`, Platzbedarf `01:AA80`, Slotzuordnung `01:A8D4`/`01:A8EA` und
+`$13A0` nach `00:D7CC`. Gemeinsame Streams können länger sein als eine Variante
+benötigt; geladen wird deren deklarierter Präfix. Der Grafikimport validiert alle
+Spannen vor der ersten Änderung und beschränkt sie auf OBJ `$6A00..7FFF`.
+Objektfarben werden zugleich im PPU und im nativen Palette-Puffer (`$48`,
+normalerweise `$2200`) gesetzt. Hintergrundgrafik, OAM und CPU-Zustand werden
+dabei nicht übernommen.
+
+Originalfarben liegen separat unter `artwork-local/enemy-library/resources`.
+`prepare_monster_resources.py --ensure` übernimmt vorhandene gemessene Paletten
+ohne Emulator. Fehlt ein belegter Farbkontext, wird er einmalig bei der
+Vorbereitung erfasst; beim Live-Spawn gibt es dafür keinen Rückfall auf einen
+Herkunftslevelstart. Der alte Originalraum-Loader bleibt für solche
+Offline-Aufnahmen und den alten internen Client erhalten. Bei eigener
+Bibliothek: `--library <Ordner>`.
+
+Auch Bosse starten in der gemeinsamen neutralen Szene. Controller `02:9346`
+lädt ihre Grafik unabhängig vom Raum und wartet in `02:93B6`
 auf `$1A12 == 0`. `$1A12` ist der Zustand des Grafikladers (DP `$1A00`), kein
 Musikflag; vorzeitiges Löschen hatte VRAM-Übertragungen abgebrochen. Die Werkstatt
 verkürzt nur den Actor-Countdown. Sprite-Beobachtungen erfolgen nach der nativen
@@ -164,6 +202,10 @@ sichtbare Teile und mehrdeutige OAM-Zuordnungen werden weiter abgewiesen.
 `python tools/test_monster_workshop.py` prüft die echten Tk-Bedienfunktionen,
 Sprung, Wurf, Tod, Werte, Pause, Live-PNG-Wechsel und Export ohne Bildbetrachter.
 `tools/test_enemy_library.py` prüft Quellen, Cache und Erhalt der Arbeits-PNGs.
+`python tools/test_enemy_resources.py` vergleicht direkt entpackte ROM-Grafiken
+mit zuvor unabhängig aufgenommenem nativem VRAM und prüft Grafikplatzplanung.
+`python tools/test_neutral_monsters.py` verbietet Herkunftsraum-Ladevorgänge und
+prüft die echten neutralen Spawns, Mode7, Palette-Puffer und atomaren Grafikimport.
 `python tools/check_boss_workshop.py --fields 480` prüft die zwölf Bosse über
 RAM, native OBJ-Zuordnungen und Mode7-Pixelprüfsummen, ohne Bilder anzusehen.
 Gespeicherte Messungen können mit `--verify-existing <Ordner>` geprüft werden.

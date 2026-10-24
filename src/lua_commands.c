@@ -24,10 +24,12 @@
 #include "character_pack.h"
 #include "enemy_pack.h"
 #include "workshop_capture.h"
+#include "enemy_resources.h"
 #include "cpu_state.h"
 #include "snes/ppu.h"
 
 extern Ppu *g_ppu;
+extern unsigned char g_ram[0x20000];
 
 static int Cv4LuaSlot(const char *args, int *slot)
 {
@@ -42,6 +44,7 @@ static int Cv4LuaSlot(const char *args, int *slot)
 static int Cv4LuaCommand(const char *name, const char *args, char *result, size_t capacity)
 {
     int slot;
+    if(!strcmp(name,"enemy_resources"))return Cv4EnemyResources(g_ppu,g_ram,args,result,capacity);
     if(!strcmp(name,"enemy_surface")) {
         int ok=Cv4WorkshopCaptureSave(args);
         snprintf(result,capacity,ok?"Native Mode7 workshop surface saved":"No active Mode7 boss surface");return ok;
