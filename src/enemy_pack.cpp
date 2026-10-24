@@ -105,28 +105,63 @@ void initialize(){
  }catch(const std::exception&e){capture=false;status=std::string("References preserved; capture disabled: ")+e.what();}
  if(!selection.empty()){active=load(selection);status="Loaded enemy pack "+selection;}
 }
-bool readActor(Ppu*p,const uint8_t*r,unsigned base,const std::set<int>&claimed,Capture&c,std::vector<Part>&parts,int&xbase,int&ybase,unsigned&flip){
+bool readActor(Ppu*p,const uint8_t*r,unsigned base,const std::set<int>&claimed,Capture&c,std::vector<Part>&parts,int&xbase,int&ybase,unsigned&flip,int shiftX=0,int shiftY=0){
  c.type=word(r,base+0x10);c.pose=word(r,base);if(!rom||c.pose<0x8000||!c.type||c.type==0x0e)return false;
  unsigned a=0x20000+(c.pose&0x7fff);if(a>=romSize)return false;unsigned count=rom[a];if(!count||count>32||a+1+count*4>romSize)return false;
- xbase=(int16_t)(word(r,base+0xa)-word(r,0x1c));ybase=(int16_t)((word(r,base+0xe)-word(r,0x1e))&word(r,0x13de));flip=word(r,base+4);
+ xbase=(int16_t)(word(r,base+0xa)-word(r,0x1c))+shiftX;ybase=(int16_t)((word(r,base+0xe)-word(r,0x1e))&word(r,0x13de))+shiftY;flip=word(r,base+4);
  unsigned add=word(r,base+0x26),priority=word(r,base+2);std::set<int> used=claimed;parts.clear();
  for(unsigned i=0;i<count;++i){unsigned o=a+1+i*4;uint16_t tile=word(rom,o+2);int size=tile&0x2000?16:8,x=(int8_t)rom[o],y=(int8_t)rom[o+1];
   x=xbase+((flip&0x4000)?-x-size:x);y=ybase+((flip&0x8000)?-y-size:y);tile=(tile|0x2000)^flip;if(priority&0x8000)tile=(tile&0xcfff)|((priority*2&255)<<8);tile+=add;
   // Require every component, including clipped offscreen pieces. Partial
   // metasprites must not consume an unrelated matching OBJ or hide originals.
   int found=-1;for(int slot=0;slot<128;++slot)if(!used.count(slot)&&ox(p,slot)==x&&(p->oam[slot*2]>>8)==(y&255)&&p->oam[slot*2+1]==tile&&os(p,slot)==size){found=slot;break;}
-  if(found<0||x<-64||x>320)return false;parts.push_back({found,x,y,size,tile,i});used.insert(found);
+  if(found<0) {
+   // A clipped boss limb may have no OAM entry. Only the workshop may recover
+   // fully offscreen components from its exact native descriptor and VRAM.
+   // Visible missing components remain a failed match; game replacement stays strict.
+   if(!workshop || (x+size>0&&x<256&&y+size>0&&y<224))return false;
+   found=128;
+  } else if(x<-64||x>320)return false;
+  parts.push_back({found,x,y,size,tile,i});if(found<128)used.insert(found);
  }
+ if(std::none_of(parts.begin(),parts.end(),[](const Part&p){return p.slot<128;}))return false;
  for(const auto &part:parts){
   int dx=part.x-xbase,dy=part.y-ybase;
   if(flip&0x4000)dx=-dx-part.size;if(flip&0x8000)dy=-dy-part.size;
   if(dx < -Anchor || dy < -Anchor || dx+part.size>Anchor || dy+part.size>Anchor){c.size=MaxCell;c.anchor=MaxCell/2;}
  }
  c.pixels.assign(c.size*c.size,0);
- std::vector<uint8_t> indices(c.size*c.size);bool visible=false;std::sort(parts.begin(),parts.end(),[](const Part&a,const Part&b){return a.slot>b.slot;});
+ std::vector<uint8_t> indices(c.size*c.size);bool visible=false;
+ bool clipped=std::any_of(parts.begin(),parts.end(),[](const Part&p){return p.slot==128;});
+ std::sort(parts.begin(),parts.end(),[clipped](const Part&a,const Part&b){return clipped?a.index>b.index:a.slot>b.slot;});
  for(const auto&a:parts)for(int y=0;y<a.size;++y)for(int x=0;x<a.size;++x){int dx=a.x+x-xbase,dy=a.y+y-ybase;if(flip&0x4000)dx=-dx-1;if(flip&0x8000)dy=-dy-1;dx+=c.anchor;dy+=c.anchor;if(dx<0||dy<0||dx>=c.size||dy>=c.size)return false;
   unsigned v=texel(p,a,x,y);if(v){indices[dy*c.size+dx]=(uint8_t)v;c.pixels[dy*c.size+dx]=rgba(p->cgram[128+((a.attr>>9)&7)*16+v]);if(a.x+x>=0&&a.x+x<256&&a.y+y>=0&&a.y+y<224)visible=true;}}
  if(!visible)return false;uint64_t h=14695981039346656037ull;for(auto v:indices){h^=v;h*=1099511628211ull;}c.id=key(c.type,c.pose,h);return true;
+}
+bool readBossOam(Ppu*p,const uint8_t*r,unsigned base,const std::set<int>&claimed,Capture&c,std::vector<Part>&parts,int&x,int&y,unsigned&flip) {
+ // Some boss routines emit their OAM before moving the actor. Recover the
+ // draw position only when the native descriptor has one unambiguous complete
+ // OAM match close to RAM. No approximate image or position is manufactured.
+ unsigned type=word(r,base+0x10),pose=word(r,base);
+ if(!rom||!workshop||type<0x80||type>0x8d||pose<0x8000)return false;
+ unsigned at=0x20000+(pose&0x7fff);if(at+5>romSize||!rom[at]||rom[at]>32)return false;
+ unsigned f=word(r,base+4),priority=word(r,base+2);uint16_t tile=word(rom,at+3);int size=tile&0x2000?16:8;
+ int dx=(int8_t)rom[at+1],dy=(int8_t)rom[at+2];if(f&0x4000)dx=-dx-size;if(f&0x8000)dy=-dy-size;
+ tile=(tile|0x2000)^f;if(priority&0x8000)tile=(tile&0xcfff)|((priority*2&255)<<8);tile+=word(r,base+0x26);
+ int expectedX=(int16_t)(word(r,base+0xa)-word(r,0x1c)),expectedY=(int16_t)((word(r,base+0xe)-word(r,0x1e))&word(r,0x13de));
+ std::set<std::pair<int,int>> candidates;
+ for(int slot=0;slot<128;++slot)if(!claimed.count(slot)&&p->oam[slot*2+1]==tile&&os(p,slot)==size) {
+  int sx=ox(p,slot)-dx-expectedX,sy=int(p->oam[slot*2]>>8)-dy-expectedY;
+  while(sy>128)sy-=256;while(sy<-128)sy+=256;
+  if(std::abs(sx)<=16&&std::abs(sy)<=16)candidates.insert({sx,sy});
+ }
+ unsigned matches=0;Capture chosen;std::vector<Part> selected;int cx=0,cy=0;unsigned cf=0;
+ for(auto shift:candidates){Capture trial;std::vector<Part> found;int tx,ty;unsigned tf;
+  if(readActor(p,r,base,claimed,trial,found,tx,ty,tf,shift.first,shift.second)){
+   ++matches;chosen=std::move(trial);selected=std::move(found);cx=tx;cy=ty;cf=tf;
+  }
+ }
+ if(matches!=1)return false;c=std::move(chosen);parts=std::move(selected);x=cx;y=cy;flip=cf;return true;
 }
 }
 extern "C" void Cv4EnemyInit(const uint8_t*r,unsigned n){rom=r;romSize=n;havePrevious=false;}
@@ -138,7 +173,8 @@ extern "C" void Cv4EnemyBegin(Ppu*p,const uint8_t*r){
   std::ostringstream observed;observed<<"{\"tick\":"<<ticks<<",\"actors\":[";bool comma=false;
   if(p->hostObjPixels)for(int s=0;s<128;++s)if(p->hostObjMask[s>>3]&(1u<<(s&7)))claimed.insert(s);
   if(visible)for(unsigned base=0x580;base<0xec0&&frameCount<MaxActors;base+=0x40){Capture c;std::vector<Part> parts;int x,y;unsigned flip;
-   bool matched=readActor(p,r,base,claimed,c,parts,x,y,flip);if(!matched&&havePrevious){c={};matched=readActor(p,previous.data(),base,claimed,c,parts,x,y,flip);}if(!matched)continue;
+   bool matched=readActor(p,r,base,claimed,c,parts,x,y,flip);if(!matched&&havePrevious){c={};matched=readActor(p,previous.data(),base,claimed,c,parts,x,y,flip);}
+   if(!matched){c={};matched=readBossOam(p,r,base,claimed,c,parts,x,y,flip);}if(!matched)continue;
    for(const auto&a:parts)claimed.insert(a.slot);
    if(capture&&(workshop||captureTypes.count(c.type)||c.type==2)&&captured.size()<MaxFrames&&captured.insert(c.id).second)writer.submit(c);
    if(workshop) {
@@ -171,7 +207,7 @@ extern "C" void Cv4EnemyBegin(Ppu*p,const uint8_t*r){
    if(frameCount>=MaxActors)break;
    const auto &selectedParts=replacement.second;
    const auto&a=*replacement.first;unsigned f=(flip&0x4000?1:0)|(flip&0x8000?2:0);auto &host=hosts[frameCount];host={};host.x=x-(f&1?a.dw-a.ax:a.ax);host.y=y-(f&2?a.dh-a.ay:a.ay);host.width=host.stride=a.dw;host.height=a.dh;host.pixels=a.proxies[f].data();host.oamSlot=127;
-   for(const auto&part:selectedParts){host.mask[part.slot>>3]|=1u<<(part.slot&7);host.oamSlot=std::min(host.oamSlot,(uint8_t)part.slot);}auto attr=selectedParts[0].attr;host.priority=SPRITE_PRIO_TO_PRIO((attr>>12)&3,(attr&0x800)==0)<<8;
+   for(const auto&part:selectedParts)if(part.slot<128){host.mask[part.slot>>3]|=1u<<(part.slot&7);host.oamSlot=std::min(host.oamSlot,(uint8_t)part.slot);}auto attr=selectedParts[0].attr;host.priority=SPRITE_PRIO_TO_PRIO((attr>>12)&3,(attr&0x800)==0)<<8;
    frames[frameCount]={a.pixels.data(),host.x,host.y,a.w,a.h,a.dw,a.dh,f,host.priority,(uint16_t)c.type,(uint16_t)c.pose,host.oamSlot,revision,a.id.c_str()};++frameCount;
    }
   }
@@ -187,4 +223,5 @@ extern "C" const char *Cv4EnemyStatus(void){return status.c_str();}
 extern "C" int Cv4EnemyCapturing(void){return capture;}
 extern "C" const char *Cv4EnemySelection(void){return selection.c_str();}
 extern "C" const char *Cv4EnemyObservation(void){return observation.c_str();}
+extern "C" int Cv4EnemyWorkshop(void){return workshop;}
 extern "C" int Cv4EnemyCommand(const char*s){try{if(!initialized)initialize();std::string c=s?s:"";if(c=="flush"){writer.flush();status="Enemy references saved";}else if(c=="workshop on"){workshop=true;capture=true;status="Native workshop capture enabled";}else if(c=="workshop off"){workshop=false;status="Workshop capture disabled";}else if(c=="capture on"){capture=true;status="Enemy pilot capture enabled";}else if(c=="capture off"){capture=false;status="Enemy capture disabled";}else if(c=="reload"){if(!selection.empty())active=load(selection);++revision;status="Reloaded enemy pack";}else if(c.rfind("pack ",0)==0){auto name=c.substr(5);Pack next=load(name);active=std::move(next);selection=name;++revision;std::ofstream("enemy_packs/selected.txt")<<name;status="Loaded enemy pack "+name;}else if(c=="off"){active={};selection.clear();++revision;std::ofstream("enemy_packs/selected.txt");status="Native enemies";}else if(c!="status")throw std::runtime_error("enemy: status, capture on/off, pack <name>, reload, off");return 1;}catch(const std::exception&e){status=e.what();return 0;}}

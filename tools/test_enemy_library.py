@@ -172,7 +172,10 @@ class LibraryTests(unittest.TestCase):
                            frame_ids=[], main_frame_ids=[], child_frame_ids=[], status='missing', captured_fields=1,
                            requested_fields=1, capture_complete=True,
                            coverage_complete=False, coverage_note='Test cache contains only selected recorded profiles.')
+            else:row.update(entry)
             self.index['profiles'].append(row)
+        self.index['run_complete']=True
+        library._index_summary(self.index)
         write(self.destination/'library.json', self.index)
         with patch.object(library, 'discover_sources', return_value=[self.normal_subset, self.boss_subset]), \
              patch.object(library.NativeSession, 'start', side_effect=AssertionError('Warm cache started native capture')) as start:
@@ -182,6 +185,35 @@ class LibraryTests(unittest.TestCase):
         self.assertFalse(result['coverage_complete'])
         self.assertFalse(result['summary']['coverage_complete'])
         self.assertEqual({row['key'] for row in result['profiles'] if not row.get('preview_only')}, {library.profile_key(entry) for entry in entries})
+
+    def test_boss_revision_retires_bad_mappings_and_preserves_artwork(self):
+        workspace=Workspace(self.folder/'workspace');workspace.load_library(self.destination)
+        row=next(p for p in self.profiles if p.get('boss'))
+        artist=workspace.folder/'artwork'/workspace.frames[row['frame_ids'][0]]['image']
+        before=sha(artist)
+        record=self.folder/'old-recording.json';write(record,{'old_native_capture':True})
+        row['recordings']=[str(record)];row['context']={'obsolete':True};row['rom_frame_ids']=row['frame_ids'][:]
+        raw=(ROOT/'Super Castlevania IV (USA).sfc').read_bytes()
+        probe=NativeSession.__new__(NativeSession);probe.bytes=raw
+        entry=next(e for e in boss_profiles(probe) if e['type']==row['type'])
+        current=library.refresh_profile(copy.deepcopy(row),entry,self.destination)
+        self.assertEqual(current['native_setup_revision'],library.BOSS_SETUP_REVISION)
+        self.assertFalse(current['frame_ids']);self.assertNotIn('context',current)
+        self.assertNotIn('capture_complete',current);self.assertNotIn('rom_frame_ids',current)
+        archived=current['legacy_captures'][0]
+        self.assertEqual(archived['frame_ids'],row['frame_ids'])
+        self.assertEqual(Path(archived['recordings'][0]).read_bytes(),record.read_bytes())
+        self.index['profiles']=[current if p.get('boss') else p for p in self.profiles]
+        write(self.destination/'library.json',self.index);workspace.load_library(self.destination)
+        self.assertEqual(sha(artist),before)
+        self.assertEqual(workspace.frames_for(row['key']),[])
+        for frame in self.boss:self.assertTrue((self.destination/'native-template'/frame['reference']).is_file())
+        ordinary=self.profiles[0]
+        self.assertIs(library.refresh_profile(ordinary,{'type':17,'variant':0},self.destination),ordinary)
+        complete={'profiles':boss_profiles(probe)}
+        self.assertTrue(library.boss_cache_current(complete))
+        complete['profiles'][0]['native_setup_revision']=0
+        self.assertFalse(library.boss_cache_current(complete))
 
     def test_cancelled_profile_keeps_real_field_count_and_is_not_a_warm_cache_hit(self):
         """Replay real recorded actor fields, with native boot deliberately stubbed.

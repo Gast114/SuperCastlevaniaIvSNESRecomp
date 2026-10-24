@@ -111,6 +111,27 @@ def main():
         assert len(app.trees['Noch zuordnen'].get_children())>0
         assert 'noch nicht geprüft' in app.notes.get()
         passed('Other monsters spawn with their stats; unverified action mappings stay explicitly disabled')
+        app.show_bosses.set(True);app.refresh_monsters()
+        app.picker.selection_set('M-0081');app.choose()
+        wait(lambda:bool(app.snapshot.get('boss_surface')),timeout=70)
+        app.single_step();spin(.5)
+        snapshot=copy.deepcopy(app.snapshot)
+        without=dict(snapshot);without.pop('boss_surface')
+        native=preview(snapshot,app.workspace,False,(512,448)).tobytes()
+        assert native!=preview(without,app.workspace,False,(512,448)).tobytes()
+        assert native==preview(snapshot,app.workspace,True,(512,448)).tobytes()
+        assert snapshot['arena']['boss'] and 'HD-Textur' in app.notes.get()
+        assert app.trees['Noch zuordnen'].get_children()
+        tick=snapshot['tick'];spin(.3);assert app.snapshot['tick']==tick
+        passed('Mode7 boss body and OBJ parts render together in both views; pause holds the same native field')
+        app.picker.selection_set('M-008B');app.choose()
+        wait(lambda:app.snapshot.get('live_stats',{}).get('actor_type')==9 and app.snapshot.get('target')==0xd80,timeout=70)
+        assert app.snapshot['live_stats']['present']
+        app.preview_mode.set('New Game+');app.change_mode()
+        wait(lambda:app.snapshot.get('live_stats',{}).get('quest')==1 and app.snapshot.get('target')==0xd80,timeout=70)
+        app.preview_mode.set('Normal');app.change_mode()
+        wait(lambda:app.snapshot.get('live_stats',{}).get('quest')==0 and app.snapshot.get('target')==0xd80,timeout=70)
+        passed('Boss alias uses its real main slot; Normal/NG+ switches restart the original boss scene')
         report['passed']=True
     finally:
         app.close();deadline=time.monotonic()+20

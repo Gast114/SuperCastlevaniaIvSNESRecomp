@@ -42,6 +42,7 @@ set(SNESRECOMP_EXECUTION_DEFAULT "on" CACHE STRING
 include(${SNESRECOMP_ROOT}/runner/runner.cmake)
 
 add_executable(SuperCastlevaniaIvSNESRecomp
+    src/workshop_capture.cpp
     ${SNESRECOMP_RUNNER_SOURCES}
     src/main.c
     src/host_contract.c

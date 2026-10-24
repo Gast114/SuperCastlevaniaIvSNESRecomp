@@ -4,6 +4,49 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## Boss-Werkstatt: Grafikladen und stabile Originalszene (24.10.)
+
+Nutzer meldete fehlerhafte Bosse. Hauptursache: spawn_boss hatte $1A12 als
+Musikwarteflag gelöscht und Controllerzustand2 erzwungen. $1A12 ist aber der
+Grafikladerstatus im DP-Block1A00 (02810E/0282C7), abgewartet in0293B6.
+Originalcontroller2A jetzt Zustand0 starten, nur Countdown+24 verkürzen,
+Grafiktransfer und Übergang natürlich fertig laufen lassen. Raum zuerst vollständig
+laden, Streamer am echten FFFF-Abschluss anhalten, keine doppelten Controller.
+80 benutzt den belegten Raum7 samt Controllervariante80 statt Ersatzraum4.
+
+Private Bosskamera an Raumursprung halten, Spielerziel invulnerabel, Phase5 und
+Raum festhalten, keine neutrale Boss-Kollision erfinden. Erstes sichtbares Teil
+vor Spawn-Rückgabe abwarten; originale Einleitungen können lange Pose0 haben.
+Native Beobachtung jetzt nach NMI/OAM in GameDrawPpuFrame. Nur Werkstatt:
+vollständig unsichtbare Teile aus exaktem Deskriptor/VRAM ergänzen; bei um bis16px
+versetzten Bossroutinen nur eine eindeutige vollständige OAM-Geometrie akzeptieren.
+Normales Spiel behält strikte Matchbedingungen und bisherigen Hookzeitpunkt.
+
+Neue workshop_capture.cpp: native Mode7-BG1-Pixel je Scanline nach IRQ/HDMA,
+Index0 transparent; Oberfläche reist als PNG-Bytes im selben Snapshot mit OBJ.
+81 jetzt sichtbar in beiden Ansichten, seine HD-BG-Texturzuordnung bleibt offen.
+Bossauxfamilie01..0D gehört zusammen ($B8-Dispatch), 0E ist Simons Waffe.
+Live-Hauptwerte nach konfiguriertem Slot, insbesondere8B → Typ09 / Slot0D80.
+Bossposen/Teile ohne semantischen Beleg unter Noch zuordnen, keine erfundene Aktion.
+
+Library native_setup_revision2 invalidiert nur alte Bossaufnahmen. Alte Metadaten
+und Aufzeichnungen unter legacy_captures/history, PNGs unverändert erhalten.
+Neue Bossaufnahmen lokal vorbereitet; normale Profile werden wiederverwendet.
+Aktuelle Bildzahlen aus library.json lesen, ältere Zahlen unten sind historisch.
+
+Prüfung ohne Bildansicht: alle12 ×480 native Felder, Raum/Phase stabil, Ziel-HP16,
+bewegte OBJ-Posen und40 unterschiedliche Mode7-Körperbilder. Messung:
+artwork-local/enemy-workshop/boss-check-n91ruq7a/verified-report.json.
+Zusätzlicher120-Felder-Starttest86/8A nach Wartefix vollständig sichtbar:
+boss-check-lrhdnw4y/report.json. Tk-Prüfung inklusive Mode7, Pause und Boss8B
+Normal/NG+: monster-check-xmczxvfu/report.json. Unabhängiger Export vergleicht
+IDs und alle RGBA-Pixel für07/12/85: pose-export-21tvb1g0/report.json.
+Renderer15Checks inkl. Clipping/eindeutige/mehrdeutige OAM-Zuordnung bestanden.
+Library9Tests inklusive Revisionsmigration/PNG-Erhalt: library-check-p00z14ho.
+Arbeitsbibliothek aktualisiert; SHA256 aller5592 vorher vorhandenen Artist-/
+Referenzdateien unverändert: boss-check-n91ruq7a/artist-preservation.json.
+Release mit und ohne Lua kompiliert. Keine Original-ROM/Save-/Artistdaten in Git.
+
 ## Monsterwerte: Normal / New Game+ und spätere eigene Modi (24.10.)
 
 Nutzer möchte beide Originaldurchgänge separat sehen und später eigene Modi mit

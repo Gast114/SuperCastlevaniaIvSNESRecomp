@@ -11,6 +11,7 @@ import shutil
 import tempfile
 import time
 from enemy_workshop_native import NativeSession,ROOT
+from enemy_catalog_profiles import BOSS_SETUP_REVISION,BOSS_TYPES
 
 DEFAULT_LIBRARY=ROOT/'artwork-local/enemy-library'
 ROM_SHA256='0ef6f4cce5a2273fa49fe1ce724e0048a8e39c91da6b00dbb693fe1ba909177d'
@@ -30,6 +31,41 @@ def profile_key(entry):
 
 def load_library(path=DEFAULT_LIBRARY):
     path=Path(path);return _read(path/'library.json' if path.is_dir() or path.suffix!='.json' else path)
+
+
+def boss_cache_current(index):
+    rows={p['type']:p for p in index.get('profiles',[]) if p.get('boss')}
+    return BOSS_TYPES<=rows.keys() and all(rows[t].get('native_setup_revision',0)>=BOSS_SETUP_REVISION for t in BOSS_TYPES)
+
+
+def refresh_profile(row,entry,destination):
+    """Invalidate obsolete native boss captures without changing any PNG.
+
+    Old mappings and recordings stay available in history; they must not be
+    reused as current boss templates after a graphics-loader correction.
+    """
+    if row is None:return None
+    revision=entry.get('native_setup_revision',0)
+    if row.get('native_setup_revision',0)<revision:
+        history=Path(destination)/'history';history.mkdir(exist_ok=True)
+        archived=dict(row)
+        archived['recordings']=[]
+        for record in row.get('recordings',[]):
+            source=Path(record)
+            if not source.is_file():continue
+            digest=hashlib.sha256(source.read_bytes()).hexdigest()[:16]
+            target=history/(row['key']+'-'+digest+'.json')
+            if not target.exists():shutil.copy2(source,target)
+            archived['recordings'].append(str(target))
+        previous=list(row.get('legacy_captures',[]));archived.pop('legacy_captures',None)
+        previous.append(archived)
+        row=dict(entry,key=row['key'],main_type=entry.get('main_type',entry['type']),
+                 frame_ids=[],main_frame_ids=[],child_frame_ids=[],poses=[],recordings=[],
+                 legacy_captures=previous,status='not_captured',captured_fields=0,coverage_complete=False)
+    else:
+        # Catalog metadata may improve without requiring another native run.
+        row.update(entry)
+    return row
 
 def discover_sources():
     sources=[]
@@ -154,7 +190,7 @@ def build_library(destination=DEFAULT_LIBRARY,rom=None,build=None,fields=240,pro
         raise ValueError('Original-USA-ROM passt nicht zur Spritebibliothek.')
     cached=_read(destination/'native-template/enemies.json')
     intact=bool(cached.get('frames')) and all((destination/'native-template'/f['reference']).is_file() for f in cached['frames'])
-    if existing.get('run_complete') and existing.get('capture_fields',0)>=fields and intact:
+    if existing.get('run_complete') and existing.get('capture_fields',0)>=fields and intact and boss_cache_current(existing):
         if progress:progress({'stage':'cached','profiles':len(existing.get('profiles',[]))})
         return existing
     merged=merge_sources(destination,discover_sources(),progress)
@@ -189,7 +225,7 @@ def build_library(destination=DEFAULT_LIBRARY,rom=None,build=None,fields=240,pro
         known=merged['frames']
         for entry in catalog:
             key=profile_key(entry);main,children=_families(entry)
-            row=old.get(key)
+            row=refresh_profile(old.get(key),entry,destination)
             if row is None:
                 # Shared normal actor keys are reusable; a boss alias must be
                 # assigned from that boss's observed recording, not all type09.

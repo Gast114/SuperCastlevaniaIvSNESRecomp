@@ -111,9 +111,10 @@ normale KI zurückkehren. Geteilte Bilder dürfen zu mehreren Aktionen gehören.
 
 ## Umfang und verbleibende Kontexte
 
-Der interne Vorrat enthält 3.697 native Bild-/Teil-Zuordnungen aus gemessenen
-Originalabläufen und belegten ROM-Posen. Diese Zahl ist kein Nachweis eines
-vollständigen Aktionskatalogs. Die Monsteransicht trennt Körper, Geschosse und
+Der interne Vorrat enthält native Bild-/Teil-Zuordnungen aus gemessenen
+Originalabläufen und belegten ROM-Posen. Der aktuelle Umfang steht in
+`artwork-local/enemy-library/library.json` unter `summary`; er ist kein Nachweis
+eines vollständigen Aktionskatalogs. Die Monsteransicht trennt Körper, Geschosse und
 Umgebungsobjekte; die frühere gemischte Sprite-Auswahl ist nicht mehr der Start.
 
 Im kurzen neutralen Test wurden 45 von 46 normalen Monster-Codes sichtbar.
@@ -122,10 +123,23 @@ Ungültige Werte werden dort ausgeblendet und die Szene angehalten. Die Angriffs
 und Sprungauslöser der weiteren Familien sowie ihre Geschosszuordnungen müssen
 noch einzeln geprüft werden. Neue Todesposen werden bei **Sterben** gespeichert.
 
-**Bosse (experimentell)** blendet Bossprofile gesondert ein. Sie verwenden ihre
-originalen Szenenskripte; eine allgemeine neutrale Boss-Kollisionsfläche fehlt.
-M-0081 benötigt BG/Mode7; M-0082 und M-008D haben noch keinen vorbereiteten
-Startablauf. Bossprofile versprechen keine vollständigen Aktionen.
+**Bosse / Originalszene** blendet zwölf vorbereitete Bossprofile ein. Sie laufen
+mit Original-KI und ihrer ursprünglichen Kollision. Die Werkstatt hält die Kamera
+und schützt das Spielerziel vor Tod und unbeabsichtigtem Raumwechsel. Beim Spawn
+wartet sie auf vollständige Grafikübertragung und das erste sichtbare Teil.
+Die Figur wird nicht mehr vom Vorschaurahmen verfolgt; Körper und Geschosse
+bleiben dadurch im selben Raumbezug.
+
+M-0081 zeichnet seinen großen Körper als Mode7-Hintergrund. Dieser Körper ist
+jetzt in beiden Ansichten in echter Bewegung sichtbar. Seine HD-Texturzuordnung
+ist noch offen; die OBJ-Teile lassen sich schon als PNG bearbeiten. M-0082 und
+M-008D haben weiterhin keinen vorbereiteten Startablauf. Ungeprüfte Bossposen
+liegen unter **Noch zuordnen**, auch bei Hilfsteilen und Geschossen.
+
+Beim nächsten Start aktualisiert der Launcher veraltete Bossaufnahmen automatisch.
+Vorhandene Zeichnungen und Original-PNGs werden erhalten. Alte Bosszuordnungen
+bleiben im internen Verlauf, werden aber nicht erneut als aktuelle Vorlagen
+übernommen. Bossprofile versprechen keinen vollständigen Angriff-/Todeskatalog.
 
 ## Getrennte Laufzeit und technische Prüfung
 
@@ -138,9 +152,21 @@ werden auf den ruhigen ersten Raum begrenzt, Grafiken vorher nativ geladen.
 M-0031 nutzt die originale Platzierung `05:9128` in Raum 18, weil sein erster
 Raum einen automatischen Übergang startet.
 
+Die neutrale Kollisionskarte gilt für gewöhnliche Monster. Bosse behalten ihren
+Originalraum. Controller `02:9346` lädt dessen Grafik und wartet in `02:93B6`
+auf `$1A12 == 0`. `$1A12` ist der Zustand des Grafikladers (DP `$1A00`), kein
+Musikflag; vorzeitiges Löschen hatte VRAM-Übertragungen abgebrochen. Die Werkstatt
+verkürzt nur den Actor-Countdown. Sprite-Beobachtungen erfolgen nach der nativen
+NMI/OAM-Übertragung. Vollständig außerhalb des Bilds liegende Teile dürfen nur
+in der Werkstatt aus dem exakten Originaldeskriptor ergänzt werden; fehlende
+sichtbare Teile und mehrdeutige OAM-Zuordnungen werden weiter abgewiesen.
+
 `python tools/test_monster_workshop.py` prüft die echten Tk-Bedienfunktionen,
 Sprung, Wurf, Tod, Werte, Pause, Live-PNG-Wechsel und Export ohne Bildbetrachter.
 `tools/test_enemy_library.py` prüft Quellen, Cache und Erhalt der Arbeits-PNGs.
+`python tools/check_boss_workshop.py --fields 480` prüft die zwölf Bosse über
+RAM, native OBJ-Zuordnungen und Mode7-Pixelprüfsummen, ohne Bilder anzusehen.
+Gespeicherte Messungen können mit `--verify-existing <Ordner>` geprüft werden.
 Andere Arbeitsordner: `python tools/monster_workshop.py --workspace "D:/Mein Ordner"`.
 Optional sind `--rom`, `--build` und `--library` verfügbar. ROM und exportierte
 Originalbilder bleiben lokal.

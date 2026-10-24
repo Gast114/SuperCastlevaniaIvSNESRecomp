@@ -32,9 +32,21 @@ PNGs meist 387×387 Pixel: ganze transparente Leinwand behalten, nicht zuschneid
 Die ZIP entpacken und später im HD-Import als Gegnerprojekt verwenden.
 
 45 von 46 normalen Codes wurden in der neutralen Szene sichtbar geprüft.
-M-007F braucht noch einen stabilen Grafikkontext; Bosse sind separat experimentell.
+M-007F braucht noch einen stabilen Grafikkontext.
 Die alte Skelett-Sammlung unter `Gegner\02_Skelette_Alle_Aktionen` bleibt erhalten.
 Weitere Hinweise: `docs\ENEMY_WORKSHOP.md`.
+
+### Bosse in der Werkstatt
+
+Werkstatt schließen und über `Gegner_Werkstatt_starten.cmd` neu starten.
+**Bosse / Originalszene** einschalten und einen Boss-Code auswählen.
+Die Bossgrafiken werden vollständig geladen; Kamera und Spielerziel bleiben
+stabil. Beim ersten Start werden die alten Bossvorlagen automatisch aktualisiert.
+Deine schon bearbeiteten PNGs bleiben erhalten.
+
+Bei **M-0081** ist der große Mode7-Körper jetzt in Bewegung sichtbar.
+Sein HD-Körperbild ist noch nicht austauschbar; die anderen PNG-Teile schon.
+Einzelne Bossaktionen sind noch nicht zugeordnet und stehen bei **Noch zuordnen**.
 
 ## Menügröße auf deinem 4K-Bildschirm
 

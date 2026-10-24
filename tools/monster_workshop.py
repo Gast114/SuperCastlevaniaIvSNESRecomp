@@ -89,7 +89,7 @@ class MonsterWorkshop:
         scrollbar=ttk.Scrollbar(left,command=self.picker.yview);self.picker.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side='right',fill='y');self.picker.pack(fill='both',expand=True)
         self.picker.bind('<<TreeviewSelect>>',self.choose)
-        ttk.Checkbutton(left,text='Bosse (experimentell)',variable=self.show_bosses,command=self.refresh_monsters).pack(anchor='w',pady=6)
+        ttk.Checkbutton(left,text='Bosse / Originalszene',variable=self.show_bosses,command=self.refresh_monsters).pack(anchor='w',pady=6)
         ttk.Label(left,text='Dein Name').pack(anchor='w');ttk.Entry(left,textvariable=self.name).pack(fill='x')
         ttk.Button(left,text='Namen speichern',command=self.save_name).pack(fill='x',pady=5)
         ttk.Label(left,text='Variante').pack(anchor='w')
@@ -247,7 +247,7 @@ class MonsterWorkshop:
             (f'{stats["speed_x"]:.2f} / {stats["speed_y"]:.2f}' if stats['speed_x'] is not None else '—'))
         self.notes.set(ai_notes(self.entry))
         self.context.set(self.snapshot['context_error'] if self.snapshot.get('context_error') else
-            'Boss: ursprünglicher Szenenkontext, neutrale Kollisionsfläche noch offen.' if self.entry.get('boss') else
+            'Boss: feste Testkamera und geschütztes Spielerziel im ursprünglichen Kollisionsraum.' if self.entry.get('boss') else
             'Neutrale Arena: flacher Boden und Seitenwände. Ziel links/rechts versetzt das Spielerziel für die Original-KI.\n\n'
             'Grau deaktivierte Aktionen sind noch ungeprüft. Springen und Angriff fehlen bei manchen Monstern tatsächlich; eine leere Gruppe behauptet das nicht.')
         supported=actions(self.entry)

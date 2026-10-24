@@ -26,6 +26,8 @@ def main():
             mapped.append(dict(frame,image=frame['reference']))
         (dest/'enemies.json').write_text(json.dumps({'version':1,'frames':mapped}))
     checks=subprocess.run([str(exe),'verify'],cwd=work,check=True,capture_output=True,text=True).stdout
+    edge_dir=work/'edge-cases';edge_dir.mkdir()
+    checks+=subprocess.run([str(exe),'edges'],cwd=edge_dir,check=True,capture_output=True,text=True).stdout
     (work/'report.json').write_text(json.dumps({'passed':True,'real_game_coverage':False,'checks':(first+checks).splitlines()},indent=2)+'\n')
     print(work);print(first+checks)
 

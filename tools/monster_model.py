@@ -45,7 +45,10 @@ def ai_notes(entry):
         if t==0x12:text+=' Der Angriff besteht aus Ausholen, Abwurf und Ausklang; dabei erzeugt die KI ein echtes Geschoss (Typ 0002).'
         if t in (0x11,0x69):text+=' Diese Variante verursacht Kontaktschaden und hat keine eigene Wurfaktion.'
         return text
-    if entry.get('boss'):return 'Originaler Bossablauf mit eigenem Szenenskript. Eine frei steuerbare neutrale Bossarena und die Bedeutungen aller Zustände sind noch nicht zugeordnet.'
+    if entry.get('boss'):
+        text='Originale Boss-KI mit ihrer ursprünglichen Kollision, fester Kamera und geschütztem Spielerziel. Körper, Geschosse und Hilfsteile bleiben zusammen. Die einzelnen Angriffs- und Todeszustände sind noch nicht vollständig zugeordnet.'
+        if t==0x81:text+=' Der Mode7-Körper wird nativ in beiden Ansichten gezeigt; seine HD-Textur kann noch nicht ersetzt werden. OBJ-Teile sind bearbeitbar.'
+        return text
     return 'Die Original-KI läuft in der Testszene. Die genaue Bedeutung ihrer Zustände und getrennte Sprung-/Angriffsauslöser sind für diesen Code noch nicht geprüft. „Natürlich“ zeigt den echten Ablauf.'
 
 
@@ -70,7 +73,8 @@ def frame_groups(entry,workspace,extra_ids=()):
     ids.update(extra_ids);t=entry['type'];main=entry.get('main_type',t)
     output={name:[] for name in GROUPS}
     recorded=workspace.data.get('monster_actions',{}).get(profile_key(entry),{})
-    for frame in workspace.frames.values():
+    preferred=set(extra_ids)
+    for frame in sorted(workspace.frames.values(),key=lambda f:f['id'] not in preferred):
         if frame['id'] not in ids:continue
         actor=frame['actor_type'];pose=frame['pose'];group=None
         if frame['id'] in recorded.get('Sterben',[]):output['Sterben'].append(frame)
@@ -81,7 +85,7 @@ def frame_groups(entry,workspace,extra_ids=()):
             elif actor==2 and t==0x12 and pose in BONES:group='Angriff'
             else:continue
         elif actor==main:group='Noch zuordnen'
-        elif actor in entry.get('child_types',[]):group='Angriff'
+        elif actor in entry.get('child_types',[]):group='Noch zuordnen' if entry.get('boss') else 'Angriff'
         if group and frame not in output[group]:output[group].append(frame)
     if t in (0x12,0x31,0x56):output['Springen']=list(output['Gehen / Bewegen'])
     return output

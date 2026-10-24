@@ -263,7 +263,7 @@ static void Cv4BeginSimFrame(unsigned number)
         PpuSetWidescreenLayerWorldMirrorBand(g_ppu, 1, 0, 224, 0, 0xffff);
     }
     Cv4CharacterBegin(g_ppu, g_ram);
-    Cv4EnemyBegin(g_ppu, g_ram);
+    if(!Cv4EnemyWorkshop())Cv4EnemyBegin(g_ppu, g_ram);
     /* Cutscenes drawn as one 256-pixel picture get designed margin columns
      * (assets/widescreen_margins.txt) instead of whatever else their map holds. */
     Cv4MarginFillApply(g_ppu, Cv4SceneName(scene));

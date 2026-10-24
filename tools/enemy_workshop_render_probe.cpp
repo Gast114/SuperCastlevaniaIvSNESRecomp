@@ -9,6 +9,7 @@
 #include <cstring>
 #include <memory>
 #include <vector>
+#include <string>
 extern "C" int Cv4HdEnabled(void){return 1;}
 extern "C" unsigned Cv4HdLayerMask(void){return 31;}
 static void put(std::vector<uint8_t>&r,unsigned a,unsigned v){r[a]=v;r[a+1]=v>>8;}
@@ -22,6 +23,20 @@ int main(int argc,char**argv){
  p->renderFlags=kPpuRenderFlags_NewRenderer;p->oam[20]=48|(120<<8);p->oam[21]=0x2000;p->oam[22]=192|(120<<8);p->oam[23]=0x2002;p->highOam[2]=0xa0;
  p->cgram[129]=31;for(int tile=0;tile<20;++tile)for(int y=0;y<8;++y)p->vram[tile*16+y]=0xff;
  Cv4EnemyInit(rom.data(),(unsigned)rom.size());Cv4EnemyCommand("workshop on");
+ if(argc>1&&!strcmp(argv[1],"edges")) {
+  Cv4EnemyBegin(p,ram.data());std::string full=Cv4EnemyObservation();
+  auto at=full.find("\"id\":\"")+6;auto identifier=full.substr(at,full.find('"',at)-at);
+  put(ram,0x58a,32);p->oam[20]=48|(240<<8);p->oam[22]=96|(120<<8);
+  Cv4EnemyBegin(p,ram.data());
+  check(strstr(Cv4EnemyObservation(),identifier.c_str())&&strstr(Cv4EnemyObservation(),"\"oam\":128"),"clipped offscreen part retains the complete native pose ID");
+  put(ram,0x590,0x80);put(ram,0x58a,128);p->oam[20]=48|(121<<8);p->oam[22]=192|(121<<8);
+  Cv4EnemyBegin(p,ram.data());check(strstr(Cv4EnemyObservation(),"\"y\":129"),"boss draw position follows the uniquely matching native OAM field");
+  p->oam[24]=48|(123<<8);p->oam[25]=0x2000;p->oam[26]=192|(123<<8);p->oam[27]=0x2002;p->highOam[3]=0x0a;
+  Cv4EnemyBegin(p,ram.data());check(strstr(Cv4EnemyObservation(),"\"actors\":[]"),"ambiguous boss geometry is rejected instead of guessing");
+  p->oam[24]=p->oam[26]=240<<8;p->oam[22]=240<<8;
+  Cv4EnemyBegin(p,ram.data());check(strstr(Cv4EnemyObservation(),"\"actors\":[]"),"missing visible boss component is rejected");
+  return 0;
+ }
  if(argc==1){Cv4EnemyBegin(p,ram.data());check(strstr(Cv4EnemyObservation(),"\"size\":256"),"large native actor promotes capture to 256px canvas");check(Cv4EnemyCommand("flush"),"complete and component references flushed");return 0;}
  check(Cv4EnemyCommand("pack large"),"load 1032px artwork for 256px canvas");Cv4EnemyBegin(p,ram.data());
  check(Cv4EnemyHdCount()==1,"complete large actor replaced once");auto f=Cv4EnemyHd(0);check(f&&f->width==1032&&f->displayWidth==256&&f->x==0&&f->y==0,"4.03125x large artwork keeps exact anchor and extent");

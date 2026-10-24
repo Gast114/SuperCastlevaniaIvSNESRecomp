@@ -23,6 +23,7 @@
 #include "game_performance.h"
 #include "character_pack.h"
 #include "enemy_pack.h"
+#include "workshop_capture.h"
 #include "cpu_state.h"
 #include "snes/ppu.h"
 
@@ -41,6 +42,10 @@ static int Cv4LuaSlot(const char *args, int *slot)
 static int Cv4LuaCommand(const char *name, const char *args, char *result, size_t capacity)
 {
     int slot;
+    if(!strcmp(name,"enemy_surface")) {
+        int ok=Cv4WorkshopCaptureSave(args);
+        snprintf(result,capacity,ok?"Native Mode7 workshop surface saved":"No active Mode7 boss surface");return ok;
+    }
     if(!strcmp(name,"enemy_snapshot")) {
         FILE *file=fopen(args,"wb");
         if(!file){snprintf(result,capacity,"Cannot write workshop snapshot");return 0;}

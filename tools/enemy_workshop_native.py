@@ -4,6 +4,7 @@ All guest writes, snapshots and captures live in an isolated copy. The artist's
 running game, configuration, saves and original ROM are never modified.
 """
 import json
+import base64
 import hashlib
 import socket
 import subprocess
@@ -138,7 +139,8 @@ class NativeSession:
             family.update(self.entry.get('child_types',[]))
             if self.entry['type']<128:family.add(self.bytes[0x8000+((0xae00+self.entry['type'])&0x7fff)])
             result['actors']=[a for a in result['actors'] if a['type'] in family]
-            main=next((a for a in result['actors'] if a['type']==self.entry.get('main_type',self.entry['type'])),None)
+            main=next((a for a in result['actors'] if a['type']==self.entry.get('main_type',self.entry['type']) and
+                       (not self.entry.get('boss') or a['slot']==self.entry.get('main_slot',a['slot']))),None)
             if main:self.target=main['slot']
             result['target']=self.target
             if getattr(self,'arena_enabled',False) and not self.entry.get('boss'):
@@ -149,13 +151,23 @@ class NativeSession:
                 f'mainmemory.read_u16_le({self.target}+0x18),mainmemory.read_u16_le({self.target}+0x1a),'
                 f'mainmemory.read_u16_le({self.target}+0x1c),mainmemory.read_u16_le({self.target}+0x1e),'
                 f'mainmemory.read_u16_le({self.target}+0x10),mainmemory.read_u16_le(0x84),'
-                f'mainmemory.read_u16_le(0x88)')['values']
+                f'mainmemory.read_u16_le(0x88),mainmemory.read_u16_le(0x1c),'
+                f'mainmemory.read_u16_le(0x1e),mainmemory.read_u16_le(0x54a)')['values']
             values=list(map(int,values))
             signed=lambda v:v-65536 if v>=32768 else v
             result['live_stats']=dict(hp=values[0],state=values[1],x=values[2],y=values[3],half_width=values[4],half_height=values[5],
                                       speed_x=signed(values[7])+values[6]/65536,speed_y=signed(values[9])+values[8]/65536,
                                       actor_type=values[10],present=values[10]==self.entry.get('main_type',self.entry['type']),
                                       difficulty=values[11],quest=values[12],source_room=self.entry['room'])
+            if self.entry.get('boss'):
+                result['arena']={'floor':200-values[14],'target_x':values[15]-values[13],
+                                 'target_y':176-values[14],'boss':True}
+                if self.arena_enabled and self.entry['type']==0x81:
+                    surface=self.folder/'boss-surface.png'
+                    self.command('enemy_surface',surface)
+                    # The exact field travels with its OBJ snapshot; reusing a
+                    # mutable file path would mix two animation times in the UI.
+                    result['boss_surface']=base64.b64encode(surface.read_bytes()).decode('ascii')
             if self.arena_enabled and not self.entry.get('boss') and values[10]>0x8d:
                 result['context_error']=f'M-{self.entry["type"]:04X}: Grafik-/Szenenkontext noch nicht stabil. Bitte ein anderes Monster wählen.'
                 result['live_stats']={'present':False}
@@ -175,10 +187,18 @@ class NativeSession:
                     0x70:5,0x86:self.arena_room,0xb8:0,0x552:0,0x558:0,0x55a:0,0x55c:0,0x55e:0,0x13f4:16})
 
     def step(self,frames=1):
-        if getattr(self,'entry',{}).get('boss'):hold_boss_stage(self,self.entry)
+        if getattr(self,'entry',{}).get('boss'):
+            for _ in range(frames):
+                # Leave suspended native room/graphics initialization alone.
+                # Its DP blocks are distinct from the normal scene context.
+                if self.read(0x3c)==0:hold_boss_stage(self,self.entry)
+                play.advance(self.lua,1)
+            self.elapsed+=frames
+            return self.snapshot()
         elif getattr(self,'entry',None) and self.arena_enabled:
             for _ in range(frames):
-                self.prepare_arena();play.advance(self.lua,1)
+                if self.read(0x3c)==0:self.prepare_arena()
+                play.advance(self.lua,1)
             self.elapsed+=frames
             return self.snapshot()
         play.advance(self.lua,frames);self.elapsed+=frames

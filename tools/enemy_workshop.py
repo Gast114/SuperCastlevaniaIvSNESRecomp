@@ -1,5 +1,7 @@
 """Separate desktop enemy workshop using the original engine, not GIF playback."""
 import argparse
+import base64
+import io
 import json
 import os
 from pathlib import Path
@@ -47,6 +49,10 @@ def preview(snapshot,workspace,custom,size,follow=True,background='#19212c'):
         x=round(arena['target_x']*zoom);y=round(arena['target_y']*zoom)
         draw.rectangle((x-6*zoom,y-12*zoom,x+6*zoom,y+12*zoom),outline='#7089a3',width=max(1,round(zoom)))
         draw.text((8,8),'KI-Ziel',fill='#aab9c9')
+    if snapshot.get('boss_surface'):
+        with Image.open(io.BytesIO(base64.b64decode(snapshot['boss_surface']))) as loaded:
+            surface=loaded.convert('RGBA').resize((max(1,round(256*zoom)),max(1,round(224*zoom))),Image.Resampling.NEAREST)
+        image.alpha_composite(surface,(0,0))
     def paste(identifier,actor,edited=False):
         source=workspace.image(identifier,edited)
         if source is None:return

@@ -43,6 +43,7 @@
 #include "campaign2.h"
 #include "character_pack.h"
 #include "enemy_pack.h"
+#include "workshop_capture.h"
 #include "hd_collect.h"
 #include "scene.h"
 #include "game_performance.h"
@@ -249,7 +250,11 @@ void GameDrawPpuFrame(void)
     Dma *dma = g_snes->dma;
     int trigger;
     int line, ch;
+    /* Workshop observations use this field's completed NMI/OAM transfer,
+     * rather than mixing new actor RAM with the previous field's objects. */
+    if(Cv4EnemyWorkshop())Cv4EnemyBegin(g_ppu,g_ram);
     Cv4HdRenderBegin(g_ppu);
+    Cv4WorkshopCaptureBegin(g_ppu,g_ram);
 
     /* Re-arm HDMA from the last $420C (HDMAEN) the guest wrote — typically
      * during the NMI just run. The framework records it for exactly this. */
@@ -291,6 +296,7 @@ void GameDrawPpuFrame(void)
         if (water_edge) g_ppu->vScroll[1] = 0;
         Cv4HdRecordLine(g_ppu, line);
         ppu_runLine(g_ppu, line);
+        Cv4WorkshopCaptureLine(g_ppu,line);
         Cv4HdRenderLine(g_ppu, line);
         if (water_edge) g_ppu->vScroll[1] = bg2_v;
     }
