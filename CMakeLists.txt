@@ -44,6 +44,7 @@ include(${SNESRECOMP_ROOT}/runner/runner.cmake)
 add_executable(SuperCastlevaniaIvSNESRecomp
     src/workshop_capture.cpp
     src/enemy_resources.cpp
+    src/level_editor.cpp
     ${SNESRECOMP_RUNNER_SOURCES}
     src/main.c
     src/host_contract.c

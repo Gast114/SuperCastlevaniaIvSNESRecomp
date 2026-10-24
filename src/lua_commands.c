@@ -25,6 +25,7 @@
 #include "enemy_pack.h"
 #include "workshop_capture.h"
 #include "enemy_resources.h"
+#include "level_editor.h"
 #include "cpu_state.h"
 #include "snes/ppu.h"
 
@@ -44,6 +45,8 @@ static int Cv4LuaSlot(const char *args, int *slot)
 static int Cv4LuaCommand(const char *name, const char *args, char *result, size_t capacity)
 {
     int slot;
+    if(!strcmp(name,"level_project"))return Cv4LevelLoad(args,result,capacity);
+    if(!strcmp(name,"level_room")){snprintf(result,capacity,"%u",Cv4LevelRoom());return 1;}
     if(!strcmp(name,"enemy_resources"))return Cv4EnemyResources(g_ppu,g_ram,args,result,capacity);
     if(!strcmp(name,"enemy_surface")) {
         int ok=Cv4WorkshopCaptureSave(args);
@@ -129,6 +132,10 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
         int ok = Cv4CaptureVideoDump(args);
         snprintf(result, capacity, ok ? "vram+cgram+oam" : "cannot write '%s'", args);
         return ok;
+    }
+    if(!strcmp(name,"wram")) {
+        int ok=Cv4CaptureWram(args);
+        snprintf(result,capacity,ok?"128 KiB native WRAM":"Cannot write native WRAM");return ok;
     }
     if (!strcmp(name, "lines")) {
         FILE *file = fopen(args, "wb");

@@ -4,6 +4,31 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 22. Oktober 2026.
 
+## Level-Editor: eigene Räume bauen
+
+`Level_Editor_starten.cmd` doppelklicken. Eine bearbeitbare Testwelt mit zwei
+Räumen, Boden, Plattform und M-0012 wird einmalig angelegt.
+
+Rechts einen Block wählen und in die Karte zeichnen. Oben zwischen Vordergrund
+und Hintergrund wechseln. **Kollision anzeigen** zeigt begehbare/feste Bereiche.
+**Kollision → Fest/Frei** bearbeitet sie unabhängig von der Grafik.
+Für getrennte Böden vor/hinter dem Zaun gibt es **3 · Zwei Spielebenen**.
+
+**Monster**: Code wählen und platzieren. **Start** setzt Simon.
+**Ausgang** setzt eine Verbindung; unter **Auswahl / Ausgang** Zielraum,
+Zielkoordinaten und Zielebene einstellen. `up` = Hoch drücken, `touch` = berühren.
+
+**F5 / Spieltest** startet die aktuelle Karte in einem eigenen Spielfenster.
+Nach Änderungen erneut F5 drücken. **Test beenden** schließt dieses Fenster.
+**Strg+S** speichert, **Strg+Z/Y** macht Änderungen rückgängig/wiederholt sie.
+Mit Auswahl und **Strg+C/V** kopierst du Kartenbereiche. Rechtsklick nimmt
+eine Kachel auf; Mitteltaste verschiebt, Strg+Mausrad zoomt.
+
+Projekte: `artwork-local/level-editor/projects/`, Dateiendung `.sc4level.json`.
+Original-ROM und normale Spielstände bleiben erhalten. Originalkartenimport
+zunächst für horizontale Mode1-Räume; Bosse sind noch Planungsmarker.
+Weitere Grenzen und Bedienung: [LEVEL_EDITOR.md](docs/LEVEL_EDITOR.md).
+
 ## Monster-Werkstatt: Codes, Aktionen und eigene Namen
 
 `Gegner_Werkstatt_starten.cmd` startet die neue Monsteransicht.

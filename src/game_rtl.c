@@ -44,6 +44,7 @@
 #include "character_pack.h"
 #include "enemy_pack.h"
 #include "workshop_capture.h"
+#include "level_editor.h"
 #include "hd_collect.h"
 #include "scene.h"
 #include "game_performance.h"
@@ -163,6 +164,7 @@ void GameRunOneFrame(void)
     Cv4PerformanceBeforeFrame();
     Cv4CampaignBeforeFrame();
     Cv4CharacterBeforeFrame();
+    Cv4LevelBeforeFrame();
     const uint64_t frame_end = g_cpu.master_cycles + GAME_MASTER_CYCLES_PER_FRAME;
     const int booting = (g_resume_pc == 0);
     int slice;
@@ -252,6 +254,7 @@ void GameDrawPpuFrame(void)
     int line, ch;
     /* Workshop observations use this field's completed NMI/OAM transfer,
      * rather than mixing new actor RAM with the previous field's objects. */
+    Cv4LevelBeforeDraw(g_ppu);
     if(Cv4EnemyWorkshop())Cv4EnemyBegin(g_ppu,g_ram);
     Cv4HdRenderBegin(g_ppu);
     Cv4WorkshopCaptureBegin(g_ppu,g_ram);
@@ -382,6 +385,7 @@ unsigned GameFrameNumber(void)
 
 void GameSessionReset(void)
 {
+    Cv4LevelReset();
     /* Rematch / soft-return: clear anything that must not survive a new
      * session. recomp-ai-rules/NETPLAY.md §3 — sticky state that "has always
      * been fine" is the usual desync culprit, because single-player never

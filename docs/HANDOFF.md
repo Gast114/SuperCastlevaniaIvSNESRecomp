@@ -4,6 +4,61 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## Level-Editor mit nativem Spieltest (24.10.)
+
+Nutzerwunsch: eigener Level-Editor im Stil von Lunar Magic. Neue separate
+Tk-Anwendung tools/level_editor.py, Start Level_Editor_starten.cmd. Zwei
+Grafikebenen, 32px/8px-Palette, Kollision, Bereichskopie, Spiegelung, Undo/Redo,
+Räume, Startpunkt, Monster-Codes, Ausgangszonen und native Testinstanz.
+tools/level_demo.py legt die lokale Erste_Testwelt einmalig an. Projektformat
+.sc4level.json in artwork-local/level-editor/projects; keine Originaldaten in Git.
+Maße/Kollision/Objekte/Ausgangsziele validiert; atomare JSON-Speicherung.
+
+tools/level_assets.py: echte WRAM-/VRAM-Assets einmalig pro Originalraum,
+Cache mit ROM-SHA; horizontaler Mode1-Import. WRAM6000/C000 Blockdefinitionen,
+8000/E000 Metatilekarten. Metatileflip8000=horizontal,4000=vertikal,
+anders als8pxTilewort. Tileklassifikation ausC8..E4. Originalakteure aus
+vollständiger sechsByteListe05:(00:D81B+Raum*2), keine uniqueCatalog-Platzierung.
+Nicht unterstützte Spezialobjekte gezählt und angezeigt. Vertikal/Mode7-Import
+explizit abgelehnt; eigene hohe Räume funktionieren.
+
+src/level_editor.cpp: opt-in Lua level_project/level_room; inaktiver Standardpfad.
+CV4LVL1 enthält Raumheader, D400ByteVRAM-Präfix+CGRAM, beide8pxKarten und
+Collisionmaps, Actor/Exitrecords. Atomar vollständig vor Installation validiert.
+BeforeFrame füllt originalen512pxKollisionsring4000/A000 und streamt Actorplätze;
+BeforeDraw installiert Grafik und mappt64x32PPU-Ringe4000/4800 mit eigener Kamera.
+NativeObjektplätze undKI bleiben erhalten; Raum0 ist ruhiger Basiskontext.
+Original-Streamer auf tatsächlichenFFFF-Abschluss der Raum0Liste gesetzt,
+Phase5/Raum0/B8=0. Vorherige Arena-/Herkunftsraumroutinen werden nicht benutzt.
+GameSessionReset deaktiviert den Projektadapter. Keine Normalspiel-Konfigänderung.
+
+Kollisionsroutine00:CF86: AE0/2 nurBG1, AE1 BG1+BG2 nachOriginalregel,
+AE3 getrennteSpielebenen, Actor+02=8018 wähltBG1, sonstBG2. Neu erstellteRäume
+verwenden3; Import übernimmtAE. AuchAusgänge können Zielebene wählen.
+OBJ-Prioritätsflag8018 überschreibt nurPriorität12/13, NICHT Palettenbits9..11.
+
+tools/level_playtest.py: private NativeSession, ROM-direkte Monsterressourcen
+inklusive belegter Kinder/Todesobjekte, ursprünglicheParameter undRaumbonus.
+AlleProjekträume teilen derzeit11nativeOBJ-Seiten und einen kompatiblen Satz
+Originalpaletten; Konflikte vor Start mit Erklärung abweisen. Bossmarker bleiben
+planbar/speicherbar, Spieltest lehnt sie bis zum passendenSpezialadapter ab.
+EigeneKampagnen-/Modexporte, HD-Kartenansicht, Treppen/Skriptobjekte, vertikaler
+Originalimport undMode7 bleiben offen; nicht als vollständigenLunarMagic-Klon ausgeben.
+
+Bedienung/Grenzen in docs/LEVEL_EDITOR.md und einfacher MERKHILFE.md.
+tools/test_level_editor.py prüft echteTkCallbacks und Original-Engine einschließlich
+1792 Originaltilewörtern,2196Rasterpixeln ohneBildbetrachter, handgezeichnetemBoden,
+M-0012 ausfremdemRaum, Touch-/Up-Ausgängen, Kamera492/261 imhohenRaum und
+getrenntenBöden192/160 aufbeidenSpielebenen; abgeschnittenesPaket atomar abgewiesen.
+Abschließender Testlauf check-9m0e9tsp bestanden, ohneBildbetrachter.
+Originalraum1 zusätzlich importiert:2048x256,AE3,16Monster;60nativeFelder stabil.
+Regulärer undLuaBuild erfolgreich. RegulärerStartupcheck startup-check-tsqvwr9x
+mitRunAhead0/1 jeweils sichtbaremSpiel bestanden. GUI undTestfenster skalieren
+mitBildschirmgröße; beideSpielinstanzen beimSchließen sauber beendet.
+InteraktiverTest zusätzlich mitScale4/echtemResume; fehlendesAudiogerät wird
+gezielt durchNeustart ohneTon behandelt. PrivateTestkonfiguration deaktiviert
+RunAhead/Rewind, daAdapterzustandnoch nicht imNativeSnapshot enthalten ist.
+
 ## Echter neutraler Spawn und portable Monsterressourcen (24.10.)
 
 **Aktuell, Vorrang vor älteren Kontextbeschreibungen unten:** Nutzer möchte
