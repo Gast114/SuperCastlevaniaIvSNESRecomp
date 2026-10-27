@@ -4,6 +4,43 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## A02: Grasabschluss und sichtbare Gargoyle-Augen (27.10.)
+
+Nutzer zeigte drei eigene Bilder: schwebende Stangen im Spiel, Gargoyle mit
+verdeckten Augen und Photoshop-Grasabschluss. Keine weiteren Bilder geöffnet.
+Die Gitter-PNG enthält das Gras bereits: opake Bildpunkte bis etwa Welt-y=202,
+Region bis y=213. RegionAt und Overlay-Vorauswahl schnitten vorher fest bei
+Welt-y=193 ab. Für a02_kind=1 gilt jetzt die registrierte untere Regionskante
+r.y+r.h; die native Türgrenze bleibt 193. Einfahrbewegung weiterhin gemessen
+vom nativen Zaun, keine Skalierung/Ankeränderung der Gittergrafik.
+
+Die drei Gargoyle-PNGs sind Gesicht/Leuchtphasen, kein separat beweglicher
+vollständiger Körper. Importrezept hat offset_native=[3,-1], nach bestehender
+Registrierung angewendet. Alle drei Phasen gemeinsam verschoben. Nativer
+phase_probe=[1551,104] unverändert; sonst würde die native Blinkphase am neuen
+Grafikort statt an der originalen Statue gelesen. Keine Pixelbearbeitung und
+keine Änderung der Original-PNGs. Neues Paket stage-01-user-a02-v4-placement
+im Audit neu aus allen elf unveränderten Quellen gebaut.
+
+Gezielter Vorher/Nachher-Test tools/test_a02_footing.py, Bericht
+build-lua/a02-footing-3cjq_tam/report.json: F2 0/40/80/120/160, F3 mit Up
+0/40/80/120/160, Endkamera1792 (synthetische Relokation), beide Leuchtphasen
+gezielt durch echten Renderer erzwungen. Alle nativen Bilder und vollständigen
+WRAM-Dumps identisch. Neu gezeichnete Abschluss-Pixel im y193..213-Band:
+F2-160:335, F3-0:5497, Ende:3180 bei 4× und Widescreen. Rote/grüne Augen
+17/17 geprüfte Punkte sichtbar, vorher4/17 und5/17. Quelle des Vorher-Builds:
+artwork-local/a02-visual-fix-2026-10-27/before-lua (archivierte Lua-EXE aus
+vorherigem Performance-Test); Test akzeptiert --before-build ausdrücklich.
+Kein Bildviewer benutzt. Keine neue breite Performance-Testreihe, HD bleibt4×.
+
+Release und Lua-Release gebaut. Neues Paket und Release in beiden Windows-
+Spielordnern installiert, 4× beibehalten. Quellen per SHA geprüft, Saves,
+Steuerung/Config/CPU-Timing/Charakterdaten unverändert. Installationsbeleg und
+Backups unter artwork-local/a02-visual-fix-2026-10-27/install-backup; EXEs
+zusätzlich eine Ebene darüber vor Release-Build gesichert. Kein Spielerprozess
+beendet, Neustart nötig. Altes v3-Paket weiterhin vorhanden. Kein Web-Deployment.
+Fremde Browser-/Landschaftsänderungen und deren Doku nicht mitcommitten.
+
 ## A02-Performance und veraltete 10×-Vorgabe korrigiert (27.10.)
 
 Nutzer meldete etwa 30 FPS bei Bewegung/Kampf in A02 und stellte klar:

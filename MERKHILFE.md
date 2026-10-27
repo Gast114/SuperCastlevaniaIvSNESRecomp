@@ -4,6 +4,17 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Gitterabschluss und Gargoyle in A02
+
+Die Gitter-PNG enthält bereits den Grasabschluss. Der Renderer hat ihn bisher
+unten abgeschnitten. Das ist korrigiert; du musst die Stangen nicht verlängern.
+Die drei Gesichtsgrafiken des Gargoyles sitzen drei Originalpixel weiter rechts
+und einen höher, damit die Augen zwischen den Stangen sichtbar werden.
+
+Beide Windows-Spielordner verwenden das neue Paket
+`stage-01-user-a02-v4-placement`, weiterhin mit 4×. Spiel einmal vollständig
+schließen und neu starten. Deine ursprünglichen PNGs bleiben erhalten.
+
 ## A02 läuft mit der passenden HD-Auflösung
 
 Die Windows-Version verwendet jetzt **4×** für deine 4×-Bilder. Vorher wurde

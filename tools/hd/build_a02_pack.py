@@ -1,7 +1,7 @@
 """Import the user's completed A02 PNGs and retain the entrance in one collection.
 
 Only working copies are resized slightly downward to the calibrated four-pixel
-source density. The game still presents at 10x. Source artwork is never changed.
+source density. Presentation uses the artwork density. Source artwork is never changed.
 """
 import argparse
 import hashlib
@@ -98,6 +98,8 @@ def build(source, entrance, output, recipe_path=ROOT / 'assets/hd/stage_01_a02.r
     statue = recipe['gargoyle']
     for phase, name in enumerate(statue['images']):
         frame, x, y = register(load(name), statue['origin_px'])
+        dx, dy = statue.get('offset_native', [0, 0])
+        x += dx; y += dy
         emit(frame, {'layer': 1, 'x': x, 'y': y,
              'coordinates': 'world', 'wrap_x': 0, 'wrap_y': 0, 'modes': [1],
              'overlay': 1, 'priority': 28929, 'a02_kind': 3, 'phase': phase,

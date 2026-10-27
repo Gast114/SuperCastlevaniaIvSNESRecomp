@@ -11,5 +11,5 @@
     {"image": "Gitter.png", "origin_px": [0, 120], "layer": 0, "priority": 49152, "overlay": 1, "a02_kind": 1}
   ],
   "doors": {"origins": [[688, 152], [1232, 152], [1424, 152]], "size": [39, 40], "images": ["Tür-01.png", "Tür-02.png", "Tür-03.png", "Tür-04.png"]},
-  "gargoyle": {"origin_px": [6231, 321], "phase_probe": [1551, 104], "images": ["Gargoyle-01.png", "Gargoyle-02.png", "Gargoyle-03.png"]}
+  "gargoyle": {"origin_px": [6231, 321], "offset_native": [3, -1], "phase_probe": [1551, 104], "images": ["Gargoyle-01.png", "Gargoyle-02.png", "Gargoyle-03.png"]}
 }

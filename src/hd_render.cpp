@@ -765,7 +765,9 @@ Sample RegionAt(Ppu *p, int x, int line, unsigned layer, const PpuTileSource *na
             if (r.wrapY) wy = Wrap(wy, r.wrapY);
         }
         if(r.a02Kind==1||r.a02Kind==2) {
-            if(wy>=193)continue;
+            // The authored fence includes its grass footing below the
+            // retail gate's floor. Retain that apron while the posts rise.
+            if(wy>=(r.a02Kind==1?r.y+r.h:193))continue;
             wy-=sceneFenceOffset;
         }
         int px = wx - r.x, py = wy - r.y;
@@ -862,7 +864,7 @@ bool GatherSceneLine(Ppu *p, int line) {
         if(pack.a02&&r.world&&!r.screen) {
             int cx=sceneCameraX+Wrap(int(p->hScroll[r.layer])-sceneCameraX+512,1024)-512;
             int cy=line+sceneCameraY+Wrap(int(p->vScroll[r.layer])-sceneCameraY+512,1024)-512;
-            if(r.a02Kind==1||r.a02Kind==2){if(cy>=193)continue;cy-=sceneFenceOffset;}
+            if(r.a02Kind==1||r.a02Kind==2){if(cy>=(r.a02Kind==1?r.y+r.h:193))continue;cy-=sceneFenceOffset;}
             if(cy<r.y||cy>=r.y+r.h||cx+256+int(p->extraLeftRight)<=r.x||cx-int(p->extraLeftRight)>=r.x+r.w)continue;
             if(r.a02Kind==2&&r.phase!=A02DoorPhase(p,r))continue;
             if(r.a02Kind==3&&r.phase!=A02GargoylePhase(p,r))continue;
