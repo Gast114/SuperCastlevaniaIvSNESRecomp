@@ -1,5 +1,13 @@
 # Lokaler Charakter-LoRA-Pilot
 
+**27.10.2026: Auf ausdrücklichen Nutzerwunsch pausiert.** Der HD-Simon ist in
+beiden Windows-Spielordnern und im Browserpaket deaktiviert. Die entfernten
+Windows-Pakete und Werkzeugkopien liegen unter
+`artwork-local/simon-pausiert-2026-10-27`; Bilder, Modelle und Arbeitsordner
+bleiben erhalten. Keine weitere Erzeugung, Fortsetzung oder Installation ohne
+erneuten Nutzerauftrag. Die folgenden Ergebnisse und Aktivierungsangaben sind
+historische Zwischenstände, keine laufenden Aufgaben.
+
 Stand: 23.10.2026. Lokal ausgeführt, keine Bild-Uploads, bezahlten Aufrufe oder
 veröffentlichten Modellgewichte. Spielpakete, EXEs, Konfiguration und Saves
 wurden für diesen Pilot nicht geändert. Alltagshinweise stehen in MERKHILFE.md.
@@ -386,3 +394,59 @@ Backup: `D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-10-21-local-lora`
 Originale/Dataset, Rezepte, Werkzeuge, Quellenbelege und fertige Adapter/Bilder
 sichern. Basismodelle und Venv nicht zusätzlich verdoppeln; sie sind erneut
 installierbar. SHA256-Manifest im Backup benennt den tatsächlich gesicherten Stand.
+
+### Eigener Adapter aus den Photoshop-Laufbildern (23. Oktober)
+
+Das neue Design kommt ausschließlich aus den sechs aktuell installierten,
+vom Nutzer überarbeiteten Laufbildern. `prepare_walking_design_lora.py` kopiert
+deren 330×510-Pixel-Arbeitsfläche ohne Resampling bei `[86,0]` auf eine graue
+512×512-Fläche. Alle sechs Bilder werden trainiert. Alte Idle-/Duck-/Sprungbilder
+sind keine Designreferenz dieses Datensatzes.
+
+Arbeitsordner: `artwork-local/simon-design-extension-2026-10-23`.
+Datensatz: `walking-design-dataset`, Trigger `scivwalkv2`.
+Das neue Training in `training-walk-design` hat 600 Schritte mit Rang16 und
+Start-Lernrate0,00008 auf der Radeon890M abgeschlossen. Es benutzt die bestehende
+`lora-rocm-runtime`; Grundmodell, alte Adapter und Python-Umgebungen bleiben
+erhalten. Training und Comfy-Inferenz laufen nacheinander.
+
+Der fertige Diffusers-Adapter hat SHA256
+`c3f88384659069cc62a901a623bd9ce87024dabc7e6f11135f0a169102e73b4a`.
+`export_comfy_lora` benennt seine 1120 Tensoren für ComfyUI um und kopiert deren
+Werte unverändert. Der separate Export heißt
+`Simon_walk_design_rank16_20261023.safetensors`, SHA256
+`28f400ba43765b83f9368e1484171f327cd407dedea17e6a083348baf513e205`.
+`training-export.json` und die `.source.json` beim Export belegen die Herkunft.
+
+`native_design_pose.py` steuert neue Haltungen durch die aufgenommenen nativen
+96×96-Atlaszellen. Canny und IP-Adapter verwenden die vorhandene gemeinsame
+Comfy-Queue8188. Ein Batch teilt Grundmodell, LoRA und Stilreferenz und rechnet
+die Posen nacheinander. Er verweigert eine belegte Queue. Keine zweite GPU-
+Instanz neben einer Landschaftsberechnung starten.
+
+Der Adapter allein traf den gewünschten Stil noch nicht ausreichend: Hautfarbe,
+Muskelgröße und Beinschienen wichen sichtbar ab. Die SDXL-Bilder dienen deshalb
+als Haltungsvorlagen. Die finalen Bilder entstehen durch eine direkte lokale
+Designübertragung mit dem bereits vorhandenen FLUX.2-Klein-Modell:
+`prepare_design_transfer.py` setzt die unveränderte Photoshop-Laufzeichnung an
+erste Stelle und eine klare HD-Haltung an zweite Stelle. Der Text benennt die
+zweite Zeichnung ausdrücklich als reine Pose und fordert keine Treppenkulisse.
+`direct_edit_walk.py batch` teilt Modelle und bei identischem Text auch die
+Qwen-Textberechnung. Es benutzt die gemeinsame Queue mit vorhandenen CPU/BF16-
+Knoten; der zuvor fehlerhafte Radeon-FLUX-Pfad wird nicht erneut ausprobiert.
+
+Die fertigen Arbeitsbilder haben 512×512Pixel, direkt10x. Eine gegebenenfalls
+1024er Haltungsvorlage wird vorher gemeinsam auf512 reduziert. Das sind keine
+zusätzlichen Spielauflösungen. `export_design_extension.py` erstellt transparente PNGs,
+Kontaktbögen, Treppenanimation, HTML und ZIP. `install_design_extension.py`
+übernimmt erst visuell geprüfte Bilder, sichert die alten Pakete und erhält
+die Lauf-PNGs, deren Zuordnungen und Gameplay-Daten unverändert.
+
+Die fünf unterschiedlichen nativen Treppen-IDs sind aus den gelieferten
+Originalen zugeordnet. Bild06 ist zugeschnitten identisch zu02 und erhält
+deshalb eine exakte Kopie. Es gibt acht unterschiedliche neue Posen und neun
+PNG-Dateien. Ein fertiges Training allein bestätigt noch keine gelungene
+Anatomie oder einheitliche Rüstungsdetails; die wirklichen Bilder werden geprüft.
+
+Quellen und fertiger Adapter sind separat SHA256-geprüft gesichert unter
+`D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-10-23-simon-design-extension`.

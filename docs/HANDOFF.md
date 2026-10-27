@@ -393,7 +393,49 @@ LoRA-/Landschaftsänderungen nicht mit diesem Auftrag committen.
 
 ## Aktuell: lokaler SDXL-LoRA-Pilot und GPU-Beschleunigung
 
-### Neuester Stand: Photoshop-Laufbilder des Nutzers installiert
+### Pausiert auf Nutzerwunsch: HD-Simon (27.10.2026)
+
+Der Nutzer hat den bisherigen HD-Simon verworfen und das gesamte Sprite-Projekt
+vorerst pausiert. KEINE weitere Erzeugung, Trainingsfortsetzung oder Installation
+ohne ausdruecklichen neuen Auftrag. Die zuvor geplanten drei Posen und Treppen-
+bilder sind keine offenen automatischen Folgeaufgaben mehr.
+
+In build-play/game und build ist characters/selected.txt leer: Original-Simon.
+Die beiden installierten simon-user-hd-three-poses-v1-Verzeichnisse wurden nach
+artwork-local/simon-pausiert-2026-10-27/spielpakete/build-play bzw. build verschoben;
+Originalpfade, Auswahl und SHA256 aller Dateien stehen in status.json. Keine
+Bilder geloescht. Lokales Quellpaket unter artwork-local/characters bleibt.
+Sieben Werkzeugkopien im Archiv unter werkzeuge sichern den unfertigen Stand.
+
+Browser ebenfalls auf Originalfigur umgestellt: lokale dist/sciv-web/site-
+Auswahl und Manifest aktualisiert, bestehendes sciv-web.tar.gz entsprechend
+neu gepackt, vorheriges Paket im Archiv. Live auf CT116 unter
+/opt/sciv-web/site/content nur characters/selected.txt und dessen Manifest-
+Eintrag geaendert. Remote Sicherung /root/sciv-simon-pausiert-20261027-120152.
+443 und8443 mit Zertifikatspruefung verifiziert: Auswahl0Bytes, Manifest korrekt.
+Bestehende Browserdaten uebernehmen den neuen Standard beim Neuladen, sofern
+die Auswahl nicht individuell geaendert wurde. Keine Saves/TLS/anderen Pakete
+geaendert. Kein laufendes Windows-Spiel beim Wechsel.
+
+Gemeinsame Comfy-Queue war leer; Modelle per /free entladen. Keine aktive Sprite-
+Berechnung. Server selbst bleibt fuer andere lokale Arbeiten verfuegbar.
+extension.json im Arbeitsordner hat paused_by_user und resume_requires_explicit_request.
+
+Bisherige Versuche bleiben unter artwork-local/simon-design-extension-2026-10-23.
+Eigenes600erLoRA ist fertig, traf den Stil aber nicht ausreichend. FLUX mit zwei
+Ganzkoerperreferenzen uebernahm die Laufpose statt der Treppenhaltung. Die letzte
+Pose-Initialisierung mit Sigmas .58,.43,.28,.14,0 bewahrte die Haltung, aenderte
+aber den Stil praktisch nicht. Auch sie ist kein fertiges Spielbild.
+Eine Detailtafel aus Walking01 liegt unter reference/Design_Details_2026-10-26.png;
+sie wurde nur vorbereitet und angesehen, NICHT in einer weiteren Berechnung
+verwendet. Keine neuen Posen exportiert/installiert. Keine weitere Probe starten.
+
+Training/Quellen waren bereits extern unter backup/hd-artwork/
+2026-10-23-simon-design-extension SHA256-geprueft gesichert. Alte Modelle und
+Python-Umgebungen unveraendert. Merkhilfe und PAUSIERT.md nennen den aktuellen
+Original-Simon-Stand; aeltere Aktivierungsangaben sind nur Verlauf.
+
+### Vorheriger Stand: Photoshop-Laufbilder des Nutzers installiert
 
 2026-10-23: Nutzer hat sechs PNGs in walking-neural-edit-2026-10-22/review-v1/frames
 selbst überarbeitet und den Einbau ausdrücklich beauftragt. Tatsächliche Dateien

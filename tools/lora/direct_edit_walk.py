@@ -74,7 +74,8 @@ def prepare(config, name, out):
           "model_guide": "https://docs.comfy.org/tutorials/flux/flux-2-klein"})
 
 
-def graph_for(prompt, images, prefix, size, cpu_model=False):
+def graph_for(prompt, images, prefix, size, cpu_model=False, init_pose=False,
+              sigmas="0.58, 0.43, 0.28, 0.14, 0"):
     graph = {}
     def add(key, kind, **inputs):
         graph[str(key)] = {"class_type": kind, "inputs": inputs}
@@ -95,14 +96,20 @@ def graph_for(prompt, images, prefix, size, cpu_model=False):
         add(node + 1, "VAEEncode", pixels=[str(node), 0], vae=["3", 0])
         add(node + 2, "ReferenceLatent", conditioning=positive, latent=[str(node + 1), 0])
         positive = [str(node + 2), 0]
-    # Distilled model's official four-step, CFG=1 reference-edit graph.
+    # Full reference edits start from noise. A pose-locked edit instead starts
+    # from the first image latent, with bounded noise, to retain its movement.
     add(5, "BasicGuider", model=model, conditioning=positive)
     add(6, "RandomNoise", noise_seed=20261022)
     add(7, "KSamplerSelect", sampler_name="euler")
-    add(8, "Flux2Scheduler", steps=4, width=size[0], height=size[1])
-    add(9, "EmptyFlux2LatentImage", width=size[0], height=size[1], batch_size=1)
+    if init_pose:
+        add(8, "ManualSigmas", sigmas=sigmas)
+        latent = ["31", 0]
+    else:
+        add(8, "Flux2Scheduler", steps=4, width=size[0], height=size[1])
+        add(9, "EmptyFlux2LatentImage", width=size[0], height=size[1], batch_size=1)
+        latent = ["9", 0]
     add(10, "SamplerCustomAdvanced", noise=["6", 0], guider=["5", 0], sampler=["7", 0],
-        sigmas=["8", 0], latent_image=["9", 0])
+        sigmas=["8", 0], latent_image=latent)
     add(11, "VAEDecodeTiled", samples=["10", 0], vae=["3", 0], tile_size=512,
         overlap=64, temporal_size=64, temporal_overlap=8)
     add(20, "SaveImage", images=["11", 0], filename_prefix=prefix)
@@ -139,6 +146,20 @@ def batch_submit(directories, report_path, batch_out):
     if any(meta["status"] != "prepared" for meta in prepared):
         raise RuntimeError("Only fresh prepared edits may enter a batch")
     shared = {"1", "2", "3", "21", "22", "23"}
+    if len({meta["job"]["prompt"] for meta in prepared}) == 1:
+        # Canonical-design transfers differ only in pose images. Encode their
+        # identical long prompt once instead of repeating CPU Qwen work per pose.
+        shared.add("4")
+        if len({digest(folder / "input.png") for folder in directories}) == 1:
+            # The canonical character is the same first reference in each edit.
+            # Reuse its image, VAE encoding and reference conditioning as well.
+            shared.update(("30", "31", "32"))
+        if all(meta.get("references") for meta in prepared) and len({
+                digest(folder / meta["references"][0]["prepared"])
+                for folder, meta in zip(directories, prepared)}) == 1:
+            # Pose-first edits share the second image (the canonical design).
+            # Its latent is reusable; ReferenceLatent35 also depends on each pose.
+            shared.update(("33", "34"))
     merged, outputs = {}, []
     prefix = "simon_direct_batch/" + uuid.uuid4().hex
     for index, (folder, meta) in enumerate(zip(directories, prepared)):
@@ -146,7 +167,9 @@ def batch_submit(directories, report_path, batch_out):
         images = [upload(folder / "input.png", subfolder)]
         images += [upload(folder / ref["prepared"], subfolder) for ref in meta["references"]]
         graph = graph_for(meta["job"]["prompt"], images, subfolder + "/edited",
-                          Image.open(folder / "input.png").size, True)
+                          Image.open(folder / "input.png").size, True,
+                          init_pose=meta["job"].get("init_pose", False),
+                          sigmas=meta["job"].get("sampler_sigmas", "0.58, 0.43, 0.28, 0.14, 0"))
         def key(old):
             return old if old in shared else str(int(old) + 100 * index)
         for old, node in graph.items():
@@ -207,7 +230,9 @@ def submit(out, download_report, cpu=False, cpu_model=False):
     folder = "simon_direct_edit/" + uuid.uuid4().hex
     names = [upload(out / "input.png", folder)]
     names += [upload(out / ref["prepared"], folder) for ref in meta["references"]]
-    graph = graph_for(meta["job"]["prompt"], names, folder + "/edited", Image.open(out / "input.png").size, cpu_model)
+    graph = graph_for(meta["job"]["prompt"], names, folder + "/edited", Image.open(out / "input.png").size,
+                      cpu_model, init_pose=meta["job"].get("init_pose", False),
+                      sigmas=meta["job"].get("sampler_sigmas", "0.58, 0.43, 0.28, 0.14, 0"))
     normalize_graph(graph)
     write(out / "workflow_api.json", graph)
     meta.update(status="submitting", client_id=uuid.uuid4().hex, model_files=models["files"], gpu_before=stats,

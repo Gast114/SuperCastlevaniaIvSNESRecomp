@@ -2,7 +2,21 @@
 
 Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
-Stand: 22. Oktober 2026.
+Stand: 27. Oktober 2026.
+
+## Simon wieder im Original – HD-Projekt pausiert
+
+Der neue HD-Simon ist ausgeschaltet. Im Spiel erscheint wieder die Originalfigur.
+Das gilt für beide Windows-Spielordner und für das Browser-Spiel.
+Im Browser bitte die Spielseite vollständig neu laden.
+
+Die bisherigen Bilder und Versuche bleiben erhalten. Die entfernten Spielpakete
+liegen sicher unter `artwork-local\simon-pausiert-2026-10-27\spielpakete`.
+Eine kurze Übersicht steht dort im übergeordneten Ordner in `PAUSIERT.md`.
+
+Wir arbeiten erst weiter an den Sprites, wenn du es ausdrücklich möchtest.
+Es läuft keine Sprite-Berechnung. Die älteren HD-Simon-Anleitungen weiter unten
+beschreiben den Stand vor dieser Pause.
 
 ## Level-Editor: eigene Räume bauen
 
