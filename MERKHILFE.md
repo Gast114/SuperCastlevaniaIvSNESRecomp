@@ -4,6 +4,15 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## HD-Hintergrund hinter der HUD-Anzeige
+
+Die Landschaft wird jetzt auch oben hinter der Lebens-/Punkteanzeige in HD
+gezeichnet. Zuvor wurden die oberen 32 Bildzeilen pauschal ausgespart.
+Schrift und Balken behalten ihre korrekte Darstellung.
+
+Die Korrektur ist in beiden Windows-Spielordnern installiert. Das Spiel einmal
+vollständig schließen und neu starten, damit die neue Version geladen wird.
+
 ## Simon wieder im Original – HD-Projekt pausiert
 
 Der neue HD-Simon ist ausgeschaltet. Im Spiel erscheint wieder die Originalfigur.

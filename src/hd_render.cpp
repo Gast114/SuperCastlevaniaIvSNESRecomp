@@ -885,6 +885,16 @@ bool GatherSceneLine(Ppu *p, int line) {
         for (unsigned n = 0; n < 4; ++n) {
             const auto &s = samples[n][i]; auto &c = out.candidates[n];
             unsigned layer = n == 3 ? 4 : n;
+            if(layer==2 && line<=std::max(32,int(p->wsHudSplitHeight&127))) {
+                // The native HUD can reposition BG3 outside ordinary tile
+                // provenance. Retain its actual winners, not a reconstructed
+                // glyph at the unshifted map position. Other layers remain HD.
+                bool onMain=((main>>8)&15)==2,onSub=((sub>>8)&15)==2;
+                uint16_t pixel=onMain?main:sub;
+                c.layer=2;c.priority=pixel&0xff00;c.screens=(onMain?1:0)|(onSub?2:0);
+                c.rgba=0xff000000u|Rgb(PpuPixelColor(p,pixel,i));
+                continue;
+            }
             c.screens = s.screens; c.layer = s.pixel >> 8 & 15; c.priority = s.pixel & 0xff00;
             bool opaque = layer == 4 || PPU_mode(p) == 7 ? (s.pixel & 255) != 0 : s.source.valid && ((s.pixel & ((1u<<s.source.bpp)-1)) != 0);
             c.rgba = opaque ? 0xff000000u | Rgb(PpuPixelColor(p, s.pixel, i)) : 0;
@@ -988,13 +998,17 @@ void RenderRows(void *, size_t begin, size_t end, unsigned) {
                     std::copy(std::begin(line.ppu.cgram),std::end(line.ppu.cgram),colours.begin());
                 }
                 sceneCameraX=line.cameraX;sceneCameraY=line.cameraY;sceneClock=line.clock;sceneFenceOffset=line.fenceOffset;
-                sceneRegionsActive=line.regionsActive && y>=size_t(std::max(32,int(line.ppu.wsHudSplitHeight&127)));
+                sceneRegionsActive=line.regionsActive;
                 sceneSharedOnly=!line.regionsActive;
                 sceneValid=GatherSceneLine(&line.ppu,int(y)+1);
             }
         }
         for (int nx = 0; nx < frameWidth; ++nx) {
-            if (sceneFrame && !sceneLines[y].tileOnly) {
+            // Only actual HUD pixels need the legacy provenance path. A
+            // whole scanline exemption leaves native scenery behind the text.
+            bool hudPixel=sceneFrame && sceneLines[y].tileOnly &&
+                (!sceneValid || scenePixels[y*frameWidth+nx].mainLayer==2);
+            if (sceneFrame && !hudPixel) {
                 if(!sceneValid) {
                     scenePixelValid[y*frameWidth+nx]=0;
                     for(int dy=0;dy<scale;++dy)std::fill_n(first+size_t(dy)*frameWidth*scale+nx*scale,scale,sceneNativeRows[y][nx]);
@@ -1116,7 +1130,7 @@ extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
         sceneNativeRows[line-1]=native;
         auto &copy=sceneLines[line-1];copy.valid=false;
         copy.tileOnly=line<=std::max(32,int(p->wsHudSplitHeight&127));
-        if(!copy.tileOnly&&(SceneActive(p)||SharedObjectsActive()||Cv4CharacterHd())&&!PPU_forcedBlank(p)&&(PPU_mode(p)==1||PPU_mode(p)==7)) {
+        if((SceneActive(p)||SharedObjectsActive()||Cv4CharacterHd())&&!PPU_forcedBlank(p)&&(PPU_mode(p)==1||PPU_mode(p)==7)) {
             copy.ppu=*p;
             if(p->renderVram)std::copy_n(p->renderVram,32768,copy.ppu.vram);
             copy.ppu.renderVram=nullptr;
@@ -1127,8 +1141,8 @@ extern "C" void Cv4HdRenderLine(Ppu *p, int line) {
             copy.valid=true;
         }
         if(timing)gatherSeconds+=std::chrono::duration<double>(HdClock::now()-t).count();
-        // HUD uses custom native BG3 placement. Its exact visible pixels
-        // remain authoritative; allow the ordinary OBJ tile path there.
+        // Keep exact native BG3/ordinary tile handling available for HUD
+        // winners, while scene regions also cover the scenery between them.
         if(!copy.tileOnly)return;
     }
     if (!SceneActive() && !SharedObjectsActive()) {

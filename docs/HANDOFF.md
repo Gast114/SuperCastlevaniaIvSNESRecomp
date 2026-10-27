@@ -4,6 +4,37 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## HD-Landschaft hinter dem HUD korrigiert (27.10.)
+
+Nutzer meldet native Landschaft oben an der HUD-Anzeige, ausdrücklich Windows.
+src/hd_render.cpp hatte Szene/Regionen für die kompletten oberen32Zeilen
+abgeschaltet und ausschließlich den normalenTilepfad verwendet. Jetzt werden
+auch dieseZeilen mit ihren eigenenPPU-Zuständen gesammelt. Nur tatsächlich
+sichtbareBG3/HUD-Pixel behalten den bisherigenProvenienzpfad, die Landschaft
+dazwischen verwendet die normaleHD-Komposition. NativeBG3-Gewinner separat
+übernommen, weilWidescreenHUD-Verschiebung reguläreTileprovenienz ausschließt.
+KeinBackground-Overlay überSchrift/Balken; Fenster/Priorität/ColorMath bleiben.
+
+NeuerTest tools/test_hd_hud_background.py reproduzierte denFehler vorKorrektur.
+Danach hud-background-gdahjz9z bestanden:3562HUD-Pixel exakt,20100veränderteHD-
+Pixel undechteSubpixeldetails imDiagnosehintergrund, Kategorie-/Szenenguards,
+installiertesBrückenpaket undA02F3:735200HD-Pixel imoberenBereich, sichtbare
+HUD-Zeichen,nativeRaster undvollständigeWRAM-Dumps unverändert. Vergleiche
+programmgesteuert,keinBildbetrachter. test_hd_scene.py ebenfalls bestanden
+(hd-scene-check-gc5gcnyd):2/4/10xOriginalidentität,Alpha,Szenenguards,Scroll,
+Brückenrotation undWasseranimation, nativeBilder/Zustände gleich.
+
+Lua- undregulärerWindowsBuild erfolgreich. NeueEXE inbuild undbuild-play/game
+installiert, SHA256626b96629413473c7d6af725e67b0baa985fe797e328e01bbb0b17c3ada3fa93.
+VorherigeEXEs undInstallationsnachweis unterartwork-local/hud-background-2026-10-27.
+Die alteSpiel-EXE liegt zusätzlich alsSuperCastlevaniaIvSNESRecomp.hud-before-
+20261027.exe imSpielordner. Austausch durchUmbenennen+vorbereiteteDatei nach
+Prüfung an eigenerlaufenderTestinstanz; keinBenutzerprozess beendet. Aktive
+Spielpaketauswahl,Steuerung,ROM-/Performance-Auswahl hashgleich; Original-Simon
+weiterausgewählt,keineBild-/Paketänderungen. Neustart fürgeladenenCode nötig.
+Browser nichtdeployt (Nutzer meldet Windows);gemeinsamerQuellfix ist beimnächsten
+Webbuild enthalten. AndereoffeneBrowser-/Landschaftsänderungen nichtcommitten.
+
 ## Level-Editor mit nativem Spieltest (24.10.)
 
 **Neuester Ausbau: freie Grafikquellen (Vorrang vor älteren Formatdetails unten).**
