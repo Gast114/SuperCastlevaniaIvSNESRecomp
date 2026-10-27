@@ -66,7 +66,7 @@ Pack pack;
 std::vector<Pack> scenePacks;
 int activeScene=-1;
 bool initialized = false, enabled = false;
-int scale = 10;
+int scale = 4;
 unsigned layers = 31, replaced = 0;
 std::string directory = "hd_pack", status = "No HD pack loaded";
 std::vector<uint32_t> surface;
@@ -507,7 +507,7 @@ Cached Lookup(Ppu *p, const PpuTileSource &r) {
 }
 Sample FindSource(Ppu *p, int x, int line, unsigned layer, const PpuTileSource &source, bool sharedOnly=false) {
     Sample s; s.source = source;
-    if (!(layers & (1u << layer)) || !source.valid) return s;
+    if (!(layers & (1u << layer)) || !source.valid || pack.tiles.empty()) return s;
     auto lookup = Lookup(p, s.source);
     if (sharedOnly && (layer != 4 || !pack.sharedObjects.count(lookup.key))) return s;
     s.tile = lookup.tile;
@@ -605,7 +605,12 @@ std::vector<uint8_t> scenePixelValid, scenePixelDirty;
 int sceneCacheScale=0,sceneCacheWidth=0;
 bool sceneReuse = std::getenv("SCIV_HD_NO_REUSE") == nullptr;
 void StoreScenePixel(size_t index,const ScenePixel &out) {
-    const auto &previous=scenePixels[index];
+    auto &previous=scenePixels[index];
+    // Most cells contain only a few visible layers (often one opaque winner).
+    // Do not stream all twelve large sampling descriptors through memory on
+    // every moving pixel. Only ordered candidates are read by SceneColour.
+    constexpr size_t header=offsetof(ScenePixel,order);
+    constexpr size_t headerSize=sizeof(ScenePixel)-header;
     bool same=false;
     if(sceneReuse && scenePixelValid[index]) {
         if(!previous.colour.brightness && !out.colour.brightness)
@@ -616,10 +621,24 @@ void StoreScenePixel(size_t index,const ScenePixel &out) {
             const auto &a=previous.candidates[previous.fast];
             const auto &b=out.candidates[out.fast];
             same=std::memcmp(&a,&b,sizeof(a))==0;
-        } else same=std::memcmp(&previous,&out,sizeof(out))==0;
+        } else {
+            same=std::memcmp(reinterpret_cast<const uint8_t*>(&previous)+header,
+                             reinterpret_cast<const uint8_t*>(&out)+header,headerSize)==0;
+            for(unsigned j=0;same && j<out.count;++j) {
+                unsigned n=out.order[j];
+                same=std::memcmp(&previous.candidates[n],&out.candidates[n],sizeof(Candidate))==0;
+            }
+        }
     }
     scenePixelDirty[index]=!same;
-    if(!same)scenePixels[index]=out;
+    if(!same) {
+        std::memcpy(reinterpret_cast<uint8_t*>(&previous)+header,
+                    reinterpret_cast<const uint8_t*>(&out)+header,headerSize);
+        if(out.fast>=0)previous.candidates[out.fast]=out.candidates[out.fast];
+        else for(unsigned j=0;j<out.count;++j) {
+            unsigned n=out.order[j];previous.candidates[n]=out.candidates[n];
+        }
+    }
 }
 thread_local int sceneCameraX=0,sceneCameraY=0,sceneClock=0,sceneFenceOffset=0;
 thread_local bool sceneRegionsActive=true;

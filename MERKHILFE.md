@@ -4,6 +4,21 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## A02 läuft mit der passenden HD-Auflösung
+
+Die Windows-Version verwendet jetzt **4×** für deine 4×-Bilder. Vorher wurde
+unnötig mit 10× gerechnet; das HD-Menü hatte diesen alten Wert sogar automatisch
+wieder eingestellt. Das ist behoben, auch im A02-Installer.
+
+Unter **Escape → HD graphics → HD render resolution** bleibt deine Auswahl
+jetzt gespeichert. Für deine aktuellen Bilder **4×** verwenden, auch auf dem
+4K-Bildschirm. Die Größe der Figuren, Ebenen und Landschaft bleibt gleich.
+
+Beide Windows-Spielordner sind aktualisiert. Das Spiel vollständig schließen
+und neu starten. Im A02-Test mit Vollbild, Ton, Laufen und Angreifen wurden
+60,08 FPS ohne ausgelassene Spiellogik-Updates gemessen. Deine PNGs bleiben
+unverändert; die Werkstatt und das pausierte Simon-Projekt sind unverändert.
+
 ## HD-Hintergrund hinter der HUD-Anzeige
 
 Die Landschaft wird jetzt auch oben hinter der Lebens-/Punkteanzeige in HD

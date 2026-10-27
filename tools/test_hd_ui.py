@@ -13,6 +13,7 @@ args = p.parse_args()
 build = sciv.build_dir(args)
 work = sciv.work_dir(build, 'hd-ui-check-')
 sciv.prepare(work, build, {'Graphics': {'Widescreen': 1}})
+(work / 'hd_settings.json').write_text(json.dumps(dict(enabled=0,scale=4,layers=31,pack=str(args.pack.resolve()))))
 for expected in (1, 0):
     old = set((work / 'debug_markers').glob('*'))
     log = sciv.run(work, 'widescreen_smoke.input', args.rom, sciv.clean_env(
@@ -23,11 +24,12 @@ for expected in (1, 0):
         log_name=f'click-{expected}.log')
     saved = json.loads((work / 'hd_settings.json').read_text())
     assert saved['enabled'] == expected, saved
+    assert saved['scale'] == 4, 'Opening the HD panel must preserve the saved render resolution'
     marker, = set((work / 'debug_markers').glob('*')) - old
     meta = json.loads((marker / 'marker.json').read_text())
     assert meta['hd']['enabled'] == expected, meta['hd']
     if expected:
-        assert Image.open(marker / 'hd_screen.png').size == (3420, 2240)
+        assert Image.open(marker / 'hd_screen.png').size == (1368, 896)
     else:
         assert not (marker / 'hd_screen.png').exists()
     assert Image.open(marker / 'screen.png').size == (342, 224)

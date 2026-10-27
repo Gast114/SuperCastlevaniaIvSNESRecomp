@@ -5,6 +5,7 @@ FPS is not the gameplay rate. Nothing writes player configuration or saves.
 Example: --fixture path/state.sav --pack path/hd_pack --scale 10 --frames 360
 """
 import argparse
+import configparser
 import csv
 import json
 from pathlib import Path
@@ -30,6 +31,7 @@ def main():
     parser.add_argument('--warmup', type=int, default=60)
     parser.add_argument('--unthrottled', action='store_true')
     parser.add_argument('--audio', action='store_true', help='Include audio output in the timing measurement')
+    parser.add_argument('--player-config', type=Path, help='Copy display options from a player config into the private test, including fullscreen')
     parser.add_argument('--buttons', default='', help='Hold game buttons, e.g. Right or Right+Y')
     parser.add_argument('--cpu-timing',type=int,choices=(0,1,2),help='0 retail, 1 FastROM, 2 FastROM + CPU boost')
     parser.add_argument('--medusa-death-at', type=int, default=0,
@@ -51,8 +53,12 @@ def main():
             parser.error('Medusa diagnostic requires the verified retail death tables')
     build = sciv.build_dir(args)
     work = sciv.work_dir(build, 'fps-profile-')
-    exe = sciv.prepare(work, build, {'Graphics': {'Widescreen': 1},
-        'General': {'DisableFrameDelay': int(args.unthrottled)}, 'Sound': {'EnableAudio':int(args.audio)}})
+    graphics={'Widescreen':1}
+    if args.player_config:
+        player=configparser.ConfigParser();player.optionxform=str;player.read(args.player_config)
+        graphics.update(dict(player['Graphics']))
+    exe = sciv.prepare(work, build, {'Graphics': graphics,
+        'General': {'DisableFrameDelay': int(args.unthrottled), 'RunAhead':0}, 'Sound': {'EnableAudio':int(args.audio)}})
     if args.character:
         shutil.copytree(args.character,work/'characters/profile-character')
         (work/'characters/selected.txt').write_text('profile-character')

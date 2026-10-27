@@ -4,6 +4,60 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## A02-Performance und veraltete 10×-Vorgabe korrigiert (27.10.)
+
+Nutzer meldete etwa 30 FPS bei Bewegung/Kampf in A02 und stellte klar:
+aktuelle Bilder sind 4×, nicht mehr 10×. Beide Windows-Spielprofile hatten
+trotzdem scale=10. HdPanel erzwang beim Öffnen sogar wieder 10×; der A02-
+Installer setzte ebenfalls immer 10×. Nun Standard 4×, explizite gespeicherte
+Auswahl 2/4/6/10 im Menü ohne Seiteneffekt beim Öffnen. A02-Installer nimmt
+art_scale aus dem Importbeleg (auch bei alten Belegen mit presentation_scale=10),
+neue Belege verwenden die tatsächliche art_scale als presentation_scale.
+Keine Änderung an PNGs, Registrierung, Ebenengrößen oder Spieltempo.
+
+Renderer: leere Tile-Pakete überspringen unnötige Schlüsselberechnung.
+StoreScenePixel vergleicht/kopiert nur geordnete sichtbare Kandidaten; bei
+sicher opakem Gewinner nur diesen. Unbenutzte zwölf Sampling-Datensätze
+werden nicht mehr bei jeder Bewegung vollständig kopiert. Sortierung,
+Alpha, native Priorität, Farbmathematik und Cache-Invalidierung bleiben.
+
+Messungen auf Nutzer-PC, private Lua-Instanzen, keine Bildansicht:
+- benchmark_hd_a02.py: alter 10×-Lauf a02-perf-before-beux8xvj (240 Frames
+  je Fall) beim Laufen 27,88 ms / 35,86 ungedrosselte FPS, Angriff 18,91 ms.
+  Das sind Rechenreserve-Messungen, nicht die normale Spielgeschwindigkeit.
+- Vorher 4×: a02-perf-before4-pa0oht75. Nachher 4×:
+  a02-perf-compact4-r6c3m5o6; HD-/native RGB-Hashes und vollständiges WRAM
+  für Stehen, Laufen, Angriff und F2-Eintritt exakt gleich. Laufzeiten schwanken
+  mit Systemlast; keine isolierte Prozentzusage für den kleineren Cache-Fix.
+- profile_sciv_fps.py jetzt optional --player-config. fps-profile-l4q6swnr:
+  echte Spieler-Graphics-Einstellungen (Fullscreen=1, Widescreen=1, VSync=0),
+  Audio an, 4×, Right+Y, F3, CPU-Timing 2, normale Taktung, 360 Frames,
+  letzte 300 ausgewertet: 60,0756 FPS, 299/299 Logikupdates, null Wiederholungen.
+  Gast 3,22 ms, Raster/HD 8,31 ms, Upload/Present 0,38 ms im Mittel.
+  Kein Anspruch auf 60 FPS in allen ungetesteten Räumen/auf anderen Geräten.
+- test_hd_reuse.py: hd-reuse-ygrt_iy3, 175 HD-Checksums/native Bilder/
+  benannte Zustände identisch mit und ohne Wiederverwendung. Brückenfixture,
+  A02 F3 für Angriff und F2 für Einfahranimation (kein echter Todestest),
+  Skalen-/Ebenenwechsel, Laden, HD-Toggle und Paket-Reload.
+- test_hd_hud_background.py: hud-background-k7xgviip bestanden, auch A02-HUD.
+- test_hd_ui.py: Release hd-ui-check-50benvus, echter ImGui-Klick, zwei Starts,
+  Auswahl bleibt 4×, Marker 1368×896 bei nativer Breite 342. Kein Bildviewer.
+
+Release und Lua-Release gebaut. Installiert in build und build-play/game,
+jeweils hd_settings.json scale=4. EXE SHA256:
+94646301e1f186b557378e706eba2de4ab9a64f7300bfdbb005b31601f564972.
+Backup und Installationsbeleg unter artwork-local/a02-performance-2026-10-27.
+Spielstände, Config/Steuerung/CPU-Timing, Paketauswahl, Original-Simon und alle
+Dateien des aktiven HD-Pakets hashgleich. Keine Spielerprozesse beendet.
+Neustart erforderlich. Alte Player-EXE zusätzlich als .a02-perf-before-20261027.exe.
+
+Offene Browserarbeit nicht mitcommitten/deployen: In der bereits untracked
+web/prepare_sources.py nur die jetzt überflüssige HD-Menü-Textersetzung entfernt;
+Vorversion im Audit gesichert. Quelladapter läuft erfolgreich nach
+build-audit/a02-browser-source-check. Der Browser benutzt künftig dasselbe
+Menü; laufende Website wurde nicht geändert. CMakeLists, übrige Browser-/KI-
+Dateien und fremde Abschnitte in MERKHILFE/HANDOFF bleiben uncommitted.
+
 ## HD-Landschaft hinter dem HUD korrigiert (27.10.)
 
 Nutzer meldet native Landschaft oben an der HUD-Anzeige, ausdrücklich Windows.

@@ -292,8 +292,17 @@ static void HdPanel() {
     if (frame == 3) ImGui::GetIO().AddMouseButtonEvent(0, false);
   }
   ImGui::TextWrapped("Switch back to original graphics at any time. Changes apply when you resume.");
-  if(Cv4HdScale()!=10)Cv4HdSetScale(10);
-  ImGui::TextUnformatted("HD resolution: 10x (4K target)");
+  int resolution=Cv4HdScale();
+  const int resolutions[]={2,4,6,10};
+  const std::string resolutionLabel=std::to_string(resolution)+"x";
+  if(ImGui::BeginCombo("HD render resolution",resolutionLabel.c_str())) {
+    for(int value:resolutions) {
+      const std::string label=std::to_string(value)+"x"+(value==4?" (recommended)":"");
+      if(ImGui::Selectable(label.c_str(),resolution==value))Cv4HdSetScale(value);
+    }
+    ImGui::EndCombo();
+  }
+  ImGui::TextWrapped("4x preserves the detail of 4x artwork, including on a 4K screen. Higher render resolutions need more processing power.");
   unsigned mask = Cv4HdLayerMask();
   const char *categories[] = {"Backgrounds", "Text / HUD", "Sprites"};
   const unsigned bits[] = {3, 12, 16};

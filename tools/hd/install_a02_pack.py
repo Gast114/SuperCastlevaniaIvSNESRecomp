@@ -25,6 +25,10 @@ def install(pack, exe, backup):
     if backup.exists():
         raise FileExistsError('Use a new backup directory')
     receipt = json.loads((pack / 'import.json').read_text(encoding='utf-8'))
+    # Older receipts hardcoded a 10x presentation even for 4x A02 artwork.
+    presentation_scale = int(receipt['art_scale'])
+    if not 1 <= presentation_scale <= 10:
+        raise ValueError('Invalid artwork scale')
     for source in receipt['sources']:
         if sha(source['source']) != source['sha256']:
             raise ValueError('Artwork changed after import: ' + source['source'])
@@ -59,7 +63,7 @@ def install(pack, exe, backup):
         shutil.copytree(pack, destination)
         copied = {str(p.relative_to(pack)): sha(p) for p in pack.rglob('*') if p.is_file()}
         assert all(sha(destination / name) == checksum for name, checksum in copied.items())
-        settings.update(enabled=1, scale=10, layers=31, pack='hd_packs/' + pack.name)
+        settings.update(enabled=1, scale=presentation_scale, layers=31, pack='hd_packs/' + pack.name)
         settings_path.write_text(json.dumps(settings, indent=2) + '\n')
         assert sha(folder / EXE) == report['exe_sha256']
         after = protected(folder)

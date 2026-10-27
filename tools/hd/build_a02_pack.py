@@ -110,7 +110,7 @@ def build(source, entrance, output, recipe_path=ROOT / 'assets/hd/stage_01_a02.r
     (output / 'pack.json').write_text(json.dumps({'version': 1, 'name': 'Stage 01 entrance + A02 user artwork', 'scenes': ['entrance', 'a02']}, indent=2))
     receipt = {'recipe_sha256': sha(recipe_path), 'builder_sha256': sha(__file__),
                'source_pixels_per_native': recipe['source_pixels_per_native'], 'art_scale': scale,
-               'presentation_scale': 10, 'resampling': 'slight downsampling; no image generation or source modifications',
+               'presentation_scale': scale, 'resampling': 'slight downsampling; no image generation or source modifications',
                'sources': receipts, 'regions': regions}
     (output / 'import.json').write_text(json.dumps(receipt, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps({'output': str(output.resolve()), 'source_images': len(receipts), 'a02_regions': len(regions)}))
