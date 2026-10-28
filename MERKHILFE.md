@@ -4,6 +4,20 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## A02-PSD ist gruppiert
+
+In A02.psd sind jetzt sieben Gruppen angelegt: SZENE_VORNE, GITTER,
+SZENE_HINTEN, HINTERGRUND, TUER, GARGOYLE und REFERENZ.
+REFERENZ enthält die Originalvorlagen und die leere Hilfsebene und ist
+ausgeblendet. Alle 15 bisherigen Ebenen, ihre Positionen und die beiden
+eingebetteten Gargoyle-Smartobjekte sind erhalten. Die HD-Darstellung wurde
+programmgesteuert pixelgenau vor und nach dem Gruppieren verglichen.
+
+Wenn A02.psd noch in PhotoCraft geöffnet ist, die Datei neu laden, damit die
+gespeicherten Gruppen erscheinen. Der automatische Spielpaket-Export ist
+weiterhin ein eigener nächster Schritt. Zusätzliche Sicherung und Prüfbericht:
+artwork-local/photocraft-grouping-2026-10-28.
+
 ## Dein Bildeditor ist PhotoCraft
 
 Du verwendest PhotoCraft, nicht Adobe Photoshop. PSD ist das Dateiformat.
