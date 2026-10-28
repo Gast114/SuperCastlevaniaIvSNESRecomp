@@ -4,6 +4,21 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Linker A02-Anschluss in Originalgröße
+
+Der große Torbogen aus Variante2 wurde verworfen: Simon kommt horizontal von
+links, kein neuer frontaler Torbogen. Neue zurückhaltende Variante:
+Stage 01\A02\Entwuerfe\A02-links-v3-passend-247x992.png.
+Nur diesen Streifen verwenden,1:1 links an den ursprünglichen456×992-Ausschnitt
+setzen und die oberen Kanten bündig ausrichten. Nicht zusätzlich skalieren.
+Die zugehörige Anschlussvorschau endet auf -Anschluss-703x992.png.
+
+KI-Ausgaben hatten die Originalszene intern verkleinert/verschoben. Deshalb
+an449 Bildmerkmalen registriert und den unteren Abschluss aus dem Original
+übernommen. Vorschau rechts pixelgenau identisch mit Original, alle992 Pixel
+der direkten Anschlusskante gleich. Prüfbericht/Prompt/Arbeitsdateien unter
+artwork-local/a02-left-v3-2026-10-28. Noch nicht in PSD oder Spiel eingebaut.
+
 ## Überarbeiteter linker A02-Eingang
 
 Der erste Randentwurf passte nicht und hatte zu viel Efeu. Für neue Motive:
