@@ -4,6 +4,15 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Oberen Steinanschluss nachgebessert
+
+Neueste Variante im A02-Ordner Entwuerfe:
+A02-links-v4-Steine-247x992.png, Anschlussvorschau daneben.
+Nur der obere Teil des linken Streifens wurde korrigiert. Ab Bildzeile380
+sind die Pixel unverändert gegenüber Variante3, ebenso der ganze rechte
+Originalausschnitt. Format bleibt247×992. Prompt und Vergleichsbericht:
+artwork-local/a02-left-v4-2026-10-28. Noch nicht in PSD oder Spiel eingebaut.
+
 ## Linker A02-Anschluss in Originalgröße
 
 Der große Torbogen aus Variante2 wurde verworfen: Simon kommt horizontal von
