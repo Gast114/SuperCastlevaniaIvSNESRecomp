@@ -4,6 +4,16 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Gemeint ist eine durchgehende Steindecke
+
+Die großen vorspringenden Steine am linken Originalrand sind als massive
+Deckenfläche nach links fortzusetzen, einschließlich sichtbarer Unterseite.
+Eine zurückliegende Kleinsteinwand an dieser Stelle erzeugt den falschen harten
+Abschluss. Aktueller Vorschlag: Entwuerfe\A02-links-v5-Decke-247x992.png,
+Anschlussvorschau daneben. Original rechts und unterer Streifen ab Zeile680
+unverändert. Noch nicht in PSD oder Spiel eingebaut. Prompt und Bericht:
+artwork-local/a02-left-v5-2026-10-28.
+
 ## Oberen Steinanschluss nachgebessert
 
 Neueste Variante im A02-Ordner Entwuerfe:
