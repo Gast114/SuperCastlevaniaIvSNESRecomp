@@ -4,6 +4,19 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Linker A02-Rand statt Spiegelung
+
+Unter Stage 01\A02\Entwuerfe liegt A02-links-247x992.png: ein KI-erstellter
+linker Erweiterungsstreifen zu deinem Ausschnitt. Die Anschlussvorschau liegt
+daneben. Noch nicht in die PSD oder das Spiel eingebaut.
+
+Im bisherigen festen 16:9-Modus sind es43 zusätzliche Originalpixel pro Seite.
+Bei deiner Arbeitsauflösung129/32 entspricht das aufgerundet174 Bildpixeln.
+247 reichen dafür;256 Pixel pro Seite sind ein praktisches Arbeitsraster.
+Bei breiteren Bildformaten muss der Rand neu aus der sichtbaren Breite berechnet
+werden. Allgemein: Zusatzbreite pro Seite in Originalpixeln mal Arbeitsmaßstab.
+Prompt und Erzeugungsdaten: artwork-local/a02-left-extension-2026-10-28.
+
 ## A02-PSD ist gruppiert
 
 In A02.psd sind jetzt sieben Gruppen angelegt: SZENE_VORNE, GITTER,
