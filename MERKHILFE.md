@@ -4,6 +4,24 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Dein Bildeditor ist PhotoCraft
+
+Du verwendest PhotoCraft, nicht Adobe Photoshop. PSD ist das Dateiformat.
+Die bisherigen Photoshop-Generator-Menüs sind deshalb keine geprüfte Anleitung
+für deinen Editor. Die getrennten Gruppen für Spielebenen bleiben sinnvoll.
+
+PhotoCraft 0.16.0 ist mit einer eigenen Kommandozeile installiert unter
+C:\Program Files\PhotoCraft. Damit wurde A02 erfolgreich ausgelesen:
+15 Ebenen, keine Importwarnungen. Die beiden Gargoyle-Korrekturen liegen
+in der PSD als eingebettete Smartobjekte mit Namen region_21.png/region_22.png.
+Gruppieren, Umbenennen und PNG-Export sind als Befehle vorhanden.
+
+PhotoCraft bietet außerdem MCP und einen Steuerkanal für die laufende Anwendung.
+Die Verbindung PSD zum Spielpaket ist noch einzurichten; bisher wurde nur gelesen.
+Die Original-PSD wurde dabei nicht verändert. Technische Primärquellen:
+https://github.com/storytold/photocraft und dessen docs/control-protocol.md.
+Lokale Metadaten: artwork-local/photocraft-research-2026-10-28.
+
 ## Kein falsches A02-Bild beim Sterben in A03
 
 Die kurze Einblendung der A02-Landschaft vor dem Neustart von A03 ist behoben.
