@@ -95,13 +95,19 @@ bool HasArt() { return !pack.tiles.empty() || !pack.regions.empty(); }
 bool LevelPictureActive() {
     return g_ram[0x32]==4;
 }
+int lastPictureBlock=-1;
+int PictureBlock() {
+    // Map addresses are reused across rooms. During an exit fade the game
+    // can already name the destination while still displaying the old room.
+    return g_ram[0x70]==6 && lastPictureBlock>=0 ? lastPictureBlock : g_ram[0x86];
+}
 bool SceneActive(Ppu *p=g_ppu) {
     if(pack.block<0)return true;
     if(!LevelPictureActive())return false;
     bool mapped=pack.nativeMaps[0]>=0;
     if(mapped&&(!p||PPU_bgTilemapAdr(p,0)!=pack.nativeMaps[0]||PPU_bgTilemapAdr(p,1)!=pack.nativeMaps[1]))return false;
     // The guest advances its block before fading the outgoing picture.
-    return g_ram[0x86]==pack.block || (mapped&&g_ram[0x70]==6);
+    return PictureBlock()==pack.block;
 }
 bool SharedObjectsActive() { return !pack.sharedObjects.empty() && LevelPictureActive(); }
 
@@ -418,7 +424,7 @@ void SelectScene(Ppu *p) {
     if(LevelPictureActive())for(size_t i=0;i<scenePacks.size();++i) {
         const auto &candidate=int(i)==activeScene?pack:scenePacks[i];
         if(PPU_bgTilemapAdr(p,0)==candidate.nativeMaps[0]&&PPU_bgTilemapAdr(p,1)==candidate.nativeMaps[1]&&
-           (g_ram[0x86]==candidate.block||g_ram[0x70]==6)){selected=int(i);break;}
+           PictureBlock()==candidate.block){selected=int(i);break;}
     }
     if(selected==activeScene)return;
     std::swap(pack,scenePacks[activeScene]);std::swap(pack,scenePacks[selected]);activeScene=selected;
@@ -1109,6 +1115,8 @@ extern "C" int Cv4HdPresentationScale(void) { Init(); return enabled && (HasArt(
 
 extern "C" void Cv4HdRenderBegin(Ppu *p) {
     Init();
+    if(!LevelPictureActive())lastPictureBlock=-1;
+    else if(g_ram[0x70]!=6)lastPictureBlock=g_ram[0x86];
     SelectScene(p);
     frameFenceOffset=pack.a02?A02FenceOffset(p):0;
     const auto *character=Cv4CharacterHd();

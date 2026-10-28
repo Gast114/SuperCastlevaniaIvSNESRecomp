@@ -4,6 +4,38 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## A03-Tod blendete fälschlich A02 ein (28.10.)
+
+Nutzer meldete F4/A03, Tod, kurzes A02-Bild vor Reload. F4 entspricht save3.sav
+(Hotkeys beginnen F1=save0); privates unverändertes Abbild unter
+artwork-local/a03-death-2026-10-28/F4.sav. save4 ist NICHT F4 und liegt in A02.
+A03 hat Block2, native BG-Maps0/4096 wie A02. SelectScene und SceneActive
+akzeptierten jedes passende Map-Paar während Phase6 ohne Blockzuordnung.
+Reproduktion mit F4 und künstlich ausgelöstem Fall (Y260), dann nativem Tod:
+15 Ausblendframes, A02-Paket mit143037 Matches trotz Block2.
+
+src/hd_render.cpp merkt nun den letzten nativen PictureBlock außerhalb Phase6
+(auch ohne aktiviertes HD), setzt ihn außerhalb Spielmodus4 zurück. Phase6
+verwendet diesen ausgehenden Block; sonst aktuellen Block. Derselbe Guard
+steuert Paketauswahl UND SceneActive. Native Maps bleiben zusätzliche Bedingung.
+So wird A03 nicht aufgrund gleicher Speicheradressen A02 zugeordnet, während
+Bridge0→1 seine noch sichtbare ausgehende HD-Szene behält.
+
+Gezielter Test tools/test_hd_death_room.py --f4 <Fixture>: private Lua-Sitzung,
+F4/A03-Falltod, A02/F3-Falltod sowie natürlicher Brückenausgang mit Right.
+Je Fall200 Frames mit HD aus/an. Bericht build-lua/hd-death-room-btbj5kp8:
+A03 alle15 Fadeframes0 Matches, A02 alle15 Fadeframes bis144239 Matches,
+Brücke alle15 Fadeframes bis33524 Matches. Beide Tode starten wieder in Phase5.
+Sämtliche200 benannten Zustände je Fall und native PNG-/volle WRAM-Hashes
+für Phasen6/3/4/5 identisch mit/ohne HD. Keine Bildansicht, keine Paketänderung.
+
+Release und Lua-Release gebaut, Release in build sowie build-play/game
+installiert. Backup vor Build und install.json unter artwork-local/a03-death-
+2026-10-28. Player-EXE zusätzlich als .a03-death-before-20261028.exe erhalten.
+Spielerkonfig/HD-Auswahl, Saves und komplettes aktives v4-Paket hashgleich,
+keinen Spielerprozess beendet. Neustart für geladenen Code nötig. Browser
+nicht deployt; fremde offene Änderungen und Doku nicht mitcommitten.
+
 ## Dauerhafte manuelle A02-Korrekturen (28.10.)
 
 Nutzer hatte region_21/22 im alten Player-v3-Paket manuell verändert und fragt

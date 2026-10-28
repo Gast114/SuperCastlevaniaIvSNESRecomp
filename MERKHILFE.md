@@ -4,6 +4,13 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Kein falsches A02-Bild beim Sterben in A03
+
+Die kurze Einblendung der A02-Landschaft vor dem Neustart von A03 ist behoben.
+Das HD-Paket wird beim Ausblenden jetzt dem tatsächlich gezeigten Abschnitt
+zugeordnet. Beide Windows-Versionen sind aktualisiert. Spiel vollständig
+schließen und neu starten; dein F4-Spielstand bleibt unverändert.
+
 ## Wo manuelle A02-Bildkorrekturen hingehören
 
 Dauerhafter Arbeitsordner:
