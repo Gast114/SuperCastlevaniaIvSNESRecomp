@@ -4,6 +4,14 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Überarbeiteter linker A02-Eingang
+
+Der erste Randentwurf passte nicht und hatte zu viel Efeu. Für neue Motive:
+wenig Bewuchs, lesbares Steinmauerwerk und passend zum vorherigen Abschnitt.
+Neue Variante: offener Burgtordurchgang nach der Zugbrücke. Datei unter
+Stage 01\A02\Entwuerfe: A02-Eingang-links-v2-247x992.png; Anschlussvorschau
+daneben. Noch nicht in PSD oder Spiel eingesetzt. Alter Entwurf bleibt erhalten.
+
 ## Linker A02-Rand statt Spiegelung
 
 Unter Stage 01\A02\Entwuerfe liegt A02-links-247x992.png: ein KI-erstellter
