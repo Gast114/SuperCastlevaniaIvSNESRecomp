@@ -4,6 +4,28 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Wo manuelle A02-Bildkorrekturen hingehören
+
+Dauerhafter Arbeitsordner:
+`D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Stage 01\A02\HD`
+
+Deine bearbeiteten fertigen Spiel-PNGs sind jetzt zusätzlich gesichert unter
+`HD\Manuelle-Korrekturen\Gargoyle-02.png` (bisher region_21.png) und
+`HD\Manuelle-Korrekturen\Gargoyle-03.png` (bisher region_22.png).
+Diese beiden künftig dort bearbeiten und unter denselben Namen speichern.
+Die Leinwand bleibt 152×92 Pixel mit Transparenz; nicht nochmals vergrößern
+oder beschneiden. Der Import übernimmt diese Dateien ohne erneute Skalierung
+und gibt ihnen Vorrang vor den ursprünglichen Gargoyle-Exporten.
+
+Neue Photoshop-Exporte anderer Teile kommen weiterhin direkt in den HD-Ordner
+unter ihren bekannten Namen (z.B. Gitter.png). Der Korrektur-Unterordner ist
+für bereits fertig registrierte Spielgrafiken gedacht. Bei anderen region_XX-
+Dateien zuerst die Zuordnung festhalten lassen; deren Nummer kann sich ändern.
+
+Die jetzigen beiden Änderungen sind bereits auch im aktiven v4-Paket enthalten.
+Ein Paketneubau berücksichtigt sie nun automatisch. Hinweise auf manuelle
+Korrekturen samt Quelle und Prüfsumme stehen im erzeugten import.json.
+
 ## Gitterabschluss und Gargoyle in A02
 
 Die Gitter-PNG enthält bereits den Grasabschluss. Der Renderer hat ihn bisher

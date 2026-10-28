@@ -1,6 +1,7 @@
 {
   "version": 1,
   "scale": 4,
+  "registered_overrides": {"directory": "Manuelle-Korrekturen", "scale": 4},
   "source_pixels_per_native": [129, 32],
   "scene_block": 1,
   "native_maps": [0, 4096],

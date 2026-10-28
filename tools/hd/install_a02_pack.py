@@ -41,8 +41,11 @@ def install(pack, exe, backup):
     backup.mkdir(parents=True)
     report = {'pack': str(pack), 'exe_sha256': sha(exe), 'targets': [], 'sources': receipt['sources']}
     for source in receipt['sources']:
-        dst = backup / 'source-pngs' / Path(source['source']).name
-        dst.parent.mkdir(exist_ok=True)
+        base = backup / 'source-pngs'
+        if source.get('kind') == 'registered-manual-correction':
+            base /= 'Manuelle-Korrekturen'
+        dst = base / Path(source['source']).name
+        dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source['source'], dst)
         assert sha(dst) == source['sha256']
     for folder in targets:

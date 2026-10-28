@@ -4,6 +4,38 @@
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.
 
+## Dauerhafte manuelle A02-Korrekturen (28.10.)
+
+Nutzer hatte region_21/22 im alten Player-v3-Paket manuell verändert und fragt
+nach dauerhaftem Ablageort. Beide Dateien waren bereits hashgleich mit dem
+aktiven v4-Player-Paket, aber ungleich dem ursprünglichen Audit-Build. Außerdem
+sind aktuelle Originalexporte Gargoyle-02/03 inzwischen149×88. Keine Dateien
+zurücksetzen, Originalexporte und Nutzeränderungen erhalten.
+
+Bearbeitete Spiel-PNGs verlustfrei kopiert nach
+D:\Super Castlevania IV Recomp\Assets (ausgeschnitten)\Stage 01\A02\HD\Manuelle-Korrekturen
+als Gargoyle-02.png und Gargoyle-03.png (je152×92 RGBA). Zusätzliche Sicherung
+und preserved.json unter artwork-local/a02-manual-2026-10-28. Keine Bilder
+geöffnet. Spielerinstallationen nicht verändert, da beide Änderungen dort sind.
+
+Importrezept registered_overrides nennt Verzeichnis und Dichte4. build_a02_pack
+übernimmt optionale gleichnamige RGBA-Korrekturen NACH Registrierung/Einpassung,
+VOR Ausgabe. Prüft exakte Leinwandgröße und Dichte; keine zweite Skalierung,
+Padding oder Positionskorrektur. Unterstützt Ebenen, Türphasen und Gargoyle-
+Phasen unter stabilen Quelldateinamen statt wandelbarer region_XX-Nummern.
+Aufgeteilte Ebenenteile nicht ungeprüft als vollständige Ebene ablegen.
+Normale neue Photoshop-Exporte weiterhin unter HD direkt. Eine vorhandene
+manuelle Korrektur hat Vorrang; für Rückkehr zum Original sie aus diesem
+Unterordner nehmen. import.json protokolliert kind=registered-manual-correction,
+replaces, Pfad, Maße und SHA. Installer sichert Korrekturen separat unter
+source-pngs/Manuelle-Korrekturen, sodass gleichnamige Originale erhalten bleiben.
+
+Gezielter Neubau artwork-local/a02-manual-2026-10-28/rebuild-check bestanden:
+beide RGBA-Bilder pixelgenau wie Nutzerdateien, komplette Regionsmetadaten
+identisch mit aktivem v4, 13 Quellenhashes einschließlich zwei Korrekturen
+geprüft. Bericht check.json daneben. Kein Runtime-/Performance-Eingriff und
+kein neues Paket installiert. Fremde offene Änderungen weiter erhalten.
+
 ## A02: Grasabschluss und sichtbare Gargoyle-Augen (27.10.)
 
 Nutzer zeigte drei eigene Bilder: schwebende Stangen im Spiel, Gargoyle mit

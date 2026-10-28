@@ -33,6 +33,26 @@ def build(source, entrance, output, recipe_path=ROOT / 'assets/hd/stage_01_a02.r
     target.mkdir()
     regions, receipts = [], []
 
+    def manual(image, name):
+        # Registered game PNGs already include density conversion and padding.
+        # Stable source names survive region renumbering in later builds.
+        options = recipe.get('registered_overrides')
+        if not options:
+            return image
+        path = source / options['directory'] / name
+        if not path.is_file():
+            return image
+        if options['scale'] != scale:
+            raise ValueError('Manual corrections use a different artwork scale')
+        with Image.open(path) as replacement:
+            if replacement.mode != 'RGBA' or replacement.size != image.size:
+                raise ValueError(f'{path}: registered RGBA canvas {image.size} required')
+            result = replacement.copy()
+        receipts.append({'source': str(path.resolve()), 'sha256': sha(path),
+                         'size': list(result.size), 'kind': 'registered-manual-correction',
+                         'replaces': name})
+        return result
+
     def load(name):
         path = source / name
         with Image.open(path) as im:
@@ -72,6 +92,7 @@ def build(source, entrance, output, recipe_path=ROOT / 'assets/hd/stage_01_a02.r
             joined.paste(image.crop((b,0,image.width,image.height)), (a,0))
             image = joined
         canvas, x, y = register(image, plane['origin_px'])
+        canvas = manual(canvas, plane['image'])
         spec = {'layer': plane['layer'], 'x': x, 'y': y,
                 'coordinates': 'world', 'wrap_x': 0, 'wrap_y': 0, 'modes': [1],
                 'priority': plane['priority'], 'overlay': plane['overlay']}
@@ -90,6 +111,7 @@ def build(source, entrance, output, recipe_path=ROOT / 'assets/hd/stage_01_a02.r
     door = recipe['doors']
     for phase, name in enumerate(door['images']):
         frame = fit(load(name), door['size'], right=True)
+        frame = manual(frame, name)
         for x, y in door['origins']:
             emit(frame, {'layer': 0, 'x': x, 'y': y, 'coordinates': 'world',
                          'wrap_x': 0, 'wrap_y': 0, 'modes': [1], 'overlay': 1,
@@ -98,6 +120,7 @@ def build(source, entrance, output, recipe_path=ROOT / 'assets/hd/stage_01_a02.r
     statue = recipe['gargoyle']
     for phase, name in enumerate(statue['images']):
         frame, x, y = register(load(name), statue['origin_px'])
+        frame = manual(frame, name)
         dx, dy = statue.get('offset_native', [0, 0])
         x += dx; y += dy
         emit(frame, {'layer': 1, 'x': x, 'y': y,
