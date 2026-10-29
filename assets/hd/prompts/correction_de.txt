@@ -1,0 +1,19 @@
+Gezielte Korrektur für {{ID}}.
+
+Bild 1: 01_GEOMETRIE.png, verbindliche Originalgeometrie.
+Bild 2: 02_STILMASTER.png, unveränderte freigegebene Stilreferenz.
+Bild 3: letzter Entwurf, der korrigiert werden soll.
+
+Ändere ausschließlich diesen Fehler:
+[EINEN konkreten Fehler und seine genaue Position eintragen.]
+
+Erhalte alles bereits Richtige: Aufbau, Steinanzahl und -positionen aus Bild 1,
+Materialstil aus Bild 2, Aussparungen, Alpha, Beleuchtung und Ausgabeformat
+{{WIDTH}} × {{HEIGHT}}. Keine zusätzliche Dekoration oder globale Neugestaltung.
+Keine 16:9-Erweiterung und keine weitere Vergrößerung der Arbeitsvorlage.
+
+Gib den korrigierten Ausschnitt als RGBA-PNG aus. Benenne verbleibende
+Abweichungen oder ungeprüfte Eigenschaften ausdrücklich.
+
+Falls der Entwurf insgesamt in falschem Stil oder falscher Geometrie ist,
+verwende ihn nicht als neue Referenz. Beginne wieder mit Bild 1 und Bild 2.

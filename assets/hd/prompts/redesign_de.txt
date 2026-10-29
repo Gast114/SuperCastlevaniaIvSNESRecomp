@@ -1,0 +1,48 @@
+Bearbeite das erste beigefügte Bild als HD-Spielgrafik für Super Castlevania IV.
+
+ZUORDNUNG DER BILDER
+Bild 1 = 01_GEOMETRIE.png: verbindliche Originalgeometrie des neuen Ausschnitts.
+Bild 2 = 02_STILMASTER.png: freigegebene HD-Material- und Stilreferenz.
+Ein ausdrücklich als ANSCHLUSS bezeichnetes drittes Bild ist gegebenenfalls
+verbindlich für den direkten Übergang zum fertigen Nachbarstück.
+
+AUFTRAG
+Gestalte Bild 1 im Materialstil von Bild 2. Die Originalvorlage liegt bereits
+in der Arbeitsauflösung vor. Ausgabe: exakt {{WIDTH}} × {{HEIGHT}} Pixel.
+Auftragskennung: {{ID}}. Dateiname: {{ID}}_HD.png.
+
+GEOMETRIE
+Jeder begehbare Stein, jede Plattform und jede Aussparung bleibt an derselben
+Position und gleich groß wie in Bild 1. Erhalte Anzahl, Abstände, Bodenhöhen,
+Konturen und architektonische Funktion. Auch verdeckte Bauzusammenhänge gelten:
+Eine angeschnittene massive Decke bleibt eine Decke mit derselben Unterkante.
+Feine Materialdetails sind neu zu gestalten; tragende Formen und spielerisch
+wichtige Fugen sind fest. Keine neue Perspektive, kein Verschieben, Zentrieren,
+Beschneiden oder weiteres 4×-/10×-Vergrößern. Übernimm nicht das Layout von Bild 2.
+
+VERBINDLICHER STIL
+Übernimm die Materialien aus Bild 2: warme rostbraune Mauersteine, kühlere
+graue Bogen-/Kantensteine, plastische aber klar lesbare Kanten, dieselbe
+Lichtrichtung, Schärfe, Farbigkeit und Detaildichte. Keine zusätzliche globale
+Farbkorrektur. Bewuchs nur dort und in dem Umfang, den Bild 1 vorgibt; im Zweifel
+weniger. Keine zusätzlichen Ranken, Türen, Bögen, Säulen, Figuren oder Requisiten.
+
+TRANSPARENZ
+Bild 1 hat echte Alphatransparenz. Deren Maske ist verbindlich. Freie Flächen
+bleiben frei; kein Himmel, Nebel, schwarzer Hintergrund oder aufgemaltes
+Schachbrett in transparenten Bereichen. Sichtbare schwarze Schatten bleiben
+sichtbar. Keine zusätzliche Farbschlüsselbehandlung bei dieser RGBA-Vorlage.
+Nur bei ausdrücklich als Farbschlüssel-Vorlage bezeichneten anderen Bildern
+steht exakt #800000 für Alpha 0; ähnliche Farben bleiben erhalten.
+
+DIESER DURCHGANG
+Nur diesen Ausschnitt neu gestalten. Keine 16:9-Erweiterung, keine Montage mit
+Bild 2, keine zusätzlichen Animationen. Erzeuge eine Variante als RGBA-PNG,
+ohne Text, Rahmen, Raster oder Wasserzeichen. Separate Spielebenen nicht mischen.
+
+QUALITÄTSKONTROLLE
+Prüfe vor der Ausgabe Geometrie und Stil getrennt. Nenne nicht ausgeführte
+Prüfungen als ungeprüft. Behaupte keine exakten Maße, Steinanzahl, pixelgleiche
+Transparenz oder nahtlosen Anschluss ohne tatsächliche Prüfung. Falls das
+Bildwerkzeug Maße oder Layout verändert hat, gib das offen an. Eine korrekte
+äußere Alphamaske allein beweist nicht, dass alle inneren Steine stimmen.

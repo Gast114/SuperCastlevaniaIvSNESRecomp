@@ -1,0 +1,31 @@
+Erweitere ausschließlich das beigefügte, bereits freigegebene HD-Bild.
+
+Vorhandenes Bild: [BREITE] × [HÖHE] Pixel.
+Zusatzfläche: LINKS [L] Pixel, RECHTS [R] Pixel. Höhe bleibt [HÖHE].
+Ausgabe: separate Erweiterungs-PNG(s) und eine Anschlussvorschau.
+Die bestehende Grafik muss in der Vorschau unverändert an ihrer Position sein.
+
+Verbindliche Bauform am Übergang:
+[Beschreiben: z.B. massive vorspringende Steinfläche/Decke samt Unterkante
+läuft nach links weiter; darunter dunkler zurückliegender Bereich.]
+
+Setze Form, Material, Steinlagen und Bodenhöhen im vorhandenen Maßstab fort.
+Kein Ersetzen einer vorspringenden Fläche durch eine zurückliegende Wand.
+Keine Spiegelung, neuen Türen, frontalen Torbögen, Perspektivwechsel oder
+zusätzlichen Ranken. Simon bewegt sich im Seitenbild horizontal.
+
+Das Bildwerkzeug darf den vorhandenen Ausschnitt nicht neu gestalten,
+verkleinern, strecken oder umpositionieren. Echte Alphatransparenz erhalten;
+sichtbares Schwarz bleibt sichtbar. Nur angeforderte Zusatzflächen erstellen.
+
+PLANUNGSHINWEIS, NICHT ALS BILDINHALT ZEICHNEN:
+Unser bisheriger fester 16:9-Modus erweitert 256 auf 342 Originalpixel:
+43 Originalpixel je Seite. Bei exakt 4× sind das172 Bildpixel; bei4,03125×
+aufgerundet174 Bildpixel.256 Bildpixel sind eine optionale Reserve.
+Explizite Auftragsmaße haben Vorrang. Die früheren247×992 betreffen nur einen
+bestimmten A02-Streifen und sind KEINE allgemeine Vorgabe für A03.
+Keine pauschalen54 Pixel verwenden. Für andere Bildformate neu berechnen.
+
+Prüfe neben den Dateimaßen auch die tatsächlichen Formen am Übergang.
+Gleiche Randfarben allein belegen keinen architektonisch passenden Anschluss.
+Benenne nicht erfüllte Vorgaben ehrlich; keine ungeprüfte Nahtlosigkeitszusage.

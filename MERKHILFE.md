@@ -4,6 +4,47 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Wiederholbarer A03-HD-Ablauf
+
+Vorbereitet unter Assets (ausgeschnitten)\Stage 01\A03\ChatGPT-Vorlagen-v1.
+Für A03_02 bis A03_05 gibt es jeweils zwei feste PNGs und ausgefüllte Prompts.
+Die Quellen2.png bis5.png sind bereits vergrößerte Original-Pixelart in RGBA
+mit echter Transparenz. Nicht erneut4× oder10× vergrößern. Zielmaße:
+A03_02:1032×903, A03_03:1161×903, A03_04:902×903, A03_05:1032×903.
+Das akzeptierte Stilbild1214×935 ist NUR Materialreferenz, keine Geometrievorlage.
+
+1. Im gewählten Ausschnittordner zuerst01_GEOMETRIE.png und danach
+   02_STILMASTER.png im ChatGPT-Fenster anhängen. Dann03_AUFTRAG.txt kopieren.
+2. Einen normalen HD-Ausschnitt gestalten lassen. Noch keine16:9-Erweiterung.
+   Derselbe freigegebene Stilmaster bleibt bei jedem Durchgang Bild2.
+3. Ergebnis herunterladen und auf05_PNG_PRUEFEN.cmd ziehen. Das verändert kein
+   Bild; es schreibt Pruefbericht.json mit Maßen, RGBA und Alpha-Vergleich.
+4. Stil und Bauform gesondert ansehen: alle begehbaren Steine, Positionen,
+   Fugen/Deckenfunktion und Übergänge. Technisches PASS ist KEINE Gesamtfreigabe.
+   Eine unveränderte äußere Alphamaske beweist keine korrekte innere Steinanzahl.
+5. Bei kleinem Fehler04_KORREKTUR.txt verwenden, nur einen Fehler benennen.
+   Bei grundsätzlich falschem Design/Geometrie wieder mit Original+Stilmaster
+   beginnen. Fehlversuche werden keine neue Stilreferenz. Bleibt das schwierig,
+   kleinere feste Bauteile/Materialien bearbeiten und in Originalgeometrie setzen.
+6. Erst freigegebene Teile in PhotoCraft gemeinsam bei100% prüfen. Für einen
+   direkten Anschluss zusätzlich den freigegebenen Nachbarrand klar als ANSCHLUSS
+   vorgeben. Überlappung ist Arbeitskontext und darf nicht doppelt eingebaut werden.
+7.16:9-Rand separat mit extension_de.txt bearbeiten, danach ins Spielpaket importieren.
+
+Feste16:9-Basis:43 zusätzliche Originalpixel je Seite,172 bei4× bzw.174 bei
+4,03125×.256 sind optionale Reserve;247×992 war nur der konkrete A02-Streifen.
+Für A03 keine pauschale Übernahme dieser Maße. Import berücksichtigt weiterhin
+registrierte manuelle Korrekturen; alte Overrides vor einem Austausch zuordnen.
+
+Prompts als versionierte Quellen unter assets/hd/prompts. PNG-Prüfer:
+tools/hd/check_redesign.py. Erkennt falsche Maße und Alpha, prüft KEINE Stiltreue,
+Steinanzahl/-positionen oder konstruktive Anschlüsse. Bei Fehlern nicht das ganze
+KI-Bild blind passend strecken oder eine leere Maske als Reparatur darüberlegen.
+Die Stilverbindlichkeit ist trotz Referenzen keine Garantie der Bildgenerierung.
+OpenAI-Primärquelle: developers.openai.com/cookbook/examples/multimodal/image-gen-models-prompting-guide.
+Vorbereitungs-/Prüfbericht: artwork-local/a03-workflow-check-2026-10-29.
+Keine neue Bildgenerierung, PSD-Änderung oder Installation bei der Vorbereitung.
+
 ## Gemeint ist eine durchgehende Steindecke
 
 Die großen vorspringenden Steine am linken Originalrand sind als massive
