@@ -862,3 +862,17 @@ Die großen Grundmodelle sind dort nicht noch einmal gespeichert.
 - Neue Figuren und Bewegungen entstehen zuerst als Vorschau. Danach folgt der Einbau ins Spiel.
 - Neue Alltagshinweise ergänze ich hier in einfacher Sprache.
 - Technische Einzelheiten für die Weiterarbeit stehen in `docs/HANDOFF.md`.
+
+## HD-Vorlagen: Englisch und Hintergrund ohne Serienbloecke
+
+Aktuell: `Assets (ausgeschnitten)\Stage 01\A03\ChatGPT-Vorlagen-v2-Englisch-ohne-Bloecke`.
+Die englischen Vorlagen liegen im Projekt unter `assets/hd/prompts/*_en.txt`.
+Nur die im Beispiel bezeichneten wiederholten quadratischen Schmuck-/Spielbloecke
+entfallen. Dahinter wird passender Hintergrund deckend rekonstruiert. Andere
+Mauersteine, Saeulen, Decken und Architektur bleiben erhalten. Diese Ausnahme hat
+Vorrang vor der alten Forderung, alle Spielsteine zu erhalten. Der Nutzer baut
+die entfernten Bloecke spaeter selbst ein. Die deutsche v1 bleibt nur Archiv.
+Der alte pixelgenaue Alpha-Vergleich prueft diese Ausnahme nicht angemessen:
+Transparenz innerhalb entfernter Bloecke darf zugunsten deckenden Hintergrunds
+entfallen. Fuer eine strenge Pruefung ist eine explizite Entfernungsmaske noetig;
+die Qualitaet der Hintergrundrekonstruktion muss separat beurteilt werden.

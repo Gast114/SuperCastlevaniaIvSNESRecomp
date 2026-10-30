@@ -1,0 +1,19 @@
+Targeted correction for {{ID}}. Output: exactly {{WIDTH}} × {{HEIGHT}}, RGBA PNG.
+
+Image 1: original geometry. Image 2: the unchanged approved style master.
+Image 3: the draft to correct. Optional REMOVE BLOCKS reference identifies the
+repeated blue-grey/greenish framed square gameplay blocks to omit.
+
+Correct only this issue:
+[DESCRIBE ONE SPECIFIC ERROR AND ITS LOCATION.]
+
+Keep all correct areas unchanged. Preserve the approved materials, lighting,
+remaining architecture, framing and coordinates. Continue omitting the designated
+repeated square blocks: their former footprints must contain convincing opaque
+background scenery, without block outlines, shadows, grid traces or transparent holes.
+Do not remove ordinary masonry or other structural elements. Preserve source alpha
+outside these removal footprints. No new decoration, enlargement or widescreen area.
+
+If the entire draft has incorrect geometry or style, restart from the original and
+approved style master. Do not use the failed draft as a new reference.
+Report unresolved or unverified requirements honestly.

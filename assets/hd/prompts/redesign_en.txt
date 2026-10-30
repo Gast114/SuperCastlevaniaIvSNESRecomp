@@ -1,0 +1,78 @@
+Create an HD game-art redesign of Image 1 for Super Castlevania IV.
+
+INPUT ROLES
+Image 1: 01_GEOMETRIE.png — authoritative source for composition, dimensions,
+positions, architecture and transparency, subject to the block-removal exception below.
+Image 2: 02_STILMASTER.png — approved reference for materials and rendering style only.
+An optional image explicitly labelled CONNECTION shows the finished neighbouring
+section. Use it to match architectural continuity at the shared edge.
+An optional image labelled REMOVE BLOCKS identifies the repeated square block type
+to omit. It is an identification reference, not a new layout or style reference.
+
+OUTPUT
+Exactly {{WIDTH}} × {{HEIGHT}} pixels. Job ID: {{ID}}.
+Filename: {{ID}}_HD_background.png. One RGBA PNG, at the source working resolution.
+The source is already enlarged: do not apply another 4× or 10× enlargement.
+
+REMOVE THE REPEATED SQUARE BLOCKS — REQUIRED EXCEPTION
+Omit the repeated, identical-looking square gameplay blocks shown in the removal
+reference: the blue-grey/greenish square tiles with a framed, dark ornamental face.
+Remove every instance of that specific block type throughout Image 1, including
+partial instances. The artist will rebuild and place those blocks manually later.
+Do not redesign them, replace them with other blocks, leave their outlines or
+shadows behind, or preserve a ghost/grid pattern showing where they used to be.
+This does NOT mean removing ordinary square masonry, structural stonework,
+arches, columns, ceilings, ledges or other unrelated platforms.
+
+Reconstruct the scenery that would naturally continue BEHIND the removed blocks.
+Infer the local material and depth from the surrounding source: continue brickwork
+with brickwork, recessed stone with recessed stone, or another existing background
+surface with the same surface. Match mortar courses, stone scale, lighting and
+perspective. Do not fill every removed area with one generic texture.
+The entire former block footprint must contain appropriate opaque background
+artwork. Do not leave transparent holes, empty cut-outs, black filler rectangles,
+blurred patches, new objects or a different scene. Preserve surrounding details.
+The required removal and background reconstruction take priority over preserving
+the original block count and block shapes. All other geometry stays fixed.
+
+PRESERVE THE REMAINING GEOMETRY
+Keep the canvas, framing and coordinates unchanged. Preserve the size and position
+of all remaining architecture, openings, ground levels and structural silhouettes.
+A projecting solid ceiling must retain its face and underside and continue as a
+ceiling at an adjoining edge; do not turn it into a recessed wall or isolated pillar.
+Do not crop, stretch, centre, reposition, mirror or change perspective.
+Do not copy the layout or canvas dimensions of the style reference.
+
+MATCH THE APPROVED STYLE
+Follow Image 2 for warm rusty-brown masonry, cooler grey arch/edge stones, readable
+dimensional edges, light direction, palette, sharpness and detail density.
+Keep the same side-view game-art treatment from one section to the next.
+No global colour grading, photorealistic reinterpretation or new stylistic direction.
+Vegetation must remain limited to what the source supports; when uncertain, use less.
+No additional vines, doors, arches, columns, characters or decorative props.
+
+TRANSPARENCY
+For an RGBA source, preserve its existing alpha mask everywhere EXCEPT within the
+footprints of the explicitly removed blocks. Those footprints must be filled with
+opaque reconstructed scenery (alpha 255), including any transparent details inside
+the removed tiles. Do not expand this exception into neighbouring transparent areas.
+All unrelated transparent areas must remain transparent. Do not add a sky, fog,
+solid background or painted checkerboard there. Preserve real black shadows.
+Only if an input is explicitly identified as a colour-key original, exact #800000
+(RGB 128, 0, 0) means transparency. Do not automatically colour-key RGBA artwork,
+similar reds or dark landscape colours. No red fringe in the finished PNG.
+
+SCOPE AND SEAMS
+Redesign this section only. Do not include a widescreen extension, montage,
+comparison, animation, text, guides, border or watermark. Do not merge separate
+game layers. At a supplied connection edge, retain the existing structural scale,
+stone courses, ceiling underside and ground height, not merely similar edge colours.
+Use the same approved style master for later sections; never promote a flawed draft
+to the new style reference.
+
+FINAL CHECK
+Check separately: canvas size; removal of the specified repeated blocks; convincing
+opaque background reconstruction; unchanged remaining geometry; correct alpha
+outside the removal footprints; style consistency; architectural connections.
+Do not claim pixel-exact dimensions, alpha or seamlessness without measuring them.
+If the image tool cannot satisfy a requirement, state the limitation honestly.

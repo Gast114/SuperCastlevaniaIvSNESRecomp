@@ -1,0 +1,26 @@
+Extend the supplied approved HD background artwork only.
+Existing image: [WIDTH] × [HEIGHT] pixels.
+Additional area: LEFT [L] pixels, RIGHT [R] pixels. Height stays [HEIGHT].
+Deliver separate RGBA extension PNG(s) and a connection preview.
+Keep the existing image unchanged and at its original coordinates in the preview.
+
+Required structure at the connection:
+[DESCRIBE THE CONTINUING STRUCTURE, INCLUDING ANY CEILING FACE AND UNDERSIDE.]
+
+Continue the exact scale, materials, lighting, stone courses, depth and ground height.
+Do not replace a projecting structure with a recessed wall. No mirroring, new doors,
+front-facing gateways, perspective changes or additional vines. Movement is horizontal
+in a side-view game. Do not add the repeated identical square gameplay blocks:
+those are separate assets the artist places manually. Extend the background behind them.
+Preserve true transparency where appropriate; real black shadows remain opaque.
+
+SIZE PLANNING — DO NOT DRAW THESE NOTES
+The current fixed widescreen mode expands 256 to 342 original pixels: 43 original
+pixels per side. At exactly 4× this is 172 artwork pixels per side; at 4.03125×,
+round up to 174. A 256-pixel side margin is optional working reserve, not a requirement.
+Explicit job dimensions take priority. The former 247×992 size belongs to one specific
+A02 strip, not every section. Do not use a universal 54-pixel margin. Recalculate for
+other aspect ratios. Normal redesign and widescreen expansion are separate passes.
+
+Verify dimensions and structural continuity separately. Matching edge colours alone
+does not prove a correct architectural seam. State any unverified requirements.
