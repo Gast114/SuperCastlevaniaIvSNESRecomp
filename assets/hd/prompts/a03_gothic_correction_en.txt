@@ -1,0 +1,29 @@
+The previous result is rejected for its art direction: the bright orange palette,
+clean uniform masonry, soft rounded bevels and evenly lit surfaces look toy-like.
+Do not use that image as the style master for any A03 section.
+
+Rework the rendering as sombre gothic horror scenery for Super Castlevania IV.
+Use aged, heavy fortress stone: desaturated umber, charcoal brown and smoke grey,
+subdued iron-oxide undertones, and cold recessed shadows. Use dim upper-left light,
+selective edge highlights and deep architectural occlusion while keeping the forms
+readable. Avoid bright orange terracotta, creamy trim and warm studio lighting.
+
+Use angular worn edges and uneven, weathered stone planes. Add believable local
+erosion, occasional chips and restrained grime in joints. No smooth pill-shaped
+blocks, inflated bevels, identical outlines, polished surfaces or clean toy masonry.
+Do not simply put a dark filter over the old result: correct the material rendering.
+
+Natural roughness is welcome, but no all-over granular noise, metallic sparkle,
+bright speckles or repeated procedural texture. Keep stone faces readable without
+making them smooth plastic. No additional ivy, decoration or horror props.
+
+Use each ORIGINAL PNG to preserve its exact canvas, architecture, openings and
+coordinates. Continue removing the specified repeated blue-grey framed gameplay
+blocks and reconstruct opaque local background behind them. Preserve alpha outside
+those removal footprints. Do not introduce black filler or transparent block holes.
+
+Complete all five separate RGBA PNGs under the existing workflow:
+01: 1032 x 903; 02: 1032 x 903; 03: 1161 x 903;
+04: 902 x 903; 05: 1032 x 903.
+No widescreen margins. Check the revised gothic material treatment before carrying
+it across the remaining sections. Report actual checks and unresolved issues honestly.

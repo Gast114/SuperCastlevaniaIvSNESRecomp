@@ -889,3 +889,16 @@ bezeichneten quadratischen Serienbloecke entfernen, dahinter deckenden lokalen
 Hintergrund rekonstruieren. Keine pauschale Entfernung quadratischer Mauersteine.
 Exakte Geometrie und passende Rekonstruktion sind durch einen Prompt nicht garantiert.
 Quellkopien hashgeprueft; keine PSD, Quelldatei oder Spielinstallation geaendert.
+
+## A03: duestere gotische Materialwirkung statt Spielzeugoptik
+
+Aktuell ist `Assets (ausgeschnitten)\Stage 01\A03\ChatGPT-Workflow-v4-Duester-Gotisch`.
+Die helle orangefarbene, glatte und rund abgeschraegte V3-Ausgabe ist abgelehnt.
+Vollauftrag: `assets/hd/prompts/a03_autonomous_en.txt`; kurze Korrektur fuer den
+bestehenden Bild-Chat: `assets/hd/prompts/a03_gothic_correction_en.txt`.
+Ziel sind schwere verwitterte gotische Mauern, entsaettigtes Braun/Grau und kuehle
+tiefe Schatten. Natuerliche lokale Rauheit ja, flaechiges Koerner-/Glitzermuster nein.
+Keine Spielzeug-Bevels oder Cartoonoptik; nur Abdunkeln ist keine Materialkorrektur.
+Alle fuenf Originale bleiben Geometrievorgabe ohne HD-Stilvorlage. Masse,
+Blockentfernung und deckende Hintergrundrekonstruktion gelten unveraendert.
+Vorlagenpaket kopiert und Quellen hashgeprueft; keine Bilder neu generiert.
