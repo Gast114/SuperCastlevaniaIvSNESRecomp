@@ -1,0 +1,63 @@
+Produce all five A03 environment sections for Super Castlevania IV as one coherent HD art set. Complete the sequence autonomously, from source analysis through generation, corrections and final file checks. Do not stop after a plan or the first image to ask whether to continue.
+
+INPUTS AND AUTHORITY
+I am supplying five ORIGINAL pixel-art PNGs, named A03_01_original.png through A03_05_original.png. There is NO supplied HD style reference. Develop the HD rendering yourself using the material direction below. The originals define layout and geometry, not the surface noise or individual enlarged pixels you should reproduce.
+
+An optional REMOVE_BLOCKS image only identifies the repeated gameplay tiles to remove. It is not a style reference. Do not imitate any rejected HD examples.
+
+EXACT DELIVERABLES
+A03_01_HD_background.png: 1032 x 903 pixels.
+A03_02_HD_background.png: 1032 x 903 pixels.
+A03_03_HD_background.png: 1161 x 903 pixels.
+A03_04_HD_background.png: 902 x 903 pixels.
+A03_05_HD_background.png: 1032 x 903 pixels.
+Five separate RGBA PNGs, each corresponding to its own original. No labels, frames, watermarks, comparison panels or visible checkerboards in the artwork. A ZIP containing those same five PNGs is welcome if file tools are available. Do not substitute one collage for the five assets.
+
+GEOMETRY CONTRACT
+Preserve each original canvas, framing, architectural silhouette, openings, ground levels, depth relationships and the coordinates of all remaining structural elements. The originals are already at working resolution. Do not enlarge them again, crop away margins, centre objects, stretch, mirror or change perspective. This is side-view game scenery, not a perspective illustration.
+
+A projecting solid ceiling remains a ceiling with a continuous face and underside. An opening remains at its original location and size. Do not invent doors, towers, arches or other structures. Fine material marks may change; structural boundaries may not. Do not move an edge merely to make it look prettier.
+
+REMOVE THE REPEATED GAMEPLAY BLOCKS
+Remove every instance, including partial instances, of the identical blue-grey/greenish square gameplay tiles with a framed ornamental face. These are the repeated small foreground blocks used as steps or platforms, not the ordinary reddish-brown masonry behind them. I will create and position those gameplay blocks manually later.
+
+Do not replace them with another block design. Remove their borders, cast shadows and any traces of their grid. Keep unrelated stonework, structural ledges, columns, arches and ceilings.
+
+Reconstruct the local background that would naturally exist behind each removed block. Continue the adjacent brick courses, recessed surfaces and material depth at the same scale. Fill the full former block footprint with opaque scenery, including any transparent details inside the removed tile. No transparent holes, black filler rectangles, blurry patches or visible replacement rectangles. Do not fill every area with a single generic texture.
+
+This removal is the only intended structural exception to the source geometry. Do not preserve the removed block count merely to satisfy the general geometry rule.
+
+MATERIAL DIRECTION: QUIET, MATTE, NATURAL STONE
+Create carefully painted 2D gothic castle ruins with readable forms and restrained detail. Use warm, muted burnt-sienna and earthy reddish-brown masonry, cooler grey structural trim where the original distinguishes it, and subdued mortar. Keep the palette coherent across all five sections.
+
+Stone faces should have broad, relatively calm planes with subtle tonal variation. Show age mainly through irregular edges, a few chips, occasional cracks and sparse local wear. Not every stone needs a crack. Keep slight differences between stones without making them look like unrelated materials.
+
+Use soft upper-left illumination with shaded lower and right edges. Keep exposed stone matte, highlights broad and restrained, and mortar darker without becoming thick black outlines. Retain local shadows and depth cues from the original architecture.
+
+Do not cover every surface with granular noise, mottled speckles, tiny pits, bright dots, metallic flecks, wet highlights, crystalline details, embossed swirls or repeated procedural crack patterns. Do not copy the original pixel dithering as HD surface detail. Avoid the appearance of polished metal, melted rock, glazed clay or a sharpened photograph. HD means clearer form, not more noise.
+
+Keep vegetation sparse and subordinate. Follow the source placement and amount or use less; do not invent ivy curtains, dense moss or decorative clutter.
+
+CONSISTENCY ACROSS THE FIVE SECTIONS
+Set one palette, light direction, edge treatment, stone surface roughness and detail density before generating. Apply that same material treatment throughout. The first generated section may guide the subsequent material rendering, but each section's own ORIGINAL remains authoritative for its geometry. Do not copy the first section's composition into the others or progressively increase detail and contrast.
+
+Check adjoining structures where the originals actually share a boundary: continue masonry courses, ceiling undersides, scale and ground height. Do not assume every cropped image edge must touch the next image. Do not stretch the five images to force a combined panorama.
+
+ALPHA AND COLOUR KEY
+The supplied originals are RGBA. Preserve their alpha outside the removed tile footprints. Within those footprints, reconstructed scenery must be opaque (alpha 255). Do not extend this exception into neighbouring transparent areas. Real black shadows remain visible and opaque; black is not automatically transparency.
+
+Only if another input is explicitly labelled a colour-key original, exact #800000 (RGB 128, 0, 0) means alpha 0. Do not colour-key genuine RGBA artwork or remove similar red/brown landscape colours. No red halos or painted transparency pattern in the result.
+
+AUTONOMOUS WORKFLOW
+1. Read the five originals and establish their geometry, alpha boundaries and the specific tile type to remove. Use file inspection tools when available; do not ask me to describe data you can inspect.
+2. Establish the shared material rules above. Generate section 01, check it against its own original, and correct deviations before continuing. Do not ask for approval between sections.
+3. Generate sections 02 through 05 in order, preserving the same rendering choices while using each original's own geometry. Review each result rather than treating completion of generation as proof of correctness.
+4. Correct local mistakes locally, preserving correct regions. If a draft has fundamental layout problems, restart it from its original rather than using the flawed layout as a new source.
+5. Verify all five files. If file tools allow it, measure format, dimensions and alpha. Inspect structural alignment against the corresponding original and inspect background reconstruction and material consistency separately. Original-alpha equality is not sufficient here because the removed tile footprints are an intentional exception.
+6. Deliver all five final PNGs with a short report listing measured dimensions and any unresolved requirements. Do not claim exact geometry or successful checks that were not actually performed. If a tool limit prevents completing all five or meeting exact geometry, explain precisely what remains instead of calling the incomplete set finished.
+
+Do not merely resize an incorrectly composed generation to the target dimensions and claim the geometry is fixed. If tools permit, use source-aligned masks and compositing to preserve structural contours. Do not assume a generation mask guarantees exact boundaries; check the result.
+
+WIDESCREEN IS A SEPARATE PASS
+Do not add widescreen margins to these five files. Only extend after the normal sections are complete and an extension is explicitly requested.
+Current fixed widescreen: 256 to 342 native pixels, or 43 extra native pixels per side. At exactly 4x that is 172 artwork pixels per side; at 4.03125x round up to 174. A 256-pixel margin is optional reserve. The old 247 x 992 size applies only to one A02 strip, not A03. There is no universal 54-pixel margin. Explicit extension dimensions override planning examples.

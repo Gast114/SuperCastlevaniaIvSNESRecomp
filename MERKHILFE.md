@@ -876,3 +876,16 @@ Der alte pixelgenaue Alpha-Vergleich prueft diese Ausnahme nicht angemessen:
 Transparenz innerhalb entfernter Bloecke darf zugunsten deckenden Hintergrunds
 entfallen. Fuer eine strenge Pruefung ist eine explizite Entfernungsmaske noetig;
 die Qualitaet der Hintergrundrekonstruktion muss separat beurteilt werden.
+
+## A03: alle fuenf Abschnitte ohne HD-Stilvorlage
+
+Aktuell: `Assets (ausgeschnitten)\Stage 01\A03\ChatGPT-Workflow-v3-Alle-5-ohne-HD-Vorlage`.
+Vollstaendiger englischer Auftrag im Projekt: `assets/hd/prompts/a03_autonomous_en.txt`.
+Alle fuenf Originale sind dabei reine Geometrievorlagen, keine HD-Stilreferenz.
+Masse 01/02/03/04/05: 1032/1032/1161/902/1032 mal jeweils 903 Pixel.
+Die KI bearbeitet die ganze Serie ohne Zwischenfreigaben. Matte, ruhige Steinflächen
+mit wenigen lokalen Schaeden statt koerniger, glaenzender Flaechentextur. Nur die
+bezeichneten quadratischen Serienbloecke entfernen, dahinter deckenden lokalen
+Hintergrund rekonstruieren. Keine pauschale Entfernung quadratischer Mauersteine.
+Exakte Geometrie und passende Rekonstruktion sind durch einen Prompt nicht garantiert.
+Quellkopien hashgeprueft; keine PSD, Quelldatei oder Spielinstallation geaendert.
