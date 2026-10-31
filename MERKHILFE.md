@@ -902,3 +902,16 @@ Keine Spielzeug-Bevels oder Cartoonoptik; nur Abdunkeln ist keine Materialkorrek
 Alle fuenf Originale bleiben Geometrievorgabe ohne HD-Stilvorlage. Masse,
 Blockentfernung und deckende Hintergrundrekonstruktion gelten unveraendert.
 Vorlagenpaket kopiert und Quellen hashgeprueft; keine Bilder neu generiert.
+
+## A03: Originalfarben statt graubrauner Entsaettigung
+
+Aktuell: `Assets (ausgeschnitten)\Stage 01\A03\ChatGPT-Workflow-v5-Originalfarben`.
+Auch der graubraune V4-Look ist vom Nutzer abgelehnt. Originale bestimmen jetzt
+explizit Geometrie UND lokale Materialfarben. A03-Mauerwerk bleibt deutlich
+roetlich-braun; grauer Besatz muss unterscheidbar sein. Düsternis durch lokale
+Schatten, Tiefe und Verwitterung statt pauschaler Entsaettigung/kaltem Farbfilter.
+Die Cartoon-/Spielzeugoptik aus V3 bleibt ebenfalls abgelehnt.
+`assets/hd/prompts/source_colour_correction_en.txt` korrigiert den laufenden
+Bild-Chat: A03 vor A04/A05 ueberpruefen, abgelehnte Bilder nicht weitertragen;
+A04/A05 behalten ihre eigenen Originalfarben. Vollauftrag und gotische Korrektur
+im Projekt ebenfalls angepasst. Nur Prompt-/Vorlagenpflege, keine Bildgenerierung.

@@ -3,10 +3,13 @@ clean uniform masonry, soft rounded bevels and evenly lit surfaces look toy-like
 Do not use that image as the style master for any A03 section.
 
 Rework the rendering as sombre gothic horror scenery for Super Castlevania IV.
-Use aged, heavy fortress stone: desaturated umber, charcoal brown and smoke grey,
-subdued iron-oxide undertones, and cold recessed shadows. Use dim upper-left light,
-selective edge highlights and deep architectural occlusion while keeping the forms
-readable. Avoid bright orange terracotta, creamy trim and warm studio lighting.
+Use aged, heavy fortress stone while preserving each ORIGINAL's material colours.
+A03's reddish-brown masonry must remain visibly reddish-brown, with warm rust and
+earthen variation; grey trim remains a separate material. Reject the subsequent
+washed-out grey-brown palette as well. Earlier blanket desaturation and charcoal
+palette instructions are superseded. Create gloom through deep local shadows,
+selective light and weathering; do not erase colour with a grey or cold filter.
+Avoid candy-orange exaggeration and uniformly bright studio lighting.
 
 Use angular worn edges and uneven, weathered stone planes. Add believable local
 erosion, occasional chips and restrained grime in joints. No smooth pill-shaped

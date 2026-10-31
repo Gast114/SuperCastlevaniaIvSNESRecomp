@@ -1,0 +1,34 @@
+IMPORTANT CORRECTION — APPLY BEFORE CONTINUING TO A04 OR A05
+
+The current results are rejected, especially the washed-out grey-brown palette.
+Do not treat them as approved or use them as the style master for later sections.
+This is not merely a request to tint the current images: re-check their architecture,
+material rendering and layout against each ORIGINAL as well.
+
+The ORIGINALS are authoritative for material colours as well as geometry.
+For A03, preserve the clearly reddish-brown masonry, warm rust/red-ochre variation
+and contrasting grey structural trim. The warm masonry must not become a nearly
+monochrome charcoal, taupe or muddy grey-brown wall. Keep the original materials
+visibly distinct. For A04 and A05, follow THEIR OWN original colour families;
+do not impose A03's palette on unrelated materials.
+
+This instruction overrides earlier blanket requests for low saturation, charcoal
+browns, smoke-grey masonry or an overall cold grade. Do not globally desaturate,
+apply a grey/sepia filter, or merely increase saturation across the entire draft.
+Re-establish the intended colours per material from the originals.
+
+The mood must still be sombre, gothic and threatening. Achieve that through shadow
+depth, directional light, aged edges, recessed joints and weathering. Keep rich
+material colour visible on exposed surfaces. Gloom does not require colourless walls.
+Avoid the earlier opposite extreme of bright candy-orange, rounded toy-like masonry.
+
+Maintain angular worn stone and believable local roughness without repeating one
+generic bevel and texture on every block. No glitter, granular overlays or excessive ivy.
+Preserve each source's exact dimensions, architecture and coordinates. Remove only
+the specified repeated square gameplay blocks and reconstruct opaque background
+behind them; preserve unrelated transparency.
+
+Correct the current A03 work and review source colours, geometry and materials
+before continuing with A04 and A05 under the same corrected rendering principles.
+Continue autonomously within the available session and tools; report any unresolved
+requirements honestly instead of declaring the rejected appearance correct.
