@@ -945,3 +945,15 @@ bisherigen Wasser-Ufer-Ausschnitts, Motivpositionen erhalten, aussen transparent
 Statische HD-Gestaltung reicht als Grundlage; keine manuelle Animationsserie.
 HD-Farb-/Reflexanimation muss erst beim Import implementiert werden, nicht
 automatisch durch den PNG-Export vorhanden. Spielersave SHA unveraendert.
+
+## A05 verwendet A03-Hintergrundgrafik (02.11.)
+
+F5/save4 vom02.11.22:54 in privater Laufzeit als A05/Block4 bestaetigt.
+Audit `artwork-local/a05-background-audit-2026-11-02/audit.json`: komplette
+BG2-Karte4096/4096 Eintraege mit A03 identisch, ebenso dekodierte Pixel und
+Paletten; Mond16x16-Kacheln+Palette identisch, OAM auf Tile170/Attr46 bestaetigt.
+HD-Himmel/Berge,Wald,Mond gemeinsam aus A03 verwenden, keine neuen A05-Exporte
+der Motive noetig. A05-Scrollversatz anders: nach91 Frames Kamera152, oberer
+BG2-Bereich h16, unterer h33. Gleiche Bandgrenze95 wie A03. Registrierung beim
+Einbau separat; A05-Vordergrund bleibt eigenstaendig. Artist-Notiz in
+`Assets (ausgeschnitten)\Stage 01\A05\HINTERGRUND_AUS_A03.txt`. F5 SHA unveraendert.
