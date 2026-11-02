@@ -1,0 +1,86 @@
+Create a coherent HD redesign of the supplied Super Castlevania IV background assets for Stage 01, sections A03 and A04. A05 will reuse the A03 backgrounds. Complete the supplied set autonomously within the current session and available tools, including source inspection, artwork generation, local corrections and file checks. Do not stop after a plan or one image merely to ask whether to continue.
+
+PURPOSE: NEW ARTWORK, SAME ORIGINAL FEELING
+These inputs are already enlarged pixel-art working references. Their current pixel dimensions are the FINAL output dimensions. Do not multiply them by 4 or 10 again.
+
+Do not merely resize, interpolate, sharpen, denoise or trace the enlarged pixels. Repaint the scenery with genuinely new, carefully placed material and shape detail: believable bark, tree volume, overlapping branches, distant mountain faces and fine water reflections. Replace pixel dithering with natural tonal transitions and form-aware detail. Retain the original composition, major silhouettes, positions, scale and atmosphere. Added detail must develop the existing scene rather than invent a different scene.
+
+There is NO supplied HD style master. The ORIGINALS control geometry, material colours, depth hierarchy and atmosphere. Rejected HD drafts must not become references.
+
+ART DIRECTION AND COLOUR
+Preserve the original sombre, eerie, nocturnal gothic atmosphere. It is a dark forest and distant landscape behind the playable scene, not a cheerful fantasy illustration. Keep the original deep violet/indigo sky, subdued purple distant mountains, dark green forest, source-supported warm reddish-brown trunks and cool water colour families. Preserve meaningful colour differences rather than imposing one global palette.
+
+Earlier generic instructions to make everything grey, charcoal, sepia, low-saturation brown or cold blue are NOT applicable. Do not wash out the original colours. Also avoid neon purple, candy colours, a vivid orange cast or a bright daytime treatment. Create gloom through shadow depth, selective illumination and atmospheric separation while keeping the original colour identity visible.
+
+Render serious, believable, hand-painted 2D game scenery. Avoid cartoon outlines, inflated forms, smooth plastic foliage, toy-like surfaces and shiny rounded bark. Use natural local texture without an all-over granular overlay, metallic flecks, bright speckles, crystalline glitter or repeated procedural patterns. More detail does not mean more visual noise.
+
+DEPTH AND VISUAL RESTRAINT
+The foreground gameplay must remain visually dominant. Distant mountains and tree lines have lower contrast and less detail than the nearer forest. Keep forest interiors dark but readable, with layered trunks and restrained foliage detail. Do not illuminate every leaf or branch. Preserve the existing empty sky and dark spaces; do not fill them with extra trees, stars, clouds, fog, ruins, ivy, characters or decorative objects. No added light rays, bloom or film grain. Do not turn the scenery into a highly contrasted foreground wall.
+
+EXACT INPUTS AND OUTPUT DIMENSIONS
+Folder A03:
+Hintergrund-01 (1).png — 612 x 383
+Hintergrund-01 (2).png — 613 x 383
+Hintergrund-01 (3).png — 613 x 383
+Hintergrund-01 (4).png — 613 x 383
+Hintergrund-02.png — 1081 x 391
+Mond.png — 60 x 60
+
+Folder A04:
+Hintergrund-01 (1).png — 840 x 254
+Hintergrund-01 (2).png — 841 x 254
+Hintergrund-02 (1).png — 682 x 133
+Hintergrund-02 (2).png — 683 x 133
+Hintergrund-02 (3).png — 683 x 133
+Hintergrund-03 (1).png — 682 x 65
+Hintergrund-03 (2).png — 683 x 65
+Hintergrund-03 (3).png — 683 x 65
+Hintergrund-04 (1).png — 657 x 451
+Hintergrund-04 (2).png — 658 x 451
+Mond.png — 60 x 60
+
+Output each PNG in its own A03 or A04 folder, keeping the original filename stem and adding _HD before .png. All output files must be actual RGBA PNGs. Keep the two folders distinct: identical filenames in different sections are not interchangeable. Read the files to verify the listed dimensions; report any discrepancy instead of guessing.
+
+PIECES OF THE SAME STRIP
+Suffixes (1), (2), etc. run left to right within one background group. The widths intentionally differ by one pixel in several groups. Preserve those widths exactly.
+
+Treat each group as one continuous scene at these original coordinates:
+A03/Hintergrund-01: total 2451 x 383; piece x offsets 0, 612, 1225, 1838.
+A04/Hintergrund-01: total 1681 x 254; piece x offsets 0, 840.
+A04/Hintergrund-02: total 2048 x 133; piece x offsets 0, 682, 1365.
+A04/Hintergrund-03: total 2048 x 65; piece x offsets 0, 682, 1365.
+A04/Hintergrund-04: total 1315 x 451; piece x offsets 0, 657.
+
+Plan each group's continuous structure first. Generate each manageable piece using its own original, the shared material direction and neighbouring boundary context. The source and already corrected neighbouring artwork may supply context, but must not override that piece's own layout.
+
+Keep branches, treetops, mountains, horizon bands, shorelines and reflections continuous where they cross a cut. Match the actual shapes and depth as well as colour and texture. Do not finish a tree at an artificial cut edge if the original continues it into the next piece. Keep joint regions from becoming brighter or more detailed than the middle of a piece.
+
+Do not mirror pieces, resize them to equal widths, duplicate a neighbour or create overlapping final outputs to hide a seam. Context overlap is allowed during construction, but the delivered crops must retain exactly the listed dimensions and coordinates. Do not force unrelated groups or sections into one panorama. Only make a group horizontally tileable if its original actually wraps; do not redesign the outer edges to force a new loop.
+
+LAYERS AND ALPHA
+All supplied background-strip images are RGB and fully opaque. Export their redesigned equivalents as RGBA with alpha 255 throughout. Black and dark purple in these originals are scenery, not a transparency key. Do not auto-remove dark forest gaps or the upper dark sky. Do not invent transparent holes or add background scenery outside the source composition. Never paint a checkerboard.
+
+The two Mond.png inputs are identical transparent images at 60 x 60. Redesign the moon ONCE and reuse the exact same HD file in both output folders. Preserve its crescent shape, orientation, position and source alpha mask. Add restrained surface and edge detail within the existing visible shape without making a new full moon, a face, a bright white icon or an oversized glow. Do not paint the moon into any sky image. Do not trim its canvas or use the earlier 60 x 61 dimensions: the current files are 60 x 60.
+
+A04 WATER: STATIC DESIGN NOW, ANIMATION AT GAME INTEGRATION
+A04/Hintergrund-02 contains the water and banks. Its three pieces must remain aligned. Create dark, cool water with restrained horizontal surface reflections at the source scale and correct shoreline, not a photographic ocean, large waves or glitter.
+
+The native effect cycles three water colours. You do not need to invent animation frames or deliver a GIF/video. Provide the normal complete _HD versions of all three pieces. Additionally, if file tools support compositing, separate each completed water/bank piece into:
+- [original stem]_Wasser_HD.png: water only, transparent outside the water.
+- [original stem]_Ufer_HD.png: the complementary banks/background, transparent where the water goes.
+Each separation must use the exact same full canvas and coordinates as its corresponding complete piece. Together they must reconstruct that complete HD piece without holes or colour changes. Do not crop either layer to visible content. Preserve any reflection layers in an editable project if available, but no editable project is mandatory.
+
+Do not approximate that separation by removing all black, blue or cyan pixels. If reliable layer separation is unavailable, still deliver the complete pieces and explicitly mark separation as outstanding. A static HD PNG does not automatically inherit native colour cycling: runtime animation will be implemented separately. Do not animate the banks or distant forest with the water.
+
+WORK ORDER AND REVIEW
+1. Inspect and inventory the supplied originals. Extract an input ZIP if needed. Use the listed names, dimensions, alpha rules and group coordinates; do not require me to restate information available in the files.
+2. Establish the common nocturnal rendering direction. Complete A03's forest group with local corrections and boundary checks, then its sky/mountains and the shared moon. Confirm original feeling and colour before carrying the treatment into A04. No intermediate approval is required.
+3. Complete A04's forest, distant tree-line, water/banks and sky/mountain groups using the same quality of rendering while preserving each original's material colours and depth. The original A04 sky may share a rendering treatment with A03, but its different composition and canvas must remain its own.
+4. Compare each completed result against its corresponding original at normal gameplay scale. Ask separately: Is this actual newly drawn detail? Are the original atmosphere and colour families retained? Are silhouettes, horizons and tree positions stable? Does the background remain subordinate? Are adjacent pieces structurally continuous? Correct failed criteria before declaring success.
+5. Use file tools where available to measure PNG format, dimensions, alpha and the identity of the reused moon. Check joined groups without rescaling. Exact dimensions alone do not prove correct internal geometry; visual appearance alone does not prove valid alpha.
+6. Deliver 17 named primary PNGs, including identical copies of the one HD moon in both folders, plus the water/bank separations where completed. Include a short manifest of actual output dimensions and any unresolved requirements. Package the files in a ZIP if possible; a comparison collage is optional and cannot replace individual deliverables.
+
+Do not claim file checks, seamlessness, correct geometry or complete delivery without actually checking. If a tool cannot preserve layout or exact boundaries, explain the specific limitation. Do not simply scale an incorrectly composed generation into the target dimensions and call it corrected. If a session limit interrupts the sequence, leave an accurate list of finished files and the next unfinished task.
+
+NO WIDESCREEN EXPANSION IN THIS PASS
+Do not add extra margins to these assets. These are already cut working pieces with fixed dimensions. Widescreen additions, if required later, are a separate integration task; do not apply old 54-pixel or 247-pixel rules to these files.

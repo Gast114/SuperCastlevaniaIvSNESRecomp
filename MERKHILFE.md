@@ -957,3 +957,21 @@ der Motive noetig. A05-Scrollversatz anders: nach91 Frames Kamera152, oberer
 BG2-Bereich h16, unterer h33. Gleiche Bandgrenze95 wie A03. Registrierung beim
 Einbau separat; A05-Vordergrund bleibt eigenstaendig. Artist-Notiz in
 `Assets (ausgeschnitten)\Stage 01\A05\HINTERGRUND_AUS_A03.txt`. F5 SHA unveraendert.
+
+## Gemeinsamer HD-Hintergrund-Workflow A03/A04 (02.11.)
+
+Paket: `Assets (ausgeschnitten)\Stage 01\Hintergrund-HD-Workflow-2026-11-02`.
+Vollstaendiger englischer Prompt: `assets/hd/prompts/backgrounds_stage01_en.txt`.
+ZIP mit17 unveraenderten Quell-PNGs in A03/A04-Unterordnern, SHA-geprueft inkl.
+ZIP-Readback. Lokale Pfade allein sind fuer den Bild-Chat kein Dateiupload.
+Ziel: echte neue Detailzeichnung statt nur Upscaling, Originalfarben und
+duestere Nachtstimmung erhalten, Hintergrundkontrast nach Tiefe abgestuft.
+Keine generische graue Entsaettigung, Cartoonformen oder Koerner-/Glitzermuster.
+A03-Wald612+613+613+613=2451x383 ergibt pixelgleich den bisherigen Gesamtstreifen.
+Weitere Gruppenbreiten: A04-Wald1681x254, Wasser/Ufer2048x133, Fernwald2048x65,
+Himmel/Berge1315x451. A03-Himmel1081x391. Mond aktuell in BEIDEN Quellordnern
+identisch60x60, ersetzt fruehere60x61-Vorlage. Einmal gestalten, gleich wiederverwenden.
+RGB-Streifen bleiben deckend; Mond-Alpha erhalten.17 primaere RGBA-Outputs plus
+bei verfuegbaren Dateiwerkzeugen zusaetzliche Wasser-/Ufertrennung fuer drei
+A04-Wasserstuecke. Diese muessen jeweils dasselbe komplette Bild rekonstruieren.
+Keine Laufzeit-Animation oder HD-Installation in diesem Auftrag implementiert.
