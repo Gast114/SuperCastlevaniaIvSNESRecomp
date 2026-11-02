@@ -930,3 +930,18 @@ Pixel, Bounds[56,48,71,63], OAMslot11/Tile170/Attr46,16x16. In beiden Stichprobe
 ortsfest. Audit: `artwork-local/a03-background-audit-2026-11-02/audit.json`.
 Nur Vorbereitung, keine HD-Registrierung/Spielinstallation. F3-SHA nach Pruefung
 unveraendert. Keine weiteren Bilder im Bildbetrachter geoeffnet.
+
+## A04-Wasser: native Farbanimation, getrennte Wasserzeichnung (02.11.)
+
+F4/save3 vom 02.11. 22:50 in privater Laufzeit bestaetigt: Block3, Kamera375.
+Audit `artwork-local/a04-water-audit-2026-11-02/audit.json`: sieben Stichproben
+Frame1/2/5/9/17/33/65, Wasser-VRAM unveraendert, CGRAM99/100/101 zyklisch
+mit drei Permutationen. Betroffen1476 BG2-Pixel, Bounds[2,136,242,157]. Andere
+VRAM-Aenderungen ab33 nur HUD bei0xb000. Keine zeitabhaengige Wellenverschiebung
+in den Stichproben; feste Scrollbaender BG2 h75/150/300 ab Zeilen0/127/159.
+Artist-Anleitung `Assets (ausgeschnitten)\Stage 01\A04\WASSER_HD_EXPORT.txt`.
+Wasser und Ufer/Fernwald getrennte Gruppen/PNGs, identische Leinwand des
+bisherigen Wasser-Ufer-Ausschnitts, Motivpositionen erhalten, aussen transparent.
+Statische HD-Gestaltung reicht als Grundlage; keine manuelle Animationsserie.
+HD-Farb-/Reflexanimation muss erst beim Import implementiert werden, nicht
+automatisch durch den PNG-Export vorhanden. Spielersave SHA unveraendert.
