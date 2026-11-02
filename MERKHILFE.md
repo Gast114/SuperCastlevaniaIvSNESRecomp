@@ -915,3 +915,18 @@ Die Cartoon-/Spielzeugoptik aus V3 bleibt ebenfalls abgelehnt.
 Bild-Chat: A03 vor A04/A05 ueberpruefen, abgelehnte Bilder nicht weitertragen;
 A04/A05 behalten ihre eigenen Originalfarben. Vollauftrag und gotische Korrektur
 im Projekt ebenfalls angepasst. Nur Prompt-/Vorlagenpflege, keine Bildgenerierung.
+
+## A03-Hintergrund: drei getrennte HD-Dateien (02.11.)
+
+Vorlagen und Anleitung: `Assets (ausgeschnitten)\Stage 01\A03\Hintergrund-Vorlagen-2026-11-02`.
+Exports spaeter nach `A03\HD\Hintergrund`: Himmel-Berge.png 1081x391, Wald.png
+2451x383 und Mond.png 60x61. Bereits Arbeitsaufloesung, nicht erneut vergroessern
+oder automatisch zuschneiden. Himmel/Wald geliefert voll deckend; Schwarz nicht
+pauschal entfernen. Mond mit echter Alphatransparenz und ohne eingemalten Himmel.
+F3/save2 vom 02.11. in privater Laufzeit als A03/Block2 bestaetigt. Zwei BG2-
+Scrollbaender: nach 90 Rechts-Frames h10 bis Zeile94 und h20 ab95, BG1 h50.
+Mond durch vier farbkanonisierte Quellfarben auf OBJ identifiziert:71 sichtbare
+Pixel, Bounds[56,48,71,63], OAMslot11/Tile170/Attr46,16x16. In beiden Stichproben
+ortsfest. Audit: `artwork-local/a03-background-audit-2026-11-02/audit.json`.
+Nur Vorbereitung, keine HD-Registrierung/Spielinstallation. F3-SHA nach Pruefung
+unveraendert. Keine weiteren Bilder im Bildbetrachter geoeffnet.
