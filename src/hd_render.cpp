@@ -48,12 +48,14 @@ struct Region {
     std::vector<uint64_t> maskKeys;
     int framePeriod=0,frameCount=1,framePhase=0;
     bool overlay=false;
+    bool nativeFallback=false;
     int a02Kind=0, phase=-1;
     int phaseProbeX=-1,phaseProbeY=-1;
 };
 struct Pack {
     int scale = 0, size = 0;
     std::unordered_map<uint64_t, std::vector<uint32_t>> tiles;
+    std::unordered_map<uint64_t, std::array<uint8_t,64>> tileCoverage;
     std::unordered_map<uint64_t, std::vector<Context>> contexts;
     std::vector<Region> regions;
     std::unordered_set<uint64_t> sharedObjects;
@@ -75,7 +77,7 @@ int frameFenceOffset=0;
 uint64_t characterRevision=0;
 uint32_t vramRevision = 0;
 std::array<uint16_t, 256> palette;
-struct Cached { const std::vector<uint32_t> *tile; uint64_t key; };
+struct Cached { const std::vector<uint32_t> *tile; uint64_t key; const std::array<uint8_t,64> *coverage; };
 thread_local std::unordered_map<uint32_t, Cached> cache;
 struct ContextCell {
     int position;
@@ -182,7 +184,7 @@ Pack ReadPack(const fs::path &root) {
         auto j = character_json::Reader(text).read();
         if (auto required = j.object.find("requires"); required != j.object.end())
             for (const auto &feature : required->second.items())
-                if (feature.string() != "tile-context-v1" && feature.string() != "scene-regions-v1" && feature.string() != "shared-objects-v1" && feature.string() != "scene-overlays-v1")
+                if (feature.string() != "tile-context-v1" && feature.string() != "scene-regions-v1" && feature.string() != "shared-objects-v1" && feature.string() != "scene-overlays-v1" && feature.string() != "native-fallback-v1")
                     throw std::runtime_error("Unsupported pack feature");
         Pack next;
         if(auto a=j.object.find("sciv_a02");a!=j.object.end())next.a02=a->second.number()!=0;
@@ -225,6 +227,20 @@ Pack ReadPack(const fs::path &root) {
                         auto b = bytes.get() + ((y + py) * w + x + px) * 4;
                         tile[py * next.size + px] = uint32_t(b[3]) << 24 | b[0] << 16 | b[1] << 8 | b[2];
                     }
+            }
+        }
+        // Summarize alpha once per native cell. Fully opaque tile art can use
+        // the same composition shortcut as an opaque scene region, without
+        // discarding mixed-alpha or transparent cells.
+        for(const auto &[key,tile]:next.tiles) {
+            auto &coverage=next.tileCoverage[key];
+            for(int y=0;y<8;++y)for(int x=0;x<8;++x) {
+                unsigned lo=255,hi=0;
+                for(int dy=0;dy<next.scale;++dy)for(int dx=0;dx<next.scale;++dx) {
+                    unsigned alpha=tile[size_t(y*next.scale+dy)*next.size+x*next.scale+dx]>>24;
+                    lo=std::min(lo,alpha);hi=std::max(hi,alpha);
+                }
+                coverage[y*8+x]=!hi?0:lo==255?1:2;
             }
         }
         if (auto shared = j.object.find("shared_objects"); shared != j.object.end()) {
@@ -283,6 +299,7 @@ Pack ReadPack(const fs::path &root) {
             for (const auto &item : regions->second.items()) {
                 Region r{};
                 if(auto v=item.object.find("overlay");v!=item.object.end())r.overlay=v->second.number()!=0;
+                if(auto v=item.object.find("native_fallback");v!=item.object.end())r.nativeFallback=v->second.number()!=0;
                 if(auto v=item.object.find("a02_kind");v!=item.object.end()) {
                     r.a02Kind=v->second.number();
                     if(!next.a02||r.a02Kind<1||r.a02Kind>3)throw std::runtime_error("Invalid A02 region role");
@@ -354,7 +371,7 @@ Pack ReadPack(const fs::path &root) {
         // plane. Affine samples can then cross a file boundary without seams.
         for (size_t i = 0; i+1 < next.regions.size();) {
             auto &a = next.regions[i]; const auto &b = next.regions[i+1];
-            if (a.overlay==b.overlay && a.a02Kind==b.a02Kind && a.phase==b.phase && a.phaseProbeX==b.phaseProbeX && a.phaseProbeY==b.phaseProbeY && a.screen==b.screen && a.maskKeys==b.maskKeys && a.priority==b.priority && a.stationary==b.stationary && a.modes==b.modes && a.sourcePalette<0 && b.sourcePalette<0 && a.layer == b.layer && a.world == b.world && a.wrapX == b.wrapX && a.wrapY == b.wrapY &&
+            if (a.overlay==b.overlay && a.nativeFallback==b.nativeFallback && a.a02Kind==b.a02Kind && a.phase==b.phase && a.phaseProbeX==b.phaseProbeX && a.phaseProbeY==b.phaseProbeY && a.screen==b.screen && a.maskKeys==b.maskKeys && a.priority==b.priority && a.stationary==b.stationary && a.modes==b.modes && a.sourcePalette<0 && b.sourcePalette<0 && a.layer == b.layer && a.world == b.world && a.wrapX == b.wrapX && a.wrapY == b.wrapY &&
                 a.y == b.y && a.h == b.h && a.x+a.w == b.x && (a.w+b.w)*next.scale <= 8192) {
                 int stride = a.stride+b.stride;
                 std::vector<uint32_t> joined(size_t(stride)*a.h*next.scale);
@@ -507,7 +524,9 @@ Cached Lookup(Ppu *p, const PpuTileSource &r) {
     if (it == cache.end()) {
         auto key = Key(p, r);
         auto tile = pack.tiles.find(key);
-        it = cache.emplace(ident, Cached{tile == pack.tiles.end() ? nullptr : &tile->second, key}).first;
+        auto coverage=pack.tileCoverage.find(key);
+        it = cache.emplace(ident, Cached{tile == pack.tiles.end() ? nullptr : &tile->second, key,
+            coverage==pack.tileCoverage.end()?nullptr:&coverage->second}).first;
     }
     return it->second;
 }
@@ -518,7 +537,10 @@ Sample FindSource(Ppu *p, int x, int line, unsigned layer, const PpuTileSource &
     if (sharedOnly && (layer != 4 || !pack.sharedObjects.count(lookup.key))) return s;
     s.tile = lookup.tile;
     auto choices = pack.contexts.find(lookup.key);
-    if (layer >= 3 || choices == pack.contexts.end()) return s;
+    if (layer >= 3 || choices == pack.contexts.end()) {
+        if(s.tile&&lookup.coverage)s.coverage=(*lookup.coverage)[source.py*8+source.px];
+        return s;
+    }
     // Reuse across a tile's rows, but never across register/memory/band changes.
     int left = x - (s.source.flip & 1 ? 7 - s.source.px : s.source.px);
     int top = line - (s.source.flip & 2 ? 7 - s.source.py : s.source.py);
@@ -783,6 +805,10 @@ Sample RegionAt(Ppu *p, int x, int line, unsigned layer, const PpuTileSource *na
         Sample sample; sample.region = r.rgba.data() + size_t(py * pack.scale) * r.stride + px * pack.scale;
         sample.stride = r.stride; sample.source.flip = flip;
         sample.coverage = r.coverage[size_t(py)*r.w+px];
+        // Authored holes can delegate dynamic tiles back to the guest. A tile
+        // replacement then follows destruction/streaming instead of freezing
+        // a manually painted platform into the complete landscape plane.
+        if(r.nativeFallback && sample.coverage==0)continue;
         sample.owner=&r;
         return sample;
     }
@@ -994,7 +1020,7 @@ bool GatherSceneLine(Ppu *p, int line) {
         else if((out.colour.flags&1) && out.colour.brightness==15) {
             for(int j=out.count-1;j>=0;--j) {
                 int n=out.order[j];const auto &c=out.candidates[n];if(!(c.screens&1))continue;
-                bool opaque = c.art.tile ? false : c.art.region||c.art.affine ? c.art.coverage==1 : (c.rgba>>24)==255;
+                bool opaque = c.art.tile||c.art.region||c.art.affine ? c.art.coverage==1 : (c.rgba>>24)==255;
                 bool math=(out.colour.flags&2) && (out.mathMask&(1u<<c.layer));
                 if(opaque && (!math || (out.addSub && !hasSub && !out.fixed))) out.fast=n;
                 break;
@@ -1054,7 +1080,7 @@ void RenderRows(void *, size_t begin, size_t end, unsigned) {
                     const auto &c=p.candidates[p.fast];
                     for(int dy=0;dy<scale;++dy) {
                         auto row=first+size_t(dy)*frameWidth*scale+nx*scale;
-                        if(!c.art.region&&!c.art.affine)std::fill_n(row,scale,c.rgba&0xffffff);
+                        if(!c.art.tile&&!c.art.region&&!c.art.affine)std::fill_n(row,scale,c.rgba&0xffffff);
                         else if(c.art.region && !c.art.displayW && !c.art.source.flip && (c.art.imageScale?c.art.imageScale:pack.scale)==scale) {
                             const auto *src=c.art.region+size_t(dy)*c.art.stride;
                             for(int dx=0;dx<scale;++dx)row[dx]=src[dx]&0xffffff;

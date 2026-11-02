@@ -1,5 +1,23 @@
 # Arbeitsstand & Übergabe (2026-10-23, lokale KI-Spritekorrektur)
 
+## A03/A04/A05 HD installiert (03.11.)
+
+Aktive Windows-Kollektion in build und build-play/game: `hd_packs/stage-01-user-a03-a05-v5`, enabled1/scale4/layers31. Beide EXEs aus aktuellem Release. Vorhandene Eingang/A02-Szenen bytegleich kopiert, nicht neu aus alten Rezepten gebaut; manuelle A02-Gargoyle-Korrekturen erhalten.
+
+`tools/hd/build_stage01_later.py` importiert Stage01_A03_A04_HD.zip (17 Hintergrund-PNGs + 6 Wasser/Ufer), registriert native BG2-Motive per Quellfarbvergleich statt Breitenstreckung und benutzt gemessene PSD-Urspruenge/Dichte129/32. A03-PSD privat exportiert ohne Referenzhintergruende/Mond/abgelegte Geheimwand. A04-grosse PSD-Ebene noch SD: fertige HD-Teile an x0/1032/2193/3225, Teil3 y129; darueber manuelle PSD-Steine/Stufen. A05-HD vier Teile plus native Platzierung vorhandener Stein-/Stufenmotive. Bestehende 16:9-PNGs und A03-PSD-Randkorrekturen erhalten. Keine neue Bildgenerierung.
+
+Renderer: `native_fallback:1` und Feature `native-fallback-v1` erlauben Plane-Lochstellen mit nativen Tile-gebundenen HD-Texturen. Paletten2/4 bleiben damit guestgebunden statt statisch im Wandhintergrund. Atlas-Mond4Teile folgt nativem OBJ. Shared crumbling-stone HD aus bisheriger entrance-Szene auf4 herunterskaliert/uebernommen. A04-Wasser: drei CGRAM-Permutationen99/100/101, source_palette96/select_address10448/select_keys; kein Host-Zeitzaehler. Nur native Reflexpixel innerhalb HD-Wassermaske moduliert, Ufer im Builder assert unveraendert.
+
+Optimierung: 64 native Alpha-Zellzusammenfassungen je Tile beim Laden; Cachepointer; nur voll deckende Tilezellen bekommen vorhandenen opaken Scene-Fastpath. Kontextvarianten konservativ. Fastpath zeichnet Tile-Art statt Native-Solidfarbe. `tools/test_hd_tile_opacity.py` gegen private vor-Optimierung-EXE: sechs Captures2/4/6 mit deckendem/gemischtem/transparentem Alpha exaktgleich (`build-lua/tile-opacity-vsjvjtl1`).
+
+`tools/test_hd_later_stage01.py` finaler Referenzlauf `build-lua/hd-later-stage01-9co8ly3t`: neun Idle/Walk/Attack-Faelle, native Raster/volleWRAM/namedstate an/aus identisch; HD pixelgleich zu vor Opazitaetsoptimierung; Wasser animiert, Reload-HDBild exakt; A02 weiter ausgewaehlt. Je A03/A04/A05 native Falltod15Fadeframes und Neustart geprueft, guest state200Frames mit/ohneHD identisch. Kein kompletter Walkthrough oder Test jeder Geheimwand.
+
+Paketv5-Renderdateien58Stueck SHA-identisch zum geprueften v4; nur Importbelege/Backup-Pfade ergaenzt. `install_a02_pack.py` unterstuetzt backup_relative_path gegen Kollision gleichnamiger Quell-PNGs. Installbericht bestaetigt geschuetzte Spielerdaten unveraendert.
+
+Performance mit Spielerfenster-Konfig, CPU-Timing2,4x,Right+Y: A03 60.134/A04 60.075/A05 vorOptimierung58.768, nachOptimierung59.506 FPS, jeweils239/239Logikupdates ohneRepeats. Keine Soundmessung moeglich: WASAPI0Geraete/No default audio device. Profile hi6g2al2/ssqugqe2/n_uckg5j/jlsjk33g unter build-lua.
+
+Audit/Quellkopien: `artwork-local/stage01-a03-a05-import-2026-11-03`, completion.json. Externe Sicherung mit alter Auswahl+EXEs, vorherigen Paketen, installiertem Paket und31 unveraenderten Quellen: `D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-11-03-A03-A04-A05-installation`. Drei gezielte Bildansichten zur notwendigen Platzierungskontrolle. Kein Browserdeploy. Fremde CMake/Web/Landschaftsaenderungen und deren Doku nicht committen.
+
 **Dauerhafte Nutzerpräferenz:** Vergessbare Bedienhinweise immer in MERKHILFE.md
 in einfacher Sprache ergänzen. Nur notwendige gezielte Prüfungen, keine
 unnötigen KI-Testreihen oder Skalenmatrix. Fertige Änderungen nach dev pushen.

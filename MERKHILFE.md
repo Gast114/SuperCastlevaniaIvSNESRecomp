@@ -975,3 +975,28 @@ RGB-Streifen bleiben deckend; Mond-Alpha erhalten.17 primaere RGBA-Outputs plus
 bei verfuegbaren Dateiwerkzeugen zusaetzliche Wasser-/Ufertrennung fuer drei
 A04-Wasserstuecke. Diese muessen jeweils dasselbe komplette Bild rekonstruieren.
 Keine Laufzeit-Animation oder HD-Installation in diesem Auftrag implementiert.
+
+## A03, A04 und A05 jetzt im Windows-Spiel in HD (03.11.)
+
+Das neue Paket `stage-01-user-a03-a05-v5` ist in beiden Spielordnern installiert
+und mit HD an / Aufloesung4 ausgewaehlt. Spiel neu starten, dann F3=A03,
+F4=A04 und F5=A05 laden. Himmel, Wald, Mond, Mauern, Steine, Treppen und
+die vorhandenen 16:9-Raender sind eingebunden. A05 nutzt die A03-Hintergruende.
+A04-Wasser wechselt mit den Originalfarbenphasen; Ufer und Wald bleiben ruhig.
+Die neuen Hintergrund-PNGs stammen aus `Stage01_A03_A04_HD.zip`. A03-Handarbeit
+aus der PSD und A04-Steine/Treppen wurden beruecksichtigt. Die grosse A04-
+PSD-Ebene war noch Originalgrafik; stattdessen sind die fertigen HD-Wandteile
+mit den handgesetzten Steinen kombiniert. A05-Steine und Stufen verwenden
+dieselben vorhandenen HD-Motive und ihre Positionen aus der Originalkarte.
+
+Geprueft: Gehen/Angriff/Stillstand, Laden sowie Tod/Neustart in allen drei
+Abschnitten. Spiellogik, Originalbild und Speicher mit HD an/aus identisch.
+Wasser nach Neuladen identisch. Zeichnungsoptimierung pixelgleich geprueft.
+Bildrate beim Gehen+Angreifen: A03/A04 etwa60FPS, A05 zuletzt59,5FPS im
+privaten Test. Ton konnte mangels Audiogeraet hier nicht mitgemessen werden.
+Eine vollstaendige Durchspielpruefung aller Levelwege ist damit nicht gemeint.
+
+Originale, PSDs, Spielersaves, Tasten und sonstige Einstellungen erhalten.
+Altes Paket bleibt vorhanden. Zusaetzliche Sicherung mit vorheriger Auswahl,
+EXEs, altem und neuem Paket sowie verwendeten Quellen liegt unter:
+`D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-11-03-A03-A04-A05-installation`.

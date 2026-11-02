@@ -42,9 +42,17 @@ def install(pack, exe, backup):
     report = {'pack': str(pack), 'exe_sha256': sha(exe), 'targets': [], 'sources': receipt['sources']}
     for source in receipt['sources']:
         base = backup / 'source-pngs'
-        if source.get('kind') == 'registered-manual-correction':
+        relative=source.get('backup_relative_path')
+        if relative is not None:
+            relative=Path(relative)
+            if relative.is_absolute() or '..' in relative.parts:
+                raise ValueError('Invalid backup source path')
+            dst=base/relative
+        elif source.get('kind') == 'registered-manual-correction':
             base /= 'Manuelle-Korrekturen'
-        dst = base / Path(source['source']).name
+            dst=base/Path(source['source']).name
+        else:
+            dst=base/Path(source['source']).name
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source['source'], dst)
         assert sha(dst) == source['sha256']
