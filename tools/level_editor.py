@@ -13,6 +13,7 @@ from PIL import Image,ImageDraw,ImageTk
 from level_project import Project,paint,room
 from level_tiles import EMPTY,bind,resolve,sources,SOURCE_COUNT,source_name
 from level_assets import Assets,ensure_room,ensure_source,collision_value
+from level_parts import CATEGORIES,builtin_parts,repeat_part,capture_part,validate_part,pick_connected_part
 from level_playtest import Playtest
 from enemy_workshop_native import NativeSession,ROOT
 from monster_model import definitions
@@ -23,6 +24,8 @@ class Editor:
         self.root=root;self.project=project or Project();self.room_id=self.project.data['rooms'][0]['id']
         self.assets={};self.events=queue.Queue();self.workers=[];self.playtest=None;self.closing=False;self.render_pending=False;self.play_pending=False;self.generation=0;self.tick_id=None;self.draw_id=None
         self.brush=[EMPTY];self.brush_collision=[0];self.brush_width=1;self.selection=None;self.selected_object=None;self.start=None;self.drag=None;self.clipboard=None
+        self.brush_mask=None;self.hover=None;self.parts={};self.part_photos=[]
+        self.part_category=tk.StringVar(value='Alle');self.part_length=tk.IntVar(value=4);self.part_name=tk.StringVar(value='Mein Bauteil');self.brush_label=tk.StringVar(value='Bauteil auswählen oder eine Auswahl merken.')
         self.loading_assets=set();self.failed_assets=set();self.empty_tile=Image.new('RGBA',(8,8));self.missing_tile=Image.new('RGBA',(8,8),'#74596d')
         self.zoom=tk.DoubleVar(value=2);self.layer=tk.StringVar(value='front');self.tool=tk.StringVar(value='Zeichnen')
         self.show_back=tk.BooleanVar(value=True);self.show_front=tk.BooleanVar(value=True);self.show_collision=tk.BooleanVar(value=False)
@@ -37,7 +40,7 @@ class Editor:
         toolbar=ttk.Frame(root,padding=8);toolbar.pack(fill='x')
         for text,fn in [('Neu',self.new),('Öffnen',self.open),('Speichern',self.save),('Speichern unter',lambda:self.save(True)),('↶ Rückgängig',self.undo),('↷ Wiederholen',self.redo),('▶ Spieltest',self.test),('■ Test beenden',self.stop_test)]:ttk.Button(toolbar,text=text,command=fn).pack(side='left',padx=3)
         controls=ttk.Frame(root,padding=(8,0));controls.pack(fill='x')
-        for text in ('Auswahl','Zeichnen','Fläche','Kollision','Monster','Start','Ausgang'):ttk.Radiobutton(controls,text=text,variable=self.tool,value=text).pack(side='left',padx=3)
+        for text in ('Auswahl','Bauteil','Zeichnen','Fläche','Kollision','Monster','Start','Ausgang'):ttk.Radiobutton(controls,text=text,variable=self.tool,value=text).pack(side='left',padx=3)
         ttk.Label(controls,text='Zielebene').pack(side='left',padx=(12,3));box=ttk.Combobox(controls,textvariable=self.layer,values=('front','back'),state='readonly',width=7);box.pack(side='left');box.bind('<<ComboboxSelected>>',lambda e:self.palette_changed())
         ttk.Label(controls,text='Zoom').pack(side='left',padx=(12,3));z=ttk.Combobox(controls,textvariable=self.zoom,values=(.5,1,2,3,4),state='readonly',width=4);z.pack(side='left');z.bind('<<ComboboxSelected>>',lambda e:self.schedule())
         options=ttk.Frame(root,padding=8);options.pack(fill='x')
@@ -62,19 +65,42 @@ class Editor:
         self.canvas.configure(xscrollcommand=sx.set,yscrollcommand=sy.set);sy.pack(side='right',fill='y');sx.pack(side='bottom',fill='x');self.canvas.pack(fill='both',expand=True)
         self.canvas.bind('<Configure>',lambda e:self.schedule());self.canvas.bind('<Button-1>',self.press);self.canvas.bind('<B1-Motion>',self.motion);self.canvas.bind('<ButtonRelease-1>',self.release);self.canvas.bind('<Button-3>',self.pick)
         self.canvas.bind('<MouseWheel>',self.wheel);self.canvas.bind('<Button-2>',lambda e:self.canvas.scan_mark(e.x,e.y));self.canvas.bind('<B2-Motion>',self.pan)
+        self.canvas.bind('<Motion>',self.hover_brush);self.canvas.bind('<Leave>',lambda e:self.hide_brush_cursor())
+        self.canvas.bind('<Shift-Button-3>',self.pick_part)
         source_box=ttk.LabelFrame(right,text='Grafiken aus allen Abschnitten',padding=6);source_box.pack(fill='x',pady=(0,5))
         ttk.Label(source_box,text='Quelle').grid(row=0,column=0,sticky='w');self.source_picker=ttk.Combobox(source_box,textvariable=self.source_choice,values=tuple(f'{n} · {source_name(n)}' for n in range(SOURCE_COUNT)),width=18,state='readonly');self.source_picker.grid(row=0,column=1,sticky='ew');self.source_picker.bind('<<ComboboxSelected>>',self.source_changed)
         source_layer=ttk.Combobox(source_box,textvariable=self.source_layer,values=('front','back'),width=7,state='readonly');source_layer.grid(row=0,column=2,padx=4);source_layer.bind('<<ComboboxSelected>>',self.source_changed)
         ttk.Label(source_box,text='Quelle frei wählen, dann in jede Zielebene zeichnen.',wraplength=round(300*self.ui)).grid(row=1,column=0,columnspan=3,sticky='w')
         ttk.Button(source_box,text='Alle Grafikquellen vorbereiten',command=lambda:self.load_assets(range(SOURCE_COUNT))).grid(row=2,column=0,columnspan=3,sticky='ew',pady=(4,0))
         self.tabs=ttk.Notebook(right);self.tabs.pack(fill='both',expand=True)
+        self.parts_tab=ttk.Frame(self.tabs);self.tabs.add(self.parts_tab,text='Bauteile')
+        categories=ttk.Combobox(self.parts_tab,textvariable=self.part_category,values=CATEGORIES,state='readonly');categories.pack(fill='x',pady=3);categories.bind('<<ComboboxSelected>>',lambda e:self.refresh_parts())
+        style.configure('Parts.Treeview',rowheight=round(86*self.ui))
+        gallery=ttk.Frame(self.parts_tab);gallery.pack(fill='both',expand=True)
+        self.parts_gallery=ttk.Treeview(gallery,show='tree',style='Parts.Treeview',height=3,selectmode='browse')
+        part_scroll=ttk.Scrollbar(gallery,command=self.parts_gallery.yview);self.parts_gallery.configure(yscrollcommand=part_scroll.set);part_scroll.pack(side='right',fill='y');self.parts_gallery.pack(fill='both',expand=True)
+        self.parts_gallery.bind('<<TreeviewSelect>>',self.choose_part)
+        part_controls=ttk.Frame(self.parts_tab);part_controls.pack(side='bottom',fill='x')
+        length=ttk.Frame(part_controls);length.pack(fill='x',pady=4)
+        ttk.Label(length,text='Plattformlänge · Steine').pack(side='left')
+        self.part_length_box=ttk.Spinbox(length,from_=1,to=32,textvariable=self.part_length,width=5,command=self.choose_part,state='disabled');self.part_length_box.pack(side='right');self.part_length_box.bind('<Return>',self.choose_part);self.part_length_box.bind('<FocusOut>',self.choose_part)
+        self.brush_preview=tk.Canvas(part_controls,height=round(92*self.ui),bg='#202632',highlightthickness=0);self.brush_preview.pack(fill='x');self.brush_preview.bind('<Configure>',lambda e:self.refresh_brush())
+        ttk.Label(part_controls,textvariable=self.brush_label,wraplength=round(300*self.ui)).pack(fill='x',pady=4)
+        ttk.Label(part_controls,text='Ein Klick setzt das ganze Bauteil im 8px-Raster.',wraplength=round(300*self.ui)).pack(fill='x')
+        ttk.Label(part_controls,text='Umschalt + Rechtsklick: vorhandene Plattform aufnehmen.',wraplength=round(300*self.ui)).pack(fill='x',pady=3)
+        ttk.Entry(part_controls,textvariable=self.part_name).pack(fill='x',pady=(6,2))
+        remember=ttk.Frame(part_controls);remember.pack(fill='x')
+        ttk.Button(remember,text='Auswahl merken',command=self.remember_selection).pack(side='left',fill='x',expand=True)
+        ttk.Button(remember,text='Pinsel merken',command=self.remember_brush).pack(side='left',fill='x',expand=True)
+        ttk.Button(part_controls,text='Eigenes Bauteil entfernen',command=self.remove_part).pack(fill='x',pady=3)
+        gallery.pack_forget();gallery.pack(fill='both',expand=True)
         self.block_canvas=self.palette_canvas('Blöcke 32px');self.tile_canvas=self.palette_canvas('Kacheln 8px')
         self.block_canvas.bind('<Button-1>',self.choose_block);self.tile_canvas.bind('<Button-1>',self.choose_tile)
         monsters=ttk.Frame(self.tabs);self.tabs.add(monsters,text='Monster')
         ttk.Entry(monsters,textvariable=self.filter).pack(fill='x');self.filter.trace_add('write',lambda *a:self.filter_monsters())
         self.monsters=ttk.Treeview(monsters,show='tree');self.monsters.pack(fill='both',expand=True);self.monsters.bind('<<TreeviewSelect>>',lambda e:self.tool.set('Monster'))
         ttk.Label(monsters,text='Bosse sind zunächst Planungsmarker.\nSpieltest-Spezialadapter folgen.',wraplength=290).pack(anchor='w',pady=5)
-        props=ttk.LabelFrame(right,text='Auswahl / Ausgang',padding=7);props.pack(fill='x',pady=6)
+        props=ttk.LabelFrame(right,text='Auswahl / Ausgang',padding=7);self.object_props=props
         for n,(label,key) in enumerate([('X','x'),('Y','y'),('Variante','variant'),('Zielraum','target'),('Ziel X','target_x'),('Ziel Y','target_y'),('Auslöser','trigger'),('Ebene / Zielebene','plane')]):
             ttk.Label(props,text=label).grid(row=n,column=0,sticky='w')
             if key in ('target','trigger','plane'):
@@ -83,6 +109,7 @@ class Editor:
             else:control=ttk.Entry(props,textvariable=self.props[key],width=16)
             control.grid(row=n,column=1,sticky='ew')
         ttk.Button(props,text='Übernehmen',command=self.apply_object).grid(row=8,column=0,sticky='ew',pady=5);ttk.Button(props,text='Löschen',command=self.delete).grid(row=8,column=1,sticky='ew')
+        self.tabs.bind('<<NotebookTabChanged>>',self.part_tab_changed)
         ttk.Label(root,textvariable=self.status,padding=8,wraplength=1500).pack(fill='x')
         for key,fn in [('<Control-s>',self.save),('<Control-o>',self.open),('<Control-n>',self.new),('<Control-z>',self.undo),('<Control-y>',self.redo),('<F5>',self.test)]:root.bind(key,lambda e,f=fn:f())
         for key,fn in [('<Control-c>',self.copy),('<Control-v>',self.paste),('<Delete>',self.delete)]:self.canvas.bind(key,lambda e,f=fn:f())
@@ -90,7 +117,7 @@ class Editor:
         raw=NativeSession.__new__(NativeSession);raw.bytes=(ROOT/'Super Castlevania IV (USA).sfc').read_bytes();catalog=raw.read_catalog()
         from enemy_catalog_profiles import boss_profiles
         self.catalog=catalog+boss_profiles(raw);self.definitions=definitions(self.catalog,raw.bytes);self.filter_monsters()
-        self.refresh_rooms();self.load_asset(self.source_room.get());self.tick_id=root.after(60,self.tick)
+        self.refresh_rooms();self.load_assets([self.source_room.get(),1,2]);self.tick_id=root.after(60,self.tick)
 
     def current(self):return self.project.get(self.room_id)
     def palette_canvas(self,title):
@@ -145,6 +172,7 @@ class Editor:
                     for n,error in value[2]:self.loading_assets.discard(n);self.failed_assets.add(n)
                     if any(n==self.source_room.get() for n,path in value[1]):self.palette_changed()
                     else:self.schedule()
+                    self.refresh_parts();self.refresh_brush()
                     if value[2]:self.status.set(' · '.join(f'{source_name(n)}: {error}' for n,error in value[2]))
                 elif value[0]=='sources_done' and not self.loading_assets and not self.failed_assets:
                     self.status.set('Grafikquellen bereit · Quelle und Zielebene frei kombinieren · F5 testen'+(' · '+self.current()['source_note'] if self.current().get('source_note') else ''))
@@ -161,6 +189,7 @@ class Editor:
         for r in self.project.data['rooms']:self.rooms.insert('','end',iid=r['id'],text=('★ ' if r['id']==self.project.data['start_room'] else '')+r['name'])
         self.target_box.configure(values=tuple(r['id']+' · '+r['name'] for r in self.project.data['rooms']))
         self.rooms.selection_set(self.room_id);self.update_room();self.load_assets(sources(self.current()));self.schedule()
+        self.refresh_parts()
     def choose_room(self,e=None):
         if self.rooms.selection():self.room_id=self.rooms.selection()[0];self.selected_object=None;self.selection=None;self.update_room();self.load_assets(sources(self.current()));self.schedule()
     def update_room(self):
@@ -219,6 +248,7 @@ class Editor:
         x,y=r['spawn'];self.canvas.create_oval((x-6)*z,(y-6)*z,(x+6)*z,(y+6)*z,fill='#63cde5',outline='white');self.canvas.create_text(x*z,(y-10)*z,text='START',fill='#9eeaff',anchor='s')
         if self.selection:
             x1,y1,x2,y2=self.selection;self.canvas.create_rectangle(x1*8*z,y1*8*z,(x2+1)*8*z,(y2+1)*8*z,outline='#f6e58d',dash=(5,3),width=2)
+        self.show_brush_cursor()
         self.root.title(('● ' if self.project.dirty else '')+'Castlevania IV · '+self.project.data['name'])
     def palette_changed(self):
         asset=self.assets.get(self.source_room.get())
@@ -231,19 +261,100 @@ class Editor:
         height=asset.tile_count//16*20;image=Image.new('RGBA',(320,height),'#252c38')
         for n in range(asset.tile_count):image.alpha_composite(asset.tile(n|(self.palette.get()<<10),source_layer).resize((20,20),Image.Resampling.NEAREST),((n%16)*20,(n//16)*20))
         self.tile_photo=ImageTk.PhotoImage(image.resize((round(320*self.ui),round(height*self.ui)),Image.Resampling.NEAREST));self.tile_canvas.delete('all');self.tile_canvas.create_image(0,0,image=self.tile_photo,anchor='nw');self.tile_canvas.configure(scrollregion=(0,0,320*self.ui,height*self.ui))
-        self.status.set(self.current().get('source_note') or 'Bereit · Linksklick zeichnen · Rechtsklick aufnehmen · Mitteltaste verschieben · Strg+Mausrad zoomen · H/V spiegeln · F5 testen');self.schedule()
+        self.status.set(self.current().get('source_note') or 'Bereit · Linksklick zeichnen · Rechtsklick aufnehmen · Mitteltaste verschieben · Strg+Mausrad zoomen · H/V spiegeln · F5 testen');self.schedule();self.refresh_brush()
     def choose_block(self,e):
         asset=self.assets.get(self.source_room.get())
         if not asset:return
         x,y=self.block_canvas.canvasx(e.x)/self.ui,self.block_canvas.canvasy(e.y)/self.ui;n=int(y//32)*8+int(x//32)
         if not 0<=n<asset.block_count:return
-        self.brush=[bind(w,self.source_room.get(),self.source_layer.get()) for w in asset.block(n,self.source_layer.get())];self.brush_width=4;self.recollision();self.tool.set('Zeichnen');self.status.set(f'Quelle {source_name(self.source_room.get())} / {self.source_layer.get()} · Block {n:03X} · 32 × 32 Pixel')
+        self.brush=[bind(w,self.source_room.get(),self.source_layer.get()) for w in asset.block(n,self.source_layer.get())];self.brush_width=4;self.brush_mask=None;self.recollision();self.tool.set('Zeichnen');self.refresh_brush();self.status.set(f'Quelle {source_name(self.source_room.get())} / {self.source_layer.get()} · Block {n:03X} · 32 × 32 Pixel')
     def choose_tile(self,e):
         asset=self.assets.get(self.source_room.get())
         if not asset:return
         x,y=self.tile_canvas.canvasx(e.x)/self.ui,self.tile_canvas.canvasy(e.y)/self.ui;n=int(y//20)*16+int(x//20)
         if not 0<=n<asset.tile_count:return
-        self.brush=[bind(n|(self.palette.get()<<10),self.source_room.get(),self.source_layer.get())];self.brush_width=1;self.recollision();self.tool.set('Zeichnen');self.status.set(f'Quelle {source_name(self.source_room.get())} / {self.source_layer.get()} · Kachel {n:03X} · 8 × 8 Pixel')
+        self.brush=[bind(n|(self.palette.get()<<10),self.source_room.get(),self.source_layer.get())];self.brush_width=1;self.brush_mask=None;self.recollision();self.tool.set('Zeichnen');self.refresh_brush();self.status.set(f'Quelle {source_name(self.source_room.get())} / {self.source_layer.get()} · Kachel {n:03X} · 8 × 8 Pixel')
+    def part_image(self,part):
+        width=part['width'];image=Image.new('RGBA',(width*8,len(part['tiles'])//width*8))
+        for i,value in enumerate(part['tiles']):
+            if part['mask'][i]:image.alpha_composite(self.tile_image(value,0,'front'),(i%width*8,i//width*8))
+        return image
+    def part_tab_changed(self,e=None):
+        if str(self.tabs.select())==str(self.parts_tab):self.object_props.pack_forget()
+        else:self.object_props.pack(side='bottom',fill='x',pady=6,before=self.tabs)
+    def refresh_parts(self):
+        selected=self.parts_gallery.selection();self.parts={p['id']:p for p in builtin_parts(self.assets)+self.project.data.get('parts',[])}
+        self.parts_gallery.delete(*self.parts_gallery.get_children());self.part_photos=[]
+        category=self.part_category.get();custom={p['id'] for p in self.project.data.get('parts',[])}
+        for key,part in self.parts.items():
+            kind='Eigene' if key in custom else part['category']
+            if category not in ('Alle',kind):continue
+            image=self.part_image(part);size=(round(98*self.ui),round(70*self.ui));scale=min(size[0]/image.width,size[1]/image.height,3*self.ui)
+            preview=Image.new('RGBA',size,'#252c38');image=image.resize((max(1,round(image.width*scale)),max(1,round(image.height*scale))),Image.Resampling.NEAREST)
+            preview.alpha_composite(image,((size[0]-image.width)//2,(size[1]-image.height)//2));photo=ImageTk.PhotoImage(preview);self.part_photos.append(photo)
+            w=part['width']*8;h=len(part['tiles'])//part['width']*8
+            self.parts_gallery.insert('','end',iid=key,text=f'{part["name"]}\n{w} × {h} px'+(' · Länge wählbar' if part.get('repeatable') else ''),image=photo)
+        if selected and self.parts_gallery.exists(selected[0]):self.parts_gallery.selection_set(selected[0])
+    def choose_part(self,e=None):
+        selection=self.parts_gallery.selection()
+        if not selection or selection[0] not in self.parts:return
+        base=self.parts[selection[0]];repeatable=base.get('repeatable',False)
+        self.part_length_box.configure(state='normal' if repeatable else 'disabled')
+        try:part=repeat_part(base,self.part_length.get() if repeatable else 1)
+        except (ValueError,tk.TclError):self.status.set('Plattformlänge: 1 bis 32 Steine.');return
+        self.brush=part['tiles'][:];self.brush_collision=part['collision'][:];self.brush_width=part['width'];self.brush_mask=part['mask'][:]
+        self.tool.set('Bauteil');self.selected_object=None;self.refresh_brush()
+        self.object_props.pack_forget()
+        needed={resolve(v,0,'front')[0] for v in self.brush if v!=EMPTY}
+        if needed-self.assets.keys():self.load_assets(needed)
+        self.status.set(part['name']+' · Ein Klick setzt das ganze Bauteil · H/V spiegeln · Kollision wird mit übernommen, wenn eingeschaltet.')
+    def pick_part(self,e):
+        try:result=pick_connected_part(self.current(),self.layer.get(),*self.coords(e))
+        except ValueError as exc:self.status.set(str(exc));return
+        if result is None:self.status.set('Hier liegt auf der Zielebene keine feste Fläche. Für freie Ausschnitte „Auswahl“ verwenden.');return
+        part,self.selection=result;self.brush=part['tiles'];self.brush_collision=part['collision'];self.brush_width=part['width'];self.brush_mask=part['mask']
+        self.selected_object=None;self.tool.set('Bauteil');self.tabs.select(self.parts_tab);self.object_props.pack_forget();self.refresh_brush();self.schedule()
+        self.status.set('Zusammenhängende Plattform aufgenommen. Linksklick setzt eine Kopie; „Pinsel merken“ speichert sie im Projekt.')
+    def refresh_brush(self):
+        if not hasattr(self,'brush_preview') or self.closing:return
+        part=dict(width=self.brush_width,tiles=self.brush,mask=self.brush_mask or [True]*len(self.brush))
+        image=self.part_image(part);width=self.brush_preview.winfo_width();height=round(88*self.ui)
+        if width<10:width=round(280*self.ui)
+        scale=min((width-12)/image.width,(height-12)/image.height,4*self.ui)
+        image=image.resize((max(1,round(image.width*scale)),max(1,round(image.height*scale))),Image.Resampling.NEAREST)
+        self.brush_photo=ImageTk.PhotoImage(image);self.brush_preview.delete('all');self.brush_preview.create_image(width//2,height//2,image=self.brush_photo,anchor='center')
+        self.brush_label.set(f'{self.brush_width*8} × {len(self.brush)//self.brush_width*8} Pixel · Zielebene: {self.layer.get()}')
+        self.show_brush_cursor()
+    def hide_brush_cursor(self):self.hover=None;self.canvas.delete('brush-cursor')
+    def hover_brush(self,e):self.hover=self.coords(e);self.show_brush_cursor()
+    def show_brush_cursor(self):
+        self.canvas.delete('brush-cursor')
+        if self.hover is None or self.tool.get()!='Bauteil':return
+        x,y=self.hover;r=self.current()
+        if not 0<=x<r['width'] or not 0<=y<r['height']:return
+        z=self.zoom.get();w=self.brush_width;h=len(self.brush)//w
+        self.canvas.create_rectangle(x*8*z,y*8*z,(x+w)*8*z,(y+h)*8*z,outline='#72e7d3',width=2,dash=(4,2),tags='brush-cursor')
+    def add_part(self,part):
+        validate_part(part)
+        if len(self.project.data.get('parts',[]))>=128:raise ValueError('Höchstens 128 eigene Bauteile pro Projekt.')
+        self.project.begin('Bauteil merken');self.project.data.setdefault('parts',[]).append(part);self.project.commit()
+        self.part_category.set('Eigene');self.refresh_parts();self.parts_gallery.selection_set(part['id']);self.tabs.select(self.parts_tab)
+        self.status.set('Bauteil gemerkt. Mit dem Projekt speichern; später per Klick wieder auswählen.');self.schedule()
+    def remember_selection(self):
+        if not self.selection:self.status.set('Mit „Auswahl“ erst ein Rechteck um die gewünschte Plattform ziehen.');return
+        try:self.add_part(capture_part(self.current(),self.layer.get(),self.selection,self.part_name.get()))
+        except ValueError as exc:messagebox.showerror('Bauteil',str(exc),parent=self.root)
+    def remember_brush(self):
+        try:
+            part=dict(id='P-'+uuid.uuid4().hex[:12],name=self.part_name.get().strip(),category='Eigene',width=self.brush_width,
+                tiles=[bind(v,self.current()['tileset'],self.layer.get()) for v in self.brush],collision=self.brush_collision[:],mask=self.brush_mask[:] if self.brush_mask is not None else [v!=EMPTY for v in self.brush])
+            self.add_part(part)
+        except ValueError as exc:messagebox.showerror('Bauteil',str(exc),parent=self.root)
+    def remove_part(self):
+        selection=self.parts_gallery.selection()
+        if not selection or not any(p['id']==selection[0] for p in self.project.data.get('parts',[])):
+            self.status.set('Hier lassen sich nur eigene gemerkte Bauteile entfernen.');return
+        self.project.begin('Bauteil entfernen');self.project.data['parts']=[p for p in self.project.data['parts'] if p['id']!=selection[0]];self.project.commit();self.refresh_parts();self.schedule()
     def recollision(self):self.brush_collision=[self.tile_collision(w,self.current()['tileset'],self.layer.get()) for w in self.brush]
     def filter_monsters(self):
         self.monsters.delete(*self.monsters.get_children());term=self.filter.get().casefold()
@@ -265,7 +376,7 @@ class Editor:
                 if self.selected_object:break
             if self.selected_object:self.object_fields()
             else:self.selection=(x,y,x,y)
-        elif tool in ('Zeichnen','Kollision'):self.stamp(x,y)
+        elif tool in ('Zeichnen','Bauteil','Kollision'):self.stamp(x,y)
         elif tool=='Fläche':self.selection=(x,y,x,y)
         elif tool=='Start':r['spawn']=[x*8,y*8]
         elif tool=='Monster':
@@ -284,11 +395,12 @@ class Editor:
         if self.tool.get()=='Kollision':
             if 0<=x<r['width'] and 0<=y<r['height']:r['collision'][layer][y*r['width']+x]=self.collision.get()
         else:
-            w=self.brush_width;x=x//w*w;y=y//max(1,len(self.brush)//w)*max(1,len(self.brush)//w)
-            paint(r,layer,x,y,self.brush,self.brush_collision if self.auto_collision.get() else None,w)
+            w=self.brush_width
+            if self.tool.get()!='Bauteil':x=x//w*w;y=y//max(1,len(self.brush)//w)*max(1,len(self.brush)//w)
+            paint(r,layer,x,y,self.brush,self.brush_collision if self.auto_collision.get() else None,w,mask=self.brush_mask)
     def motion(self,e):
         if self.start is None:return
-        x,y=self.coords(e);r=self.current();tool=self.tool.get()
+        x,y=self.coords(e);self.hover=(x,y);r=self.current();tool=self.tool.get()
         if tool in ('Zeichnen','Kollision'):
             ox,oy=self.drag;n=max(abs(x-ox),abs(y-oy),1)
             for i in range(n+1):self.stamp(round(ox+(x-ox)*i/n),round(oy+(y-oy)*i/n))
@@ -301,18 +413,19 @@ class Editor:
         if self.tool.get()=='Fläche' and self.selection:
             x1,y1,x2,y2=self.selection;w=self.brush_width;h=max(1,len(self.brush)//w)
             for y in range(y1,y2+1,h):
-                for x in range(x1,x2+1,w):paint(self.current(),self.layer.get(),x,y,self.brush,self.brush_collision if self.auto_collision.get() else None,w)
+                for x in range(x1,x2+1,w):paint(self.current(),self.layer.get(),x,y,self.brush,self.brush_collision if self.auto_collision.get() else None,w,mask=self.brush_mask)
         self.project.commit();self.start=None;self.schedule()
     def pick(self,e):
         x,y=self.coords(e);r=self.current()
         if 0<=x<r['width'] and 0<=y<r['height']:
-            self.brush=[bind(r['layers'][self.layer.get()][y*r['width']+x],r['tileset'],self.layer.get())];self.brush_collision=[r['collision'][self.layer.get()][y*r['width']+x]];self.brush_width=1;self.tool.set('Zeichnen');self.status.set(f'Kachel mit Originalquelle aufgenommen: {self.brush[0]:08X}')
+            self.brush=[bind(r['layers'][self.layer.get()][y*r['width']+x],r['tileset'],self.layer.get())];self.brush_collision=[r['collision'][self.layer.get()][y*r['width']+x]];self.brush_width=1;self.brush_mask=None;self.tool.set('Zeichnen');self.refresh_brush();self.status.set(f'Kachel mit Originalquelle aufgenommen: {self.brush[0]:08X}')
     def object(self):
         if not self.selected_object:return None
         kind,identifier=self.selected_object;return next((a for a in self.current()['actors' if kind=='actor' else 'doors'] if a['id']==identifier),None)
     def object_fields(self):
         item=self.object()
         if item:
+            self.object_props.pack(side='bottom',fill='x',pady=6,before=self.tabs)
             for k,v in self.props.items():v.set(str(item.get(k,'')))
             self.props['plane'].set(('back' if item.get('flags',0)&0x8000==0 else 'front') if self.selected_object[0]=='actor' else ('back' if item.get('target_plane',0) else 'front'))
             if 'target' in item:
@@ -346,7 +459,7 @@ class Editor:
                         [r['collision'][self.layer.get()][y*r['width']+x] for y in range(y1,y2+1) for x in range(x1,x2+1)],w)
         self.status.set(f'Ausschnitt {w*8} × {(y2-y1+1)*8} Pixel kopiert.')
     def paste(self):
-        if self.clipboard:self.brush,self.brush_collision,self.brush_width=copy.deepcopy(self.clipboard);self.tool.set('Zeichnen');self.status.set('Ausschnitt mit Linksklick platzieren.')
+        if self.clipboard:self.brush,self.brush_collision,self.brush_width=copy.deepcopy(self.clipboard);self.brush_mask=None;self.tool.set('Zeichnen');self.refresh_brush();self.status.set('Ausschnitt mit Linksklick platzieren.')
     def flip(self,horizontal):
         w=self.brush_width;h=len(self.brush)//w;indices=[(y*w+(w-1-x) if horizontal else (h-1-y)*w+x) for y in range(h) for x in range(w)]
         values=[];collisions=[]
@@ -356,6 +469,8 @@ class Editor:
             if collision==self.tile_collision(old,self.current()['tileset'],self.layer.get()):collision=self.tile_collision(value,self.current()['tileset'],self.layer.get())
             values.append(value);collisions.append(collision)
         self.brush,self.brush_collision=values,collisions
+        if self.brush_mask is not None:self.brush_mask=[self.brush_mask[i] for i in indices]
+        self.refresh_brush()
     def undo(self):self.project.undo();self.selected_object=None;self.refresh_rooms()
     def redo(self):self.project.redo();self.selected_object=None;self.refresh_rooms()
     def confirm(self):return not self.project.dirty or messagebox.askyesno('Ungespeicherte Änderungen','Ohne Speichern fortfahren?',parent=self.root)

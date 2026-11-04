@@ -24,6 +24,11 @@ def validate(data):
     ids={r['id'] for r in rows}
     if len(ids)!=len(rows):raise ValueError('Raum-IDs müssen eindeutig sein.')
     if data.get('start_room') not in ids:raise ValueError('Der Startraum fehlt.')
+    parts=data.get('parts',[])
+    if not isinstance(parts,list) or len(parts)>128:raise ValueError('Höchstens 128 eigene Bauteile pro Projekt.')
+    from level_parts import validate_part
+    for part in parts:validate_part(part)
+    if len({p['id'] for p in parts})!=len(parts):raise ValueError('Bauteil-IDs müssen eindeutig sein.')
     for r in rows:
         w,h=r['width'],r['height']
         if type(w) is not int or type(h) is not int or not 32<=w<=1024 or not 28<=h<=512 or w*h>MAX_CELLS:
@@ -115,8 +120,9 @@ class Project:
         self.commit()
 
 
-def paint(r,layer,x,y,values,collisions=None,brush_width=1):
+def paint(r,layer,x,y,values,collisions=None,brush_width=1,mask=None):
     for i,value in enumerate(values):
+        if mask is not None and not mask[i]:continue
         xx,yy=x+i%brush_width,y+i//brush_width
         if 0<=xx<r['width'] and 0<=yy<r['height']:
             at=yy*r['width']+xx;r['layers'][layer][at]=value

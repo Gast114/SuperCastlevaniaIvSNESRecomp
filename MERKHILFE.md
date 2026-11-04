@@ -4,6 +4,24 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Level-Editor: Steine und Plattformen bequem auswählen (04.11.)
+
+Den Editor über Level_Editor_starten.cmd neu starten. Rechts öffnet sich
+„Bauteile“ mit großen Vorschauen für Steine, Plattformen und Treppen.
+Vorlage anklicken, dann in der Karte setzen. Plattformlänge: 1 bis 32 Steine.
+Das Werkzeug „Bauteil“ setzt mit einem Klick ein ganzes Teil im 8px-Raster;
+ein Rahmen zeigt vor dem Setzen seine Größe. H/V spiegelt das Teil.
+
+Umschalt + Rechtsklick auf eine feste Fläche nimmt die zusammenhängende
+Plattform auf. Mit Linksklick kopieren. Für freie Ausschnitte „Auswahl“ nutzen.
+Namen eintragen und „Auswahl merken“ oder „Pinsel merken“: eigene Bauteile
+werden mit dem Projekt gespeichert und funktionieren auch in anderen Räumen
+und Zielebenen. Alle Grafikquellen bleiben zugänglich.
+„Kollision beim Zeichnen übernehmen“ einschalten, damit die Plattform begehbar ist.
+Treppenmasken erhalten die Wand zwischen den Stufen. Die Vorlagen sind feste
+Landschaftsteile; bewegliche Plattformen sind weiterhin eigene Spielobjekte.
+Bedienung, Speichern/Undo und echte Bodenkollision beider Plattformvorlagen geprüft.
+
 ## Breitbild: Gegner warten auf ihre Kollisionsdaten (04.11.)
 
 Der F10-Fehler ist behoben und in beiden Windows-Spielordnern installiert.

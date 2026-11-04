@@ -27,6 +27,36 @@ Testinstanz deaktiviert, weil sie den Projektzustand noch nicht mitspeichern.
 
 ## Karte bearbeiten
 
+### Steine, Plattformen und Treppen auswählen
+
+Der neue Reiter **Bauteile** zeigt große Vorschauen, getrennt nach **Steine**,
+**Plattformen**, **Treppen** und **Eigene**. Eine Vorlage anklicken, dann in die
+Karte klicken: Das gesamte Bauteil wird im 8-Pixel-Raster gesetzt. Der Rahmen
+unter der Maus zeigt seine Größe und Position. Bei Plattformen lässt sich die
+Länge über **Plattformlänge · Steine** auf 1 bis 32 Steine einstellen.
+Die A02-Vorlage verwendet die Plattformgrafik aus dem F10-Beispiel.
+
+**Umschalt + Rechtsklick** auf eine vorhandene feste Plattform nimmt ihre
+zusammenhängende Fläche auf. Nur die aktuelle Zielebene wird berücksichtigt;
+andere Kollisionsklassen und Lücken bleiben ausgespart. Mit Linksklick eine
+Kopie setzen. Für größere oder frei geformte Ausschnitte weiterhin mit
+**Auswahl** ein Rechteck aufziehen.
+
+Einen Namen eintragen und **Auswahl merken** oder **Pinsel merken** drücken,
+um das Teil unter **Eigene** abzulegen. Diese Bauteile werden mit dem Projekt
+gespeichert und stehen in allen seinen Räumen zur Verfügung. Sie behalten
+Grafikquelle, Farben, Masken und Kollision auch auf einer anderen Zielebene.
+Mit **Eigenes Bauteil entfernen** wird nur die Vorlage entfernt; bereits
+gesetzte Kopien bleiben stehen. Das Entfernen ist rückgängig zu machen.
+
+**Kollision beim Zeichnen übernehmen** muss eingeschaltet sein, wenn auch die
+begehbare Fläche gesetzt werden soll. **H/V** spiegelt das ganze Bauteil samt
+Maske. Treppenmasken lassen die Wand zwischen den Stufen erhalten.
+Die bisherigen Quellen aller Abschnitte, 32px-Blöcke und 8px-Kacheln bleiben
+frei zugänglich; eigene Teile können daraus beliebig zusammengesetzt werden.
+Die Vorlagen hier sind feste Landschaftsteile. Bewegliche Plattformen benötigen
+weiterhin ein passendes Spielobjekt und dessen Verhalten.
+
 ### Grafiken frei aus allen Abschnitten mischen
 
 Rechts unter **Grafiken aus allen Abschnitten** die gewünschte **Quelle**
@@ -140,3 +170,9 @@ Grafikpicker, Kopieren zwischen Räumen/Ebenen, Mode7-Dekodierung, unabhängige
 Farben, Transparenz und native Sprite-Priorität. Im Spieltest werden 17
 Quell-/Palettenkombinationen und ein Raumwechsel geprüft. Ungültige Verweise
 in Grafikpaketen werden ohne Änderung der aktiven Szene abgewiesen.
+
+`tools/test_level_parts.py` prüft die Bauteilgalerie über echte Tk-Callbacks,
+Längenänderung, 8px-Platzierung, maskierte Treppen, zusammenhängende Auswahl,
+Quelltreue zwischen Räumen/Ebenen, Projektablage und Undo/Redo. Native Spieltests
+prüfen Stand und Bewegung auf beiden Plattformvorlagen. `--no-native` führt
+nur die Daten- und Bedienprüfungen aus. Kein Bildbetrachter wird geöffnet.
