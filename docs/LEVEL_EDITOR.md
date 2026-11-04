@@ -10,13 +10,24 @@ Beim Ausbau sind bestehende Levels umbauen und neue Levels erstellen gleich wich
 aus deiner eigenen USA-ROM vorbereitet. Danach werden sie wiederverwendet.
 Die vorhandene Python-Umgebung der HD-Werkzeuge wird verwendet.
 
-Die **Erste_Testwelt** enthält zwei verbundene Räume, Boden, eine Plattform und
-M-0012. Sie wird einmalig angelegt und bei späteren Starts nicht überschrieben.
-Mit **Speichern unter** eine eigene Fassung anlegen. Projekte liegen standardmäßig
-unter `artwork-local/level-editor/projects/` und enden auf `.sc4level.json`.
+Der Editor startet im Reiter **Originalspiel** mit allen **68 Originalabschnitten**
+R-00 bis R-67. Die bekannten ersten Abschnitte sind zusätzlich als Stage 01 / A01
+bis A05 bezeichnet. Beim Auswählen wird eine Vorschau vorbereitet; die Originale
+werden dabei nicht bearbeitet. **Als eigene Kopie bearbeiten** übernimmt einen
+unterstützten 2D-Abschnitt in ein eigenes Projekt. **Neues eigenes Level** beginnt
+mit einem leeren Raum. **Mein Projekt** wechselt zurück zur eigenen Karte.
 
-**F5 / Spieltest** startet eine eigene Spielinstanz mit der aktuellen Karte,
-auch ohne vorher zu speichern. **Test beenden** schließt sie. Nach einer Änderung
+Eine bereits vorhandene **Erste_Testwelt** bleibt erhalten und lässt sich über
+**Öffnen** laden. Sie wird nicht mehr automatisch gestartet. Projekte liegen
+standardmäßig unter `artwork-local/level-editor/projects/` und enden auf
+`.sc4level.json`. **Speichern unter** legt eine zusätzliche eigene Fassung an.
+
+**F5 / Spieltest** startet eine eigene Spielinstanz: im Originalkatalog den
+ausgewählten Originalabschnitt mit seinen nativen Skripten, unter Mein Projekt
+die eigene aktuelle Karte, auch ohne vorher zu speichern. Das Originalspiel
+lässt sich so auch bei vertikalen und Mode7-Einträgen testen, deren vollständige
+2D-Kartenansicht und Kartenimport noch fehlen. **Test beenden** schließt die
+Instanz. Nach einer Änderung
 F5 erneut drücken. Das Spielfenster muss den Eingabefokus haben, um zu spielen.
 Die Originalsteuerung des privaten Spieltests gilt. Native Speicherstände und
 Rewind gehören noch nicht zum Projektformat; nach Tod oder versehentlichem
@@ -54,8 +65,30 @@ begehbare Fläche gesetzt werden soll. **H/V** spiegelt das ganze Bauteil samt
 Maske. Treppenmasken lassen die Wand zwischen den Stufen erhalten.
 Die bisherigen Quellen aller Abschnitte, 32px-Blöcke und 8px-Kacheln bleiben
 frei zugänglich; eigene Teile können daraus beliebig zusammengesetzt werden.
-Die Vorlagen hier sind feste Landschaftsteile. Bewegliche Plattformen benötigen
-weiterhin ein passendes Spielobjekt und dessen Verhalten.
+Die festen Bauteile verändern die Karte. Bewegliche Plattformen werden separat
+als native Spielobjekte gesetzt, siehe unten.
+
+### Bewegliche Plattformen und Objektbilder
+
+Unter **Bauteile → Bewegliche Plattformen** oder im Reiter **Objekte** stehen
+zwei geprüfte Varianten von **O-0017** bereit: waagerecht und senkrecht. Eine
+Variante anklicken und ihren Mittelpunkt in der Karte setzen. Der eingezeichnete
+Weg zeigt die native Pendelbewegung über 80 Pixel nach links bzw. nach oben.
+Die Plattform kehrt am Ende um. Ihr Weg muss vollständig im Raum liegen.
+
+Nach dem Setzen oder Auswählen lassen sich **Bewegung**, X/Y und Spielebene
+unter **Auswahl / Ausgang** ändern und mit **Übernehmen** bestätigen. F5 führt
+die Originalroutine aus: Die Plattform bewegt sich pixelgenau, trägt Simon und
+erlaubt Abspringen. Die Bewegung ist nicht bloß eine Animation über festen Kacheln.
+Andere Objekte sind mit O-Codes und ihrer vorhandenen Originalgrafik auswählbar;
+ihre Funktion kann zusätzliche native Levelskripte benötigen.
+
+Monster und Objekte haben jetzt Sprite-Bilder in der Auswahl **und in der Karte**.
+Die Bilder verwenden ihre native Größe und ihren Originalanker. Figuren der
+hinteren Spielebene werden vor dem Vordergrund gezeichnet, etwa hinter dem Zaun.
+**Objektnamen** blendet die Codes zusätzlich ein; ausgewählte Objekte zeigen ihren
+Code immer. Vorhandene Originalposen werden nur gelesen. Für unsichtbare
+Controller oder fehlende Vorschaubilder wird keine Ersatzgrafik erfunden.
 
 ### Grafiken frei aus allen Abschnitten mischen
 
@@ -118,8 +151,8 @@ Kollisionsebenen nach Originalregel. Importierte Räume behalten ihren Modus.
 
 Unter **Monster** einen Code wählen und in die Karte klicken. Die Varianten,
 Koordinaten und Spielebene lassen sich unter **Auswahl / Ausgang** ändern.
-Monster werden in der Karte als beschriftete Marker gezeigt; ihre echte KI
-und Animation laufen im Spieltest. Die Codes entsprechen der Monsterwerkstatt.
+Monster werden in der Karte mit einer vorhandenen nativen Pose gezeigt; ihre
+echte KI und Animation laufen im Spieltest. Die Codes entsprechen der Monsterwerkstatt.
 Geschosse und belegte Hilfsteile bleiben bei ihrem Monster.
 
 **Start** setzt Simons Startpunkt im gewählten Raum. **Ausgang** setzt einen
@@ -176,3 +209,9 @@ Längenänderung, 8px-Platzierung, maskierte Treppen, zusammenhängende Auswahl,
 Quelltreue zwischen Räumen/Ebenen, Projektablage und Undo/Redo. Native Spieltests
 prüfen Stand und Bewegung auf beiden Plattformvorlagen. `--no-native` führt
 nur die Daten- und Bedienprüfungen aus. Kein Bildbetrachter wird geöffnet.
+
+`tools/test_level_objects.py` prüft Sprite-Pixel und Anker in der Karte,
+Bildauswahl und Plattformparameter, den Startkatalog mit allen 68 Abschnitten,
+Originalvorschau/Kopiergrenze und Original-Spieltests. Native Tests prüfen beide
+Plattformachsen einschließlich Umkehren, Mitfahren und Abspringen sowie einen
+Mode7-Originalabschnitt. Auch hier überspringt `--no-native` die Spieltests.

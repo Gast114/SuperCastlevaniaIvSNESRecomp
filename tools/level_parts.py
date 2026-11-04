@@ -3,7 +3,7 @@ import copy
 import uuid
 from level_tiles import EMPTY, bind, valid
 
-CATEGORIES=('Alle','Steine','Plattformen','Treppen','Eigene')
+CATEGORIES=('Alle','Steine','Plattformen','Bewegliche Plattformen','Treppen','Eigene')
 
 
 def validate_part(part):

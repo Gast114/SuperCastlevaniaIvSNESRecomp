@@ -4,6 +4,29 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Level-Editor: Originalkatalog, Sprite-Bilder und bewegliche Plattformen (04.11.)
+
+Editor über Level_Editor_starten.cmd neu starten. Er öffnet jetzt „Originalspiel“
+mit allen 68 Originalabschnitten. F5 spielt den gewählten Abschnitt nativ.
+„Als eigene Kopie bearbeiten“ übernimmt eine unterstützte 2D-Karte in ein eigenes
+Projekt; „Neues eigenes Level“ beginnt leer. Vorhandene Projektdateien bleiben
+über „Öffnen“ erreichbar. Die alte Testwelt startet nicht mehr automatisch.
+Vertikale/Mode7-Abschnitte sind per F5 spielbar; ihre vollständige Kartenansicht
+und ihr Kartenimport sind noch nicht umgesetzt. Die Einträge bleiben aufgelistet.
+
+Monster und Objekte haben Sprite-Bilder in Auswahl und Karte. Mit „Objektnamen“
+lassen sich zusätzlich die Codes einblenden; Auswahlrahmen/Codes erscheinen beim
+Anklicken. Hintere Figuren stehen auch in der Vorschau hinter dem Vordergrund.
+Die Sprite-Bilder sind vorhandene Originalposen, keine neue Bildgenerierung.
+
+Unter „Bauteile → Bewegliche Plattformen“ und „Objekte“: O-0017 waagerecht oder
+senkrecht wählen, dann den Mittelpunkt setzen. Die Originalbewegung pendelt
+80 Pixel nach links bzw. oben und zurück. Der Weg wird angezeigt und muss im
+Raum liegen. Nach Auswahl lässt sich die Richtung unter „Bewegung“ ändern.
+Beide Varianten tragen Simon und erlauben Abspringen; das ist im echten
+Spieltest geprüft. Andere O-Objekte können zusätzliche Levelskripte benötigen.
+Persönliche Spielstände, HD-Dateien und die installierte Spiel-EXE unverändert.
+
 ## Level-Editor: Steine und Plattformen bequem auswählen (04.11.)
 
 Den Editor über Level_Editor_starten.cmd neu starten. Rechts öffnet sich

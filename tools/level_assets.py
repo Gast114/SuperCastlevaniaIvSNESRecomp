@@ -116,7 +116,7 @@ class Assets:
     @property
     def tile_count(self):return 256 if self.meta['ppu']['bgmode']&7==7 else 1024
 
-    def import_room(self):
+    def import_room(self,include_objects=False):
         if not self.meta['supported']:raise ValueError('Mode7-Räume benötigen einen eigenen Kartenmodus und sind noch nicht importierbar.')
         if self.meta['height']>256:raise ValueError('Vertikale Originalkarten folgen separat. Eigene hohe Räume sind schon möglich.')
         width=min(8192,self.meta['width'])//8;r=room(f'Original R-{self.meta["room"]:02d}',width,32,self.meta['room'])
@@ -134,6 +134,7 @@ class Assets:
         raw=NativeSession.__new__(NativeSession);raw.bytes=(ROOT/'Super Castlevania IV (USA).sfc').read_bytes()
         from monster_model import definitions
         allowed={m['type'] for m in definitions(raw.read_catalog(),raw.bytes)}
+        if include_objects:allowed.update(range(1,0x8e))
         pointer=raw.word(0,0xd81b+self.meta['room']*2);special=0
         for n in range(1024):
             at=5*0x8000+((pointer+n*6)&0x7fff);flags,yy,t,var=struct.unpack_from('<HHBB',raw.bytes,at)

@@ -47,6 +47,8 @@ def validate(data):
             if type(a['type']) is not int or not 0<a['type']<=0x8d or type(a.get('variant',0)) is not int or not 0<=a.get('variant',0)<=255:
                 raise ValueError('Ungültiger Monster-Code oder Variante.')
             if type(a.get('flags',0)) is not int or not 0<=a.get('flags',0)<=65535:raise ValueError('Ungültige Monster-Ebene.')
+            from level_objects import validate_platform
+            validate_platform(a,w*8,h*8)
         objects=r['actors']+r['doors']
         if len({a['id'] for a in objects})!=len(objects):raise ValueError('Objekt-IDs müssen je Raum eindeutig sein.')
         for d in r['doors']:
@@ -105,6 +107,8 @@ class Project:
     def resize(self,r,width,height,name=None,collision_mode=None):
         if not 32<=width<=1024 or not 28<=height<=512 or width*height>MAX_CELLS:raise ValueError('Ungültige Raumgröße.')
         if any(a['x']>=width*8 or a['y']>=height*8 for a in r['actors']):raise ValueError('Beim Verkleinern würden Gegner abgeschnitten.')
+        from level_objects import validate_platform
+        for actor in r['actors']:validate_platform(actor,width*8,height*8)
         if any(d['x']>=width*8 or d['y']>=height*8 for d in r['doors']):raise ValueError('Beim Verkleinern würden Ausgänge abgeschnitten.')
         if any(d['target']==r['id'] and (d['target_x']>=width*8 or d['target_y']>=height*8) for q in self.data['rooms'] for d in q['doors']):raise ValueError('Ein Ausgangsziel würde außerhalb dieses Raums liegen.')
         self.begin('Raumgröße')

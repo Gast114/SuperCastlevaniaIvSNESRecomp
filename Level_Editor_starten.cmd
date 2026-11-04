@@ -17,7 +17,7 @@ if not exist "artwork-local\enemy-library\library.json" (
 )
 "%SCIV_EDITOR_PYTHON%" "%~dp0tools\prepare_monster_resources.py" --ensure
 if errorlevel 1 goto failed
-"%SCIV_EDITOR_PYTHON%" "%~dp0tools\level_editor.py" --demo
+"%SCIV_EDITOR_PYTHON%" "%~dp0tools\level_editor.py"
 if errorlevel 1 goto failed
 exit /b 0
 :failed

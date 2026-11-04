@@ -10,6 +10,7 @@ from enemy_sprite_export import descriptor
 from level_assets import Assets,ensure_room
 from level_project import validate
 from level_graphics import compile_graphics
+from level_objects import resource_entry
 
 
 def monster_plan(raw,placements,index):
@@ -40,8 +41,8 @@ def compile_project(data,destination,rom=None,build=None,quest=0):
     owners={};bank_data={}
     for a in actors.values():
         t=a['type']
-        entry=dict(type=t,variant=a.get('variant',0));colors=palette(library,entry)
-        profile=next((p for p in index['profiles'] if p['type']==t and p.get('variant',0)==a.get('variant',0)),{})
+        entry=resource_entry(a);colors=palette(library,entry)
+        profile=next((p for p in index['profiles'] if p['type']==t and p.get('variant',0)==entry['variant']),{})
         banks={}
         for pose in set(poses.get(t,[]))|set(profile.get('poses',[])):
             for _,_,attr in descriptor(raw,pose):
@@ -116,5 +117,37 @@ class Playtest:
             s.command('level_project',level)
         except BaseException:self.close();raise
 
+    def close(self):
+        if self.session:self.session.close();self.session=None
+
+
+class OriginalPlaytest:
+    """Play an original section natively, including its scripts and Mode7 scenes."""
+    def __init__(self,number,folder,rom=None,build=None,fast=False,window_scale=3):
+        if type(number) is not int or not 0<=number<68:raise ValueError('Ungültiger Originalabschnitt.')
+        self.folder=Path(folder);self.session=None;self.audio_unavailable=False
+        session=NativeSession(rom,build,folder=self.folder/'game');self.session=session
+        config=configparser.ConfigParser();config.read(session.folder/'config.ini')
+        config['General']['RunAhead']='0';config['Rewind']={'Enabled':'0'}
+        if not fast:
+            config['General']['DisableFrameDelay']='0';config['Graphics']['WindowScale']=str(max(2,min(8,window_scale)));config['Sound']['EnableAudio']='1'
+        with (session.folder/'config.ini').open('w') as f:config.write(f)
+        try:
+            try:session.start()
+            except (OSError,RuntimeError):
+                log=(session.folder/'game.log').read_text(encoding='utf-8',errors='replace')
+                if fast or 'audio device open FAILED' not in log:raise
+                config['Sound']['EnableAudio']='0';self.audio_unavailable=True
+                with (session.folder/'config.ini').open('w') as f:config.write(f)
+                session.start()
+            session.command('enemy','workshop off');session.command('enemy','capture off')
+            if number:
+                session.write({0x86:number,0x70:3})
+                from enemy_workshop_native import play
+                for _ in range(900):
+                    play.advance(session.lua,1)
+                    if session.read(0x70)==5 and session.read(0x3c)==0:break
+                else:raise ValueError('Originalabschnitt konnte nicht vollständig geladen werden.')
+        except BaseException:self.close();raise
     def close(self):
         if self.session:self.session.close();self.session=None
