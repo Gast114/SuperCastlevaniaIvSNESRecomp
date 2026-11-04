@@ -202,10 +202,9 @@ def build(source,prior,output,audit):
                 raise ValueError(f'{stage}: unexpected cropped canvas; registration needs review')
             base,gx,gy=normalize(plane)
         a=Assets(ROOT/'artwork-local/level-editor/rooms'/f'{int(stage[1:])-1:02d}')
-        if stage=='A03':
-            painted=base.copy();mask=np.zeros((base.height,base.width),bool)
-            detail=dict(placements=[],counts={},changed_pixels=0,walls_outside_object_alpha_exact=True,complete_artist_plane_exact=True)
-        else:painted,mask,detail=stamp_objects(base,gx,gy,a,motifs)
+        # All three artist planes need the explicit gameplay blocks and steps.
+        # A complete wall PNG does not imply that these separate motifs are baked in.
+        painted,mask,detail=stamp_objects(base,gx,gy,a,motifs)
         base.save(audit/(stage+'-normalized-source.png'));painted.save(audit/(stage+'-complete.png'))
         Image.fromarray(mask.astype(np.uint8)*255).save(audit/(stage+'-object-mask.png'))
 

@@ -1,5 +1,13 @@
 # Arbeitsstand & Übergabe (2026-10-23, lokale KI-Spritekorrektur)
 
+## V8: A03-Steine und Treppen wieder vollständig (04.11.)
+
+Nutzer meldete fehlende Steine in A03. Ursache: build_stage01_later.py nahm A03 seit v6 ausdrücklich von stamp_objects aus, aufgrund falscher Annahme, alle separaten Spielblöcke seien bereits im vollständigen Künstler-PNG enthalten. V7 übernahm dies. Der vorherige Bildtest verlangte sogar A03==Wandquelle und prüfte damit die falsche Vollständigkeitsannahme. Jetzt stamp_objects für alle drei Abschnitte; weiterhin nur exakte native Block-/Treppensignaturen, keine allgemeinen Mauer-Kachelpools.
+
+A03: 126 vollständige Blöcke, acht linke und acht rechte Stufen, 16 Teilflächen; 543865 geänderte Pixel innerhalb der Motivmasken. Native Positionen aus room02. Die Wand außerhalb Motiv-Alpha bleibt exakt. A03-Test verlangt jetzt konkrete Block-/Stufenzahlen, nichtleere Maske und tatsächliche Bildpixel des unabhängig komponierten Steins bei native(768,0). Live-BG1 aller drei Abschnitte pixelgenau: build-lua/prepared-plane-9oila9l7/report.json. Native Replay neun Fälle sowie Tod/Restart/Wasser/Reload PASS build-lua/hd-later-stage01-thatsdvo/report.json. Eingang/A02/A04/A05 vollständig bytegleich mit v7, Quellen-PNGs/raster.json unverändert. Keine Bilder angesehen.
+
+Aktiv in build und build-play/game `hd_packs/stage-01-user-grid-v8`, enabled1/scale4/layers31. EXE unverändert, geschützte Spielstände und Konfiguration laut Installer unverändert. Backup `D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-11-04-A03-Steine-v8` enthält vorherige HD-Auswahl/EXEs, Importquellen und Tests. Audit artwork-local/stage01-a03-motifs-2026-11-04. Exporte-4x/LIES_MICH und Generatorhinweise klären, dass Spielebene.png allein nicht alle separat ergänzten Spielblöcke enthält. Alte PSDs/Quellen weiter unverändert; keine neue Bildgenerierung und keine weitere Rasterumrechnung.
+
 ## V7: registrierte 4x-Quellen, 8x-Quellvertrag vorbereitet (04.11.)
 
 Nutzer moechte die129/32-Arbeitsgrafiken retten statt neu zeichnen und spaeter einzelne8x-Objekte. tools/hd/prepare_stage01_grid.py erzeugt nur neue Exporte; Rezept assets/hd/stage01_grid.recipe.json registriert bekannte Panelgrenzen und Originalspielhoehe. A03-Quellpanels1032/1032/1161/902/1032 -> native256/256/288/224/256; A04 1032/1161/1032/903 ->256/288/256/224; A05 903/903/774/516 ->224/224/192/128. Margen separat174 (A04 rechts175) ->172, UrsprungHD[-172,0]=native[-43,0]. Originalhoehe903->896. A03 Quellzeile903 hat nur links175Alpha-Pixel, liegt ausserhalb Originalspielhoehe und entfaellt in neuer Fassung; alte Quelle unveraendert. Keine Neugenerierung/keine PSD-Aenderung. Lanczos mit kompletter Quelle als Filterkontext je registrierter Box, nicht zugeschnittene8x8-Mauerkacheln.

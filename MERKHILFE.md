@@ -4,6 +4,18 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## A03: fehlende Steine und Stufen ergänzt (04.11.)
+
+Aktiv ist jetzt `hd_packs/stage-01-user-grid-v8` in beiden Windows-Spielordnern.
+Das Spiel neu starten. Der Import ergänzt auch in A03 die separaten Steine und
+Treppen an ihren Originalpositionen: 126 vollständige Steine, 16 Stufen und
+16 Teilstücke. A03 war zuvor fälschlich von dieser Platzierung ausgenommen.
+Die Wandgrafik und alle Quell-PNGs bleiben erhalten. Spielebene.png allein
+ist keine vollständige Vorschau der separat ergänzten Spielblöcke.
+Ein zusätzlicher Test prüft die A03-Bauteile und ihre tatsächlichen Bildpixel.
+Die übrigen Abschnitte sind gegenüber v7 unverändert. Spieltests bestanden.
+Sicherung: backup\hd-artwork\2026-11-04-A03-Steine-v8.
+
 ## Exaktes 4×-Raster für A03/A04/A05 (04.11.)
 
 Aktiv ist `hd_packs/stage-01-user-grid-v7` in beiden Windows-Spielordnern.

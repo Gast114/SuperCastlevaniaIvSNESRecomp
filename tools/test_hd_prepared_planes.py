@@ -20,6 +20,7 @@ def check(pack,source,audit):
     report=[]
     grid_path=source/'raster.json'
     grid=json.loads(grid_path.read_text(encoding='utf-8')) if grid_path.exists() else None
+    imported=json.loads((audit/'report.json').read_text(encoding='utf-8'))
     try:
         s.start(ROOT/'build-play/game/saves/save2.sav');s.command('enemy','workshop off');s.command('hd','pack '+str(pack));s.command('hd','on');s.command('hd','scale 4');s.command('layers',1)
         for stage,slot in [('A03',2),('A04',3),('A05',4)]:
@@ -32,7 +33,20 @@ def check(pack,source,audit):
             final=np.array(Image.open(audit/(stage+'-complete.png')).convert('RGBA'))
             mask=np.array(Image.open(audit/(stage+'-object-mask.png')))>0
             assert np.array_equal(final[~mask],normalized[~mask]),stage+' wall pixels altered'
-            if stage=='A03':assert not mask.any() and np.array_equal(final,normalized),'A03 complete plane altered'
+            if stage=='A03':
+                # Native room 02 has 126 full decorative gameplay blocks and
+                # eight steps in each direction. A wall-only import is incomplete.
+                counts=imported['stages'][stage]['counts']
+                assert counts.get('block')==126 and counts.get('stair-step-left')==8 and counts.get('stair-step-right')==8, 'A03 blocks/steps missing'
+                assert mask.any() and np.any(final!=normalized), 'A03 motifs not composited'
+                if grid:
+                    # A known unflipped native block at (768,0), independently
+                    # composed from the supplied 64x64 motif, must reach the image.
+                    block=Image.open(source/'HD/Gemeinsame-Teile/Stein-01.png').convert('RGBA')
+                    block=block.resize((64,64),Image.Resampling.LANCZOS)
+                    box=(768*4+172,0,784*4+172,64)
+                    expected=Image.alpha_composite(im.crop(box),block)
+                    assert np.array_equal(final[0:64,box[0]:box[2]],np.array(expected)), 'A03 block image/position incorrect'
             meta=json.loads((pack/stage.lower()/'pack.json').read_text())
             regions=[r for r in meta['regions'] if r['layer']==0]
             assert not any(r.get('native_fallback',0) or r.get('overlay',0) for r in regions)
