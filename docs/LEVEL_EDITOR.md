@@ -10,12 +10,14 @@ Beim Ausbau sind bestehende Levels umbauen und neue Levels erstellen gleich wich
 aus deiner eigenen USA-ROM vorbereitet. Danach werden sie wiederverwendet.
 Die vorhandene Python-Umgebung der HD-Werkzeuge wird verwendet.
 
-Der Editor startet im Reiter **Originalspiel** mit allen **68 Originalabschnitten**
+Der Editor startet im Reiter **Originale** mit allen **68 Originalabschnitten**
 R-00 bis R-67. Die bekannten ersten Abschnitte sind zusätzlich als Stage 01 / A01
 bis A05 bezeichnet. Beim Auswählen wird eine Vorschau vorbereitet; die Originale
-werden dabei nicht bearbeitet. **Als eigene Kopie bearbeiten** übernimmt einen
-unterstützten 2D-Abschnitt in ein eigenes Projekt. **Neues eigenes Level** beginnt
-mit einem leeren Raum. **Mein Projekt** wechselt zurück zur eigenen Karte.
+werden dabei nicht bearbeitet. **Dieses Level bearbeiten** oder **Bearbeiten**
+öffnet eine eigene Kopie. Auch direktes Ziehen oder Hinzufügen einer Figur erstellt
+diese Kopie automatisch. Ein vorhandenes eigenes Projekt mit Änderungen bleibt
+erhalten; die Kopie wird als weiterer Raum ergänzt. **Eigenes Level beginnen**
+startet leer. **Mein Projekt** wechselt zurück zur eigenen Karte.
 
 Eine bereits vorhandene **Erste_Testwelt** bleibt erhalten und lässt sich über
 **Öffnen** laden. Sie wird nicht mehr automatisch gestartet. Projekte liegen
@@ -24,7 +26,8 @@ standardmäßig unter `artwork-local/level-editor/projects/` und enden auf
 
 **F5 / Spieltest** startet eine eigene Spielinstanz: im Originalkatalog den
 ausgewählten Originalabschnitt mit seinen nativen Skripten, unter Mein Projekt
-die eigene aktuelle Karte, auch ohne vorher zu speichern. Das Originalspiel
+den gerade geöffneten eigenen Raum, auch ohne vorher zu speichern. Der im Projekt
+gespeicherte Startraum wird dadurch nicht verändert. Das Originalspiel
 lässt sich so auch bei vertikalen und Mode7-Einträgen testen, deren vollständige
 2D-Kartenansicht und Kartenimport noch fehlen. **Test beenden** schließt die
 Instanz. Nach einer Änderung
@@ -40,7 +43,7 @@ Testinstanz deaktiviert, weil sie den Projektzustand noch nicht mitspeichern.
 
 ### Steine, Plattformen und Treppen auswählen
 
-Der neue Reiter **Bauteile** zeigt große Vorschauen, getrennt nach **Steine**,
+Unter **Gelände → Bauteile** findest du große Vorschauen, getrennt nach **Steine**,
 **Plattformen**, **Treppen** und **Eigene**. Eine Vorlage anklicken, dann in die
 Karte klicken: Das gesamte Bauteil wird im 8-Pixel-Raster gesetzt. Der Rahmen
 unter der Maus zeigt seine Größe und Position. Bei Plattformen lässt sich die
@@ -92,7 +95,7 @@ Controller oder fehlende Vorschaubilder wird keine Ersatzgrafik erfunden.
 
 ### Grafiken frei aus allen Abschnitten mischen
 
-Rechts unter **Grafiken aus allen Abschnitten** die gewünschte **Quelle**
+Unter **Gelände → Grafikquelle** die gewünschte **Quelle**
 wählen: R-00 bis R-67, dazu der später geladene Mode7-Grafiksatz aus R-23.
 Daneben die Vorder- oder Hintergrundgrafiken dieser Quelle auswählen.
 Dann einen Block oder eine Kachel anklicken und in die Karte zeichnen.
@@ -141,7 +144,7 @@ Steigungen und andere native Klassen bleiben dabei erhalten.
 
 Unter Raumeigenschaften lassen sich Name, Breite und Höhe ändern. Maße müssen
 durch acht teilbar sein. Verkleinerungen, die Gegner oder Ausgangsziele
-abschneiden würden, werden abgewiesen. **Raumwerte übernehmen** bestätigt die Werte.
+abschneiden würden, werden abgewiesen. **Eigenschaften…** öffnet den Dialog; **Übernehmen** bestätigt die Werte.
 
 Der Kollisionsmodus **3 · Zwei Spielebenen** hält die Böden vor und hinter dem
 Zaun unabhängig. **0/2** verwenden den Vordergrund; **1** kombiniert beide
@@ -149,18 +152,30 @@ Kollisionsebenen nach Originalregel. Importierte Räume behalten ihren Modus.
 
 ## Monster, Start und Ausgänge
 
-Unter **Monster** einen Code wählen und in die Karte klicken. Die Varianten,
-Koordinaten und Spielebene lassen sich unter **Auswahl / Ausgang** ändern.
+Rechts **Gegner** öffnen, ein Bild auswählen und **＋ Hinzufügen** drücken. Die
+Figur erscheint in der sichtbaren Kartenmitte und ist direkt zum Ziehen ausgewählt.
+Alternativ ein Bild aus der Bibliothek in die Karte ziehen. **Mit Maus platzieren**
+zeigt eine Vorschau am Mauszeiger; mit einem Klick setzen. Danach ist wieder
+**Auswählen & ziehen** aktiv. Umschalt beim Setzen erlaubt mehrere Platzierungen,
+Esc beendet den Platzierungsmodus. Unter **Objekte** funktioniert es genauso,
+beispielsweise für Kerzen oder bewegliche Plattformen.
+
+Koordinaten, Variante und Spielebene stehen links an der ausgewählten Figur.
+Es werden nur die jeweils passenden Eigenschaften angezeigt; Ausgangsfelder
+erscheinen erst bei einem Ausgang. **Werte / KI / Boss…** oder ein Doppelklick
+auf die Figur öffnet die ausführlichen Werte.
 Monster werden in der Karte mit einer vorhandenen nativen Pose gezeigt; ihre
 echte KI und Animation laufen im Spieltest. Die Codes entsprechen der Monsterwerkstatt.
 Geschosse und belegte Hilfsteile bleiben bei ihrem Monster.
 
-Mit **Auswahl** anklicken und ziehen. Die Pfeiltasten verschieben ein ausgewähltes
+Figuren direkt mit der linken Maustaste anklicken und ziehen. Ein Wechsel aus
+einem Platzierungsmodus ist dafür nicht nötig. Der Greifpunkt bleibt erhalten;
+kleine und nicht am Raster ausgerichtete Figuren lassen sich pixelgenau greifen. Die Pfeiltasten verschieben ein ausgewähltes
 Objekt um einen Pixel, Umschalt + Pfeiltaste um acht. Strg+C / Strg+V kopiert die
 Figur einschließlich Name und eigener Werte; anschließend in die Karte klicken.
-Die Werkzeugwahl **Monster** oder **Objekt** bleibt zum mehrfachen Platzieren aktiv.
+Auch **Duplizieren** links kopiert eine ausgewählte Figur samt eigenen Werten.
 
-**Werte / KI / Boss-Einstellungen** öffnet den Detaildialog. Normal und New Game+
+**Werte / KI / Boss…** öffnet den Detaildialog. Normal und New Game+
 stehen separat neben dem wirksamen Normalwert. Eigene Gesundheit, Kontaktschaden
 und halbe Trefferbreite/-höhe gelten pro platziertem Exemplar im F5-Spieltest und
 werden im Projekt gespeichert. Ein leeres Feld übernimmt den Originalwert;
@@ -194,7 +209,7 @@ Grafikbehandlung. Originale feste Bewegungsgrenzen und Bossphasen gelten weiterh
 neue KI oder frei definierbare Angriffsabläufe sind damit noch nicht verbunden.
 
 **Start** setzt Simons Startpunkt im gewählten Raum. **Ausgang** setzt einen
-markierten Bereich. Mit **Auswahl** anklicken, Zielraum aus der Liste wählen,
+markierten Bereich. Mit **Auswählen & ziehen** anklicken, Zielraum aus der Liste wählen,
 Ziel X/Y und Zielebene einstellen und **Übernehmen** drücken.
 `up` verlangt die Hoch-Taste im Bereich; `touch` wechselt beim Betreten.
 
@@ -263,3 +278,10 @@ und Todesphasen. `tools/test_level_boss_end.py` prüft zusätzlich Einleitung,
 Rückkehr, Ausgang, Spielertod und Sturz, einschließlich Wiederherstellung der
 gewöhnlichen Objektgrafik und Kerzenflags. Alle Bildprüfungen laufen ohne
 Bildbetrachter über die tatsächlichen Pixel.
+
+`tools/test_level_editor_ui.py` sendet echte Tk-Mausereignisse an ein sichtbares
+Editorfenster. Geprüft werden Hinzufügen, Platzierungsvorschau, Ziehen kleiner
+Fledermäuse, Drag-and-drop aus der Bibliothek, Originalkopie bei der ersten
+Änderung, Schutz bestehender ungespeicherter Projekte und Undo. Layout-Prüfungen
+bei 1280×900 und 4K-Skalierung prüfen die Erreichbarkeit der Schaltflächen ohne
+Bildbetrachter. F5 wird außerdem gegen den aktuell geöffneten Raum geprüft.

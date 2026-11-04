@@ -48,7 +48,7 @@ def check(native=True):
             app.part_category.set('Bewegliche Plattformen');app.refresh_parts();app.parts_gallery.selection_set('moving-vertical');app.choose_part()
             assert app.tool.get()=='Objekt' and app.object_template['variant']==1
             event=lambda x,y:SimpleNamespace(x=x*8*app.zoom.get()+1,y=y*8*app.zoom.get()+1)
-            app.hover_brush(event(25,20));assert len(app.canvas.find_withtag('brush-cursor'))==2
+            app.hover_brush(event(25,20));assert len(app.canvas.find_withtag('brush-cursor'))>=2
             app.press(event(25,20));app.release(event(25,20));actor=r['actors'][-1]
             assert (actor['type'],actor['variant'],actor['kind'])==(0x17,1,'platform') and app.props['motion'].get()=='Senkrecht'
             app.props['motion'].set('Waagerecht');app.apply_object();assert r['actors'][-1]['variant']==0
@@ -67,7 +67,8 @@ def check(native=True):
             assert app.original_number==0
             own=copy.deepcopy(app.project.data);original_snapshot=copy.deepcopy(app.current());app.tool.set('Zeichnen')
             event=lambda x,y:SimpleNamespace(x=x*8*app.zoom.get()+1,y=y*8*app.zoom.get()+1)
-            app.press(event(4,4));app.release(event(4,4));assert app.project.data==own and app.current()==original_snapshot
+            app.press(event(4,4));app.release(event(4,4));assert not app.original_view and app.original_cache[0]==original_snapshot
+            app.room_tabs.select(app.original_tab);root.update()
             app.originals.selection_set('1');app.choose_original();spin(root,lambda:app.original_number==1 and app.original_room is not None and not app.original_loading)
             original=copy.deepcopy(app.current());assert any(a['type']==0x11 for a in original['actors'])
             assert app.edit_original();root.update();assert not app.original_view and app.project.dirty

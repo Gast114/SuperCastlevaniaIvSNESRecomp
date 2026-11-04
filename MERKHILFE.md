@@ -1185,3 +1185,12 @@ Spielinstallation, Spielstaende und alle aktuellen Importdateien sind unveraende
 - Ein Boss ist eine einzelne Begegnung mit festem Ausschnitt. Andere Gegner und dynamische Objekte pausieren und kehren danach zurück. `continue` = im Raum bleiben; `exit` = erster Raumausgang. Spielertod/Sturz startet am eigenen Startpunkt.
 - Native Bewegungsgrenzen, besondere Bossphasen und Abhängigkeiten mancher Szenenobjekte bleiben bestehen. Das ist noch kein freier Baukasten für sämtliche Original-Levelskripte.
 - Keine neuen HD-Bilder nötig; Original-/Künstlerdateien bleiben unverändert. Details: `docs/LEVEL_EDITOR.md`.
+
+## Level-Editor: Hinzufügen und Ziehen / neue Oberfläche (04.11.2026)
+
+- Editor neu starten. Rechts **Gegner** oder **Objekte** öffnen, ein Bild wählen und **＋ Hinzufügen** drücken. Die Figur erscheint in der sichtbaren Kartenmitte und ist direkt ausgewählt. Alternativ das Bild in die Karte ziehen.
+- **Mit Maus platzieren** zeigt die Figur als Vorschau am Zeiger. Ein Klick setzt sie; danach ist wieder **Auswählen & ziehen** aktiv. Umschalt = mehrfach setzen, Esc = abbrechen.
+- Figuren direkt mit der linken Maustaste greifen und ziehen, auch aus einem Platzierungsmodus. Kleine Fledermäuse werden jetzt ohne vorherige 8px-Rundung getroffen.
+- Beim ersten Ziehen oder Hinzufügen in einer Originalvorlage entsteht automatisch eine eigene Kopie. Bereits vorhandene eigene Räume und ungespeicherte Arbeit bleiben dabei erhalten.
+- Links stehen nur die passenden Eigenschaften der Auswahl; Werte/KI per Schaltfläche oder Doppelklick. Gelände liegt getrennt unter **Gelände**. Die größere dunkle Oberfläche ist auch für 4K ausgelegt.
+- F5 testet den gerade geöffneten eigenen Raum, ohne den gespeicherten Startraum zu ändern.
