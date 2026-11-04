@@ -19,7 +19,7 @@ if errorlevel 1 goto failed
 if errorlevel 1 goto failed
 "%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\enemy_workshop.py" --prepare-library
 if errorlevel 1 goto failed
-"%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\monster_workshop.py"
+"%SCIV_WORKSHOP_PYTHON%" "%~dp0tools\level_editor.py" --monsters
 if errorlevel 1 goto failed
 exit /b 0
 :failed

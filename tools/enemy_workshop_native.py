@@ -251,6 +251,9 @@ class NativeSession:
         self.prepare_arena()
 
     def spawn_neutral(self,entry,count=1):
+        if entry.get('boss') and 'controller' in entry:
+            from level_bosses import spawn_scene
+            spawn_scene(self,dict(entry));return self.snapshot()
         if entry.get('boss'):
             arena=self.arena_enabled;self.arena_enabled=False
             try:spawn_boss(self,entry,neutral=True)

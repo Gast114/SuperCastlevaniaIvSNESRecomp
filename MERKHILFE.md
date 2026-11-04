@@ -1194,3 +1194,10 @@ Spielinstallation, Spielstaende und alle aktuellen Importdateien sind unveraende
 - Beim ersten Ziehen oder Hinzufügen in einer Originalvorlage entsteht automatisch eine eigene Kopie. Bereits vorhandene eigene Räume und ungespeicherte Arbeit bleiben dabei erhalten.
 - Links stehen nur die passenden Eigenschaften der Auswahl; Werte/KI per Schaltfläche oder Doppelklick. Gelände liegt getrennt unter **Gelände**. Die größere dunkle Oberfläche ist auch für 4K ausgelegt.
 - F5 testet den gerade geöffneten eigenen Raum, ohne den gespeicherten Startraum zu ändern.
+
+## 2026-11-04 – Gemeinsames Castlevania Studio
+- Level-Editor und vollständige Monster-Werkstatt sind eine Anwendung mit den Bereichen „Level & Räume“ und „Monster & Animationen“. `Gegner_Werkstatt_starten.cmd` startet `level_editor.py --monsters`, der normale Levelstarter öffnet weiterhin den Originalkatalog.
+- Map-Figur → Animationen & HD öffnet Code/Variante; „Werte der Level-Figur“ bearbeitet instanzbezogene Levelwerte. Neutraler Testraum zeigt Original-/NG+-Werte. Namen werden sofort in Karte/Bibliothek übernommen. „Im Level hinzufügen“ setzt die gewählte Variante in die sichtbare Karte.
+- Bestehende Künstler-Werkstatt/PNG-Dateinamen bleiben erhalten. Karten-/Projektformat unverändert. Levelkarte und F5-Leveltest bleiben Originalgrafik; das HD-Livepreview sitzt in der eingebauten Werkstatt.
+- Werkstatt wird erst beim Öffnen geladen, Arena pausiert im Hintergrund; eigener Leveltest wird beim Wechsel beendet. Hauptfenster speichert/schließt seine eigenen Prozesse. Strg+Z/Y im Monsterbereich verändert die verdeckte Karte nicht.
+- Nativ geprüft: Knochenangriff, NG+, zusätzliche Bosse 82/8D, echte Hintergrundpause und Prozessende; GUI 1280×900 und 4K ohne Bildbetrachter. Artist-Metadaten werden im Test nur privat kopiert. Vollständige Boss-Phasen bleiben nicht durchgängig geprüft.

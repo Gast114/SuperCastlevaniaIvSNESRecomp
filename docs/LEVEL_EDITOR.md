@@ -1,4 +1,4 @@
-# Castlevania IV – Level-Editor
+# Castlevania Studio – Level- und Monster-Editor
 
 Erste benutzbare Fassung vom 24.10.2026. Der Editor ist eine separate Anwendung
 mit Karte und Werkzeugen, angelehnt an den Arbeitsablauf von Lunar Magic.
@@ -9,6 +9,36 @@ Beim Ausbau sind bestehende Levels umbauen und neue Levels erstellen gleich wich
 `Level_Editor_starten.cmd` doppelklicken. Beim ersten Start werden Originaldaten
 aus deiner eigenen USA-ROM vorbereitet. Danach werden sie wiederverwendet.
 Die vorhandene Python-Umgebung der HD-Werkzeuge wird verwendet.
+
+Level-Editor und Monster-Werkstatt befinden sich jetzt in **einem Fenster**:
+**Level & Räume** enthält Karte, Bibliothek und Platzierungen;
+**Monster & Animationen** enthält den neutralen Testraum, Original/HD-Vergleich,
+Posen, Einzelteile, PNG-Austausch und Export. `Gegner_Werkstatt_starten.cmd`
+öffnet dasselbe Studio direkt im Monsterbereich. Die vorhandenen Werkstattdateien
+und Redesigns werden weiterverwendet; ein eigenes Levelprojekt bleibt beim
+Wechsel geöffnet.
+
+Eine Figur auf der Karte auswählen und links **Animationen & HD…** drücken:
+Die Werkstatt öffnet genau diesen Monster-Code und seine Variante. Über
+**Werte der Level-Figur…** lassen sich Gesundheit, Schaden, Trefferfläche und
+Bossverhalten dieser Platzierung ändern. Bei Originalen wird dazu eine eigene
+Levelkopie angelegt. Die Werteübersicht des neutralen Testraums zeigt weiterhin
+die Originalwerte für Normal und New Game+; die Überschreibungen gehören zur
+verknüpften Level-Figur. Bei einem anderen Monster-Code ist die Verknüpfung
+deaktiviert.
+
+Über **Animationen & HD bearbeiten…** in der Gegnerbibliothek lässt sich deren
+ausgewähltes Monster öffnen. **Im Level hinzufügen** setzt den gewählten Code
+einschließlich Variante in den sichtbaren Kartenbereich und wechselt zurück
+zur Karte. Die Figur ist anschließend ausgewählt und mit der Maus verschiebbar.
+Gespeicherte Monsternamen erscheinen auch in Bibliothek und Karte.
+
+Im Monsterbereich speichert **Monster speichern / Strg+S** die Werkstatt;
+**F5 / Monster testen** startet das gewählte Monster neu. **Vorschau pausieren**
+pausiert die Animation. Der neutrale Test pausiert auch beim Zurückwechseln zur
+Karte; ein vorheriger privater Leveltest wird beim Öffnen der Werkstatt beendet.
+Beim Schließen werden die Werkstatt gespeichert und die eigenen Testprozesse
+beendet. Ein bereits laufendes normales Spielfenster bleibt erhalten.
 
 Der Editor startet im Reiter **Originale** mit allen **68 Originalabschnitten**
 R-00 bis R-67. Die bekannten ersten Abschnitte sind zusätzlich als Stage 01 / A01
@@ -285,3 +315,11 @@ Fledermäuse, Drag-and-drop aus der Bibliothek, Originalkopie bei der ersten
 Änderung, Schutz bestehender ungespeicherter Projekte und Undo. Layout-Prüfungen
 bei 1280×900 und 4K-Skalierung prüfen die Erreichbarkeit der Schaltflächen ohne
 Bildbetrachter. F5 wird außerdem gegen den aktuell geöffneten Raum geprüft.
+
+`tools/test_level_studio.py` prüft die gemeinsame Fensterverwaltung, verknüpfte
+Levelwerte, Namen, Variante und Einfügen sowie 1280×900 und mit `--ui4k` die
+4K-Skalierung. `--native` prüft zusätzlich Knochenangriff, New Game+, die beiden
+zusätzlichen Bosscontroller und das tatsächliche Pausieren des Hintergrundtests.
+Die Tests verwenden eine private Kopie der Werkstatt und prüfen, dass die
+Künstlerdaten unverändert bleiben. Die eigenständige Werkstatt wird weiterhin
+mit `tools/test_monster_workshop.py` geprüft.

@@ -86,10 +86,11 @@ def preview(snapshot,workspace,custom,size,follow=True,background='#19212c'):
 
 
 class Worker(threading.Thread):
-    def __init__(self,commands,events,rom,build,arena=False,library=None):
+    def __init__(self,commands,events,rom,build,arena=False,library=None,initial_entry=None):
         super().__init__(daemon=True);self.commands=commands;self.events=events
         self.rom=rom;self.build=build;self.stopping=False;self.arena=arena
         self.library=Path(library) if library else DEFAULT_LIBRARY
+        self.initial_entry=initial_entry
 
     def publish(self,value):
         try:self.events.put_nowait(value)
@@ -113,7 +114,7 @@ class Worker(threading.Thread):
         try:
             session=NativeSession(self.rom,self.build);session.arena_enabled=self.arena
             session.resource_library=self.library;session.start()
-            entry=next(e for e in session.catalog if e['type']==18 and e['variant']==0)
+            entry=self.initial_entry or next(e for e in session.catalog if e['type']==18 and e['variant']==0)
             snapshot=session.spawn(entry);paused=False;speed=1.;action='Natürlich';action_age=0;missing_age=0;collect=[]
             allow(snapshot)
             self.publish(dict(catalog=session.catalog,references=str(session.references),snapshot=snapshot,status='Native Laufzeit bereit',**group_event()))

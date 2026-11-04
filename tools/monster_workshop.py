@@ -54,37 +54,50 @@ def export_monster(workspace,entry,destination,extra_ids=(),graphics_variants=Fa
 
 
 class MonsterWorkshop:
-    def __init__(self,root,rom=None,build=None,workspace=DEFAULT_WORKSPACE,library=DEFAULT_LIBRARY):
-        self.root=root;self.workspace=Workspace(workspace)
+    def __init__(self,root,rom=None,build=None,workspace=DEFAULT_WORKSPACE,library=DEFAULT_LIBRARY,*,embedded=False,catalog=None,initial_entry=None,on_place=None,on_values=None,on_name_changed=None,on_selected=None):
+        self.root=root;self.embedded=embedded;self.on_place=on_place;self.on_values=on_values;self.on_name_changed=on_name_changed;self.on_selected=on_selected
+        self.active=True;self.closed=False;self.tick_id=None
+        self.runtime_args=(rom,build,library)
+        self.workspace=workspace if isinstance(workspace,Workspace) else Workspace(workspace)
         if library and (Path(library)/'library.json').is_file():self.workspace.load_library(library)
         self.rom=Path(rom or ROOT/'Super Castlevania IV (USA).sfc').read_bytes()
         self.commands=queue.Queue();self.events=queue.Queue(maxsize=8)
-        self.catalog=[];self.monsters=[];self.entry={'type':18,'variant':0}
+        self.catalog=list(catalog or []);self.monsters=definitions(self.catalog,self.rom);self.entry=dict(initial_entry or {'type':18,'variant':0})
         self.snapshot={'actors':[]};self.references=None;self.allowed=set();self.live_ids={}
         self.selected_id=None;self.signature=None;self.photos=[];self.closing=False
         self.last_ingest=0.;self.last_save=0.;self.dirty=False;self.active_action='Natürlich'
-        self.name=tk.StringVar();self.variant=tk.StringVar();self.parts=tk.BooleanVar(value=False)
-        self.paused=tk.BooleanVar(value=False);self.still=tk.BooleanVar(value=False)
-        self.speed=tk.StringVar(value='100%');self.show_bosses=tk.BooleanVar(value=False)
-        self.graphics_variants=tk.BooleanVar(value=False)
-        self.preview_mode=tk.StringVar(value='Normal')
-        self.status=tk.StringVar(value='Eigene Original-Laufzeit startet …')
-        self.context=tk.StringVar(value='Monster per Code wählen. Namen kannst du selbst vergeben.')
-        self.stats=tk.StringVar();self.notes=tk.StringVar();self.file=tk.StringVar()
-        root.title('Monster-Werkstatt · Super Castlevania IV')
+        self.name=tk.StringVar(root);self.variant=tk.StringVar(root);self.parts=tk.BooleanVar(root,value=False)
+        self.paused=tk.BooleanVar(root,value=False);self.still=tk.BooleanVar(root,value=False)
+        self.speed=tk.StringVar(root,value='100%');self.show_bosses=tk.BooleanVar(root,value=embedded)
+        self.graphics_variants=tk.BooleanVar(root,value=False)
+        self.preview_mode=tk.StringVar(root,value='Normal')
+        self.status=tk.StringVar(root,value='Eigene Original-Laufzeit startet …')
+        self.context=tk.StringVar(root,value='Monster per Code wählen. Namen kannst du selbst vergeben.')
+        self.stats=tk.StringVar(root);self.notes=tk.StringVar(root);self.file=tk.StringVar(root);self.level_context=tk.StringVar(root)
         scale=max(1.,float(root.tk.call('tk','scaling'))/(96/72),min(root.winfo_screenwidth()/1920,root.winfo_screenheight()/1080))
-        root.tk.call('tk','scaling',96/72*scale)
-        root.geometry(f'{min(round(1540*scale),root.winfo_screenwidth()-60)}x{min(round(980*scale),root.winfo_screenheight()-90)}')
-        root.minsize(min(round(1060*scale),root.winfo_screenwidth()-80),min(round(700*scale),root.winfo_screenheight()-100))
-        style=ttk.Style();style.configure('.',font=('Segoe UI',11));style.configure('Treeview',rowheight=round(30*scale))
+        if embedded:scale=max(1.,float(root.tk.call('tk','scaling'))/(96/72))
+        self.scale=scale
+        if not embedded:
+            root.title('Monster-Werkstatt · Super Castlevania IV');root.tk.call('tk','scaling',96/72*scale)
+            root.geometry(f'{min(round(1540*scale),root.winfo_screenwidth()-60)}x{min(round(980*scale),root.winfo_screenheight()-90)}')
+            root.minsize(min(round(1060*scale),root.winfo_screenwidth()-80),min(round(700*scale),root.winfo_screenheight()-100))
+            style=ttk.Style();style.configure('.',font=('Segoe UI',11));style.configure('Treeview',rowheight=round(30*scale))
         outer=ttk.Frame(root,padding=14);outer.pack(fill='both',expand=True)
-        ttk.Label(outer,text='Monster-Werkstatt',font=('Segoe UI',22,'bold')).pack(anchor='w')
-        ttk.Label(outer,text='Monster auswählen · Aktionen prüfen · Original und Redesign live vergleichen').pack(anchor='w',pady=(0,10))
+        if not embedded:ttk.Label(outer,text='Monster-Werkstatt',font=('Segoe UI',22,'bold')).pack(anchor='w')
+        if embedded:
+            link=ttk.Frame(outer);link.pack(fill='x',pady=(0,10))
+            self.place_button=ttk.Button(link,text='＋ Im Level hinzufügen',style='Accent.TButton',command=lambda:self.on_place(self.entry));self.place_button.pack(side='right')
+            self.values_button=ttk.Button(link,text='Werte der Level-Figur…',command=lambda:self.on_values(self.entry),state='disabled');self.values_button.pack(side='right',padx=8)
+            ttk.Label(link,textvariable=self.level_context,wraplength=round(620*scale)).pack(side='left',fill='x',expand=True)
+        else:ttk.Label(outer,text='Monster auswählen · Aktionen prüfen · Original und Redesign live vergleichen').pack(anchor='w',pady=(0,10))
         split=ttk.Panedwindow(outer,orient='horizontal');split.pack(fill='both',expand=True)
         left=ttk.Frame(split,width=round(220*scale));center=ttk.Frame(split);right=ttk.Frame(split,width=round(300*scale))
         split.add(left,weight=0);split.add(center,weight=1);split.add(right,weight=0)
         ttk.Label(left,text='Monster-Codes').pack(anchor='w')
-        self.picker=ttk.Treeview(left,show='tree',selectmode='browse',height=15)
+        from level_objects import SpriteLibrary
+        self.sprite_library=SpriteLibrary(ROOT/'artwork-local/enemy-library');self.picker_photos=[]
+        ttk.Style().configure('MonsterList.Treeview',rowheight=round(56*scale))
+        self.picker=ttk.Treeview(left,show='tree',selectmode='browse',height=10,style='MonsterList.Treeview')
         self.picker.column('#0',width=round(215*scale),stretch=True)
         scrollbar=ttk.Scrollbar(left,command=self.picker.yview);self.picker.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side='right',fill='y');self.picker.pack(fill='both',expand=True)
@@ -156,19 +169,22 @@ class MonsterWorkshop:
         ttk.Button(right,text='HD-Paket erstellen',command=self.build_pack).pack(fill='x',pady=4)
         ttk.Button(right,text='Arbeitsordner öffnen',command=lambda:os.startfile(self.workspace.folder)).pack(fill='x',pady=4)
         ttk.Label(outer,textvariable=self.status,wraplength=round(1400*scale)).pack(anchor='w',pady=(8,0))
-        self.worker=Worker(self.commands,self.events,rom,build,arena=True,library=library);self.worker.start()
-        root.protocol('WM_DELETE_WINDOW',self.close);root.after(50,self.tick)
+        self.worker=Worker(self.commands,self.events,rom,build,arena=True,library=library,initial_entry=initial_entry);self.worker.start()
+        if not embedded:root.protocol('WM_DELETE_WINDOW',self.close)
+        if self.catalog:self.select_entry(self.entry,spawn=False)
+        self.tick_id=root.after(50,self.tick)
 
     def send(self,kind,**values):self.commands.put(dict(kind=kind,**values))
     def invalidate(self):self.signature=None
     def refresh_monsters(self):
         selected=self.picker.selection();current=selected[0] if selected else code(self.entry['type'])
         self.picker.delete(*self.picker.get_children())
-        names=self.workspace.data.get('monster_names',{})
+        names=self.workspace.data.get('monster_names',{});self.picker_photos=[]
         for monster in self.monsters:
             if monster['boss'] and not self.show_bosses.get():continue
             c=monster['code'];name=names.get(c,'')
-            self.picker.insert('','end',iid=c,text=c+(' · '+name if name else ''))
+            photo=ImageTk.PhotoImage(self.sprite_library.thumbnail(monster,(round(52*self.scale),round(44*self.scale))),master=self.root);self.picker_photos.append(photo)
+            self.picker.insert('','end',iid=c,text=c+(' · '+name if name else ''),image=photo)
         if self.picker.exists(current):self.picker.selection_set(current)
     def choose(self,*_):
         selection=self.picker.selection()
@@ -178,6 +194,20 @@ class MonsterWorkshop:
         self.entry=dict(monster['variants'][0],_chosen=True)
         self.variants.configure(values=[f'V-{e["variant"]:02X}' for e in monster['variants']]);self.variants.current(0)
         self.name.set(self.workspace.data.get('monster_names',{}).get(monster['code'],''));self.spawn()
+    def select_entry(self,entry,spawn=True):
+        monster=next((m for m in self.monsters if m['type']==entry['type']),None)
+        if not monster:return False
+        variants=monster['variants'];index=next((i for i,v in enumerate(variants) if v.get('variant',0)==entry.get('variant',0)),0)
+        self.entry=dict(variants[index],_chosen=True);self.show_bosses.set(self.show_bosses.get() or monster['boss']);self.refresh_monsters()
+        self.picker.selection_set(monster['code']);self.picker.see(monster['code']);self.variants.configure(values=[f'V-{v.get("variant",0):02X}' for v in variants]);self.variants.current(index)
+        self.name.set(self.workspace.data.get('monster_names',{}).get(monster['code'],''))
+        if spawn:self.spawn()
+        else:
+            self.update_details()
+            if self.on_selected:self.on_selected(self.entry)
+        return True
+    def set_active(self,value):
+        self.active=bool(value);self.send('pause',value=self.paused.get() or not self.active)
     def change_variant(self,*_):
         monster=next(m for m in self.monsters if m['type']==self.entry['type'])
         self.entry=dict(monster['variants'][self.variants.current()],_chosen=True);self.spawn()
@@ -187,10 +217,18 @@ class MonsterWorkshop:
     def save_name(self):
         self.workspace.data.setdefault('monster_names',{})[code(self.entry['type'])]=self.name.get().strip()
         self.workspace.save();self.refresh_monsters();self.status.set('Dein Name ist gespeichert. Der Monster-Code bleibt gleich.')
+        if self.on_name_changed:self.on_name_changed(dict(self.workspace.data['monster_names']))
     def spawn(self):
         if not self.catalog:return
         self.still.set(False);self.paused.set(False);self.active_action='Natürlich';self.snapshot={'actors':[]}
-        self.invalidate();self.send('spawn',entry=self.entry);self.update_details()
+        self.invalidate()
+        if not self.worker.is_alive() and not self.closing:
+            rom,build,library=self.runtime_args;self.commands=queue.Queue();self.events=queue.Queue(maxsize=8)
+            self.worker=Worker(self.commands,self.events,rom,build,arena=True,library=library,initial_entry=self.entry);self.worker.start()
+        else:self.send('spawn',entry=self.entry)
+        self.update_details()
+        if not self.active:self.send('pause',value=True)
+        if self.on_selected:self.on_selected(self.entry)
     def run_action(self,action):
         if not actions(self.entry).get(action):return
         self.still.set(False);self.paused.set(False);self.active_action=action
@@ -285,7 +323,7 @@ class MonsterWorkshop:
             while True:
                 event=self.events.get_nowait()
                 if 'catalog' in event and not self.catalog:
-                    self.catalog=event['catalog'];self.monsters=definitions(self.catalog,self.rom);self.refresh_monsters()
+                    self.catalog=event['catalog'];self.monsters=definitions(self.catalog,self.rom);self.select_entry(self.entry,spawn=False)
                 key=event.get('profile_key')
                 if key:self.live_ids.setdefault(key,set()).update(event.get('profile_frame_ids',()))
                 self.allowed.update(event.get('allowed_ids',()))
@@ -303,22 +341,32 @@ class MonsterWorkshop:
                 self.status.set(event.get('fatal',event.get('error',event.get('status',self.status.get()))))
         except queue.Empty:pass
         now=time.monotonic()
-        if self.references and now-self.last_ingest>.5:
+        if self.active and self.references and now-self.last_ingest>.5:
             self.workspace.ingest(self.references,self.allowed);self.last_ingest=now
         if self.dirty and now-self.last_save>2:self.workspace.save();self.dirty=False;self.last_save=now
+        if not self.active:
+            self.tick_id=self.root.after(200,self.tick);return
         self.update_details();self.refresh_poses();self.photos=[]
         for i,canvas in enumerate(self.canvases):
             size=max(2,canvas.winfo_width()),max(2,canvas.winfo_height())
             picture=pose_preview(self.workspace,self.selected_id,bool(i),size) if self.still.get() and self.selected_id else preview(self.snapshot,self.workspace,bool(i),size)
-            photo=ImageTk.PhotoImage(picture);self.photos.append(photo);canvas.delete('all');canvas.create_image(0,0,anchor='nw',image=photo)
+            photo=ImageTk.PhotoImage(picture,master=self.root);self.photos.append(photo);canvas.delete('all');canvas.create_image(0,0,anchor='nw',image=photo)
         if self.workspace.last_error:self.status.set(self.workspace.last_error)
-        self.root.after(50,self.tick)
+        self.tick_id=self.root.after(50,self.tick)
     def close(self):
-        self.closing=True;self.workspace.save();self.worker.stopping=True;self.send('stop')
+        if self.closing:return True
+        try:self.workspace.save()
+        except OSError as error:messagebox.showerror('Monster-Werkstatt speichern',str(error),parent=self.root);return False
+        self.closing=True
+        if self.tick_id:self.root.after_cancel(self.tick_id);self.tick_id=None
+        self.worker.stopping=True;self.send('stop')
         def finish():
             if self.worker.is_alive():self.root.after(50,finish)
-            else:self.root.destroy()
+            else:
+                self.closed=True
+                if not self.embedded:self.root.destroy()
         finish()
+        return True
 
 
 def main():

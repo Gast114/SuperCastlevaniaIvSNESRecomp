@@ -69,7 +69,7 @@ def frame_groups(entry,workspace,extra_ids=()):
     """Group body, attack projectiles and death effects under one monster."""
     from enemy_workshop_library import profile_key
     profile=next((p for p in workspace.data['library_profiles'] if p['key']==profile_key(entry)),None)
-    ids=set(profile.get('frame_ids',[])) if profile else set(workspace.frames)
+    ids=set(profile.get('frame_ids',[])) if profile else set(extra_ids) if entry.get('boss') else set(workspace.frames)
     ids.update(extra_ids);t=entry['type'];main=entry.get('main_type',t)
     output={name:[] for name in GROUPS}
     recorded=workspace.data.get('monster_actions',{}).get(profile_key(entry),{})

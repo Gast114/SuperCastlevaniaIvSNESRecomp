@@ -52,10 +52,24 @@ class Editor:
         try:self.library_names=json.loads((ROOT.parent/'Assets (ausgeschnitten)/Gegner/Werkstatt/project.json').read_text(encoding='utf-8')).get('monster_names',{})
         except (OSError,ValueError):self.library_names={}
         self.rom=raw.bytes;base_catalog=catalog+profiles(raw);self.catalog=base_catalog+scene_objects(raw,catalog);self.definitions=definitions(base_catalog,raw.bytes);self.object_types={e['type'] for e in self.catalog if e.get('category')=='object'};self.filter_monsters();self.filter_objects()
+        from level_studio import MonsterPanel
+        self.studio=MonsterPanel(self);self.workspaces.bind('<<NotebookTabChanged>>',self.workspace_changed)
         self.refresh_rooms();self.load_assets([self.source_room.get(),1,2]);self.tick_id=root.after(60,self.tick)
         if self.original_view:self.originals.selection_set('0')
 
     def current(self):return self.original_room if self.original_view and self.original_room is not None else self.project.get(self.room_id)
+    def open_monster_workshop(self,entry=None):
+        self.studio.source(entry);self.workspaces.select(self.monster_page);self.studio.show();self.workspace_header()
+    def workspace_changed(self,e=None):
+        if str(self.workspaces.select())==str(self.monster_page):
+            if not self.studio.visible:self.open_monster_workshop()
+        else:self.studio.hide()
+        self.workspace_header()
+    def workspace_header(self):
+        monster=self.studio.visible
+        self.save_button.configure(text='Monster speichern' if monster else 'Speichern')
+        self.test_button.configure(text='▶ Monster testen   F5' if monster else '▶ Spieltest   F5');self.stop_button.configure(text='⏸ Vorschau pausieren' if monster else '■ Test beenden')
+        if monster:self.root.title('Castlevania Studio · Monster & Animationen')
     def editable(self):
         if self.original_view:
             self.status.set('Zum Bearbeiten oben „Bearbeiten“ wählen oder eine Figur ziehen.');return False
@@ -131,7 +145,9 @@ class Editor:
     def library_entry(self,kind):
         if kind=='Monster':
             selected=self.monsters.selection()
-            if selected:return next((e for e in self.catalog if f'M-{e["type"]:04X}'==selected[0]),None)
+            if selected:
+                if self.monster_template and f'M-{self.monster_template["type"]:04X}'==selected[0]:return self.monster_template
+                return next((e for e in self.catalog if f'M-{e["type"]:04X}'==selected[0]),None)
         else:
             selected=self.object_picker.selection()
             if selected:return self.object_rows.get(selected[0])
@@ -270,8 +286,11 @@ class Editor:
                         self.mode_hint.set('Kartenansicht noch nicht verfügbar. F5 spielt diesen Originalabschnitt.');self.status.set(f'R-{result["number"]:02d}: {self.original_error} · F5 startet den Originalabschnitt; Grafikquellen bleiben verfügbar.')
                     self.schedule()
                 elif value[0]=='play':
+                    if self.studio.visible:self.play_pending=False;value[1].close();continue
                     self.sprites.cache.clear();self.filter_monsters();self.filter_objects();self.schedule()
                     self.play_pending=False;self.playtest=value[1];self.playtest.session.lua.command('resume');self.status.set('Spieltest läuft in einem separaten Fenster'+(' ohne Ton (kein Audiogerät)' if self.playtest.audio_unavailable else '')+'. Mit „Test beenden“ schließen.')
+                elif value[0]=='studio_workspace':self.studio.ready(value[1])
+                elif value[0]=='studio_error':self.studio.failed(value[1])
         except queue.Empty:pass
         self.tick_id=self.root.after(60,self.tick)
     def refresh_rooms(self):
@@ -321,6 +340,7 @@ class Editor:
         if not self.render_pending:self.render_pending=True;self.draw_id=self.root.after(30,self.draw)
     def draw(self):
         self.render_pending=False;self.draw_id=None
+        if hasattr(self,'studio') and self.studio.visible:return
         if self.closing:return
         if self.original_view and (self.original_loading or self.original_room is None):
             self.canvas.delete('all');text=f'Original R-{self.original_number:02d}\n'+('Wird vorbereitet …' if self.original_loading else self.original_error+'\n\nF5: Originalabschnitt spielen\nDie Grafikquellen stehen rechts zur Verfügung.')
@@ -664,6 +684,8 @@ class Editor:
             self.prop_rows['plane'][0].configure(text='Spielebene' if actor else 'Zielebene');self.duplicate_button.configure(state='normal' if actor else 'disabled')
             if actor:self.details_button.grid()
             else:self.details_button.grid_remove()
+            if actor and any(d['type']==item['type'] for d in self.definitions):self.animation_button.grid()
+            else:self.animation_button.grid_remove()
             self.motion_box.configure(state='readonly' if moving else 'disabled');self.variant_entry.configure(state='readonly' if moving else 'normal')
             self.props['motion'].set(('Waagerecht' if item.get('variant',0)==0 else 'Senkrecht') if moving else '')
             self.props['plane'].set(('back' if item.get('flags',0)&0x8000==0 else 'front') if self.selected_object[0]=='actor' else ('back' if item.get('target_plane',0) else 'front'))
@@ -769,19 +791,22 @@ class Editor:
         if self.brush_mask is not None:self.brush_mask=[self.brush_mask[i] for i in indices]
         self.refresh_brush()
     def undo(self):
+        if self.studio.visible:return
         if self.editable():self.project.undo();self.selected_object=None;self.refresh_rooms()
     def redo(self):
+        if self.studio.visible:return
         if self.editable():self.project.redo();self.selected_object=None;self.refresh_rooms()
     def confirm(self):return not self.project.dirty or messagebox.askyesno('Ungespeicherte Änderungen','Ohne Speichern fortfahren?',parent=self.root)
     def new(self):
-        if self.confirm():self.original_view=False;self.generation+=1;self.project=Project();self.room_id=self.project.data['rooms'][0]['id'];self.room_tabs.select(self.project_tab);self.refresh_rooms();self.load_asset(0)
+        if self.confirm():self.workspaces.select(self.level_page);self.original_view=False;self.generation+=1;self.project=Project();self.room_id=self.project.data['rooms'][0]['id'];self.room_tabs.select(self.project_tab);self.refresh_rooms();self.load_asset(0)
     def open(self):
         if not self.confirm():return
         name=filedialog.askopenfilename(parent=self.root,initialdir=self.project_directory(),filetypes=[('Castlevania-Level','*.sc4level.json'),('JSON','*.json')])
         if name:
-            try:self.project=Project.load(name);self.original_view=False;self.generation+=1;self.room_id=self.project.data['start_room'];self.room_tabs.select(self.project_tab);self.refresh_rooms();self.load_asset(self.current()['tileset'])
+            try:self.project=Project.load(name);self.workspaces.select(self.level_page);self.original_view=False;self.generation+=1;self.room_id=self.project.data['start_room'];self.room_tabs.select(self.project_tab);self.refresh_rooms();self.load_asset(self.current()['tileset'])
             except Exception as e:messagebox.showerror('Öffnen',str(e),parent=self.root)
     def save(self,as_new=False):
+        if self.studio.visible and not as_new:self.studio.save();return
         if self.original_view and not self.edit_original():return
         name=self.project.path
         if as_new or name is None:name=filedialog.asksaveasfilename(parent=self.root,initialdir=self.project_directory(),defaultextension='.sc4level.json',initialfile='Mein_Level.sc4level.json',filetypes=[('Castlevania-Level','*.sc4level.json')])
@@ -791,6 +816,9 @@ class Editor:
     def project_directory(self):
         path=self.project.path.parent if self.project.path else ROOT/'artwork-local/level-editor/projects';path.mkdir(parents=True,exist_ok=True);return path
     def test(self):
+        if self.studio.visible:
+            if self.studio.workshop:self.studio.workshop.spawn()
+            return
         if self.play_pending:return
         if self.playtest:self.stop_test()
         parent=ROOT/'artwork-local/level-editor/tests';parent.mkdir(parents=True,exist_ok=True);folder=Path(tempfile.mkdtemp(prefix='play-',dir=parent));data=copy.deepcopy(self.project.data)
@@ -800,26 +828,32 @@ class Editor:
             number=self.original_number;self.background(lambda:('play',OriginalPlaytest(number,folder,window_scale=scale)))
         else:self.background(lambda:('play',Playtest(data,folder,window_scale=scale)))
     def stop_test(self):
+        if hasattr(self,'studio') and self.studio.visible:self.studio.pause();return
+        self.stop_level_test()
+    def stop_level_test(self):
         if self.playtest:self.playtest.close();self.playtest=None;self.status.set('Spieltest beendet. Dein Projekt bleibt geöffnet.')
     def close(self):
         if not self.confirm():return
+        if not self.studio.close():return
         self.closing=True
         for timer in (self.tick_id,self.draw_id):
             if timer:self.root.after_cancel(timer)
-        self.stop_test();self.root.withdraw();self.finish_close()
+        self.stop_level_test();self.root.withdraw();self.finish_close()
     def finish_close(self):
         try:
             while True:
                 kind,value=self.events.get_nowait()
                 if kind=='ok' and value[0]=='play':value[1].close()
         except queue.Empty:pass
-        if any(t.is_alive() for t in self.workers):self.root.after(100,self.finish_close)
+        if any(t.is_alive() for t in self.workers) or not self.studio.stopped():self.root.after(100,self.finish_close)
         else:self.root.destroy()
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--project',type=Path);parser.add_argument('--demo',action='store_true');args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--project',type=Path);parser.add_argument('--demo',action='store_true');parser.add_argument('--monsters',action='store_true');args=parser.parse_args()
     if args.demo and args.project is None:
         from level_demo import make_demo
         args.project=make_demo()
-    root=tk.Tk();Editor(root,Project.load(args.project) if args.project else None);root.mainloop()
+    root=tk.Tk();app=Editor(root,Project.load(args.project) if args.project else None)
+    if args.monsters:root.after_idle(app.open_monster_workshop)
+    root.mainloop()

@@ -62,7 +62,7 @@ def spawn_scene(session,entry):
     session.command('enemy_resources',write_bundle(session.folder/'scene-colors.bin',colors,dict(blocks=[dict(vram_word=0x6a00,data=video[0xd400:0x10000])]),full_palette=True))
     pointer=session.word(0,0xd81b)
     while session.word(5,pointer)!=65535:pointer+=6
-    session.write({0xb8:0,0x94:pointer,0x96:pointer,0x590:entry['controller'],0x594:entry['controller_variant'],0x58a:128,0x58e:128,0x592:0})
+    session.write({0xb8:0,0x88:session.quest,0x94:pointer,0x96:pointer,0x590:entry['controller'],0x594:entry['controller_variant'],0x58a:128,0x58e:128,0x592:0})
     for _ in range(1200):
         snapshot=session.step(1)
         main=next((a for a in snapshot['actors'] if a['type']==entry['type']),None)

@@ -1,9 +1,13 @@
 # Monster-Werkstatt
 
-`Gegner_Werkstatt_starten.cmd` startet die neue Monsteransicht in einem eigenen
-Fenster. Die vorhandenen Arbeits-PNGs bleiben erhalten. Original und Redesign
-verwenden denselben nativen Bewegungsablauf; Photoshop-Änderungen werden live
-neu geladen.
+`Gegner_Werkstatt_starten.cmd` öffnet **Castlevania Studio** direkt im Bereich
+**Monster & Animationen**. Die vollständige Werkstatt und **Level & Räume**
+liegen im selben Fenster. Über **Animationen & HD…** einer Level-Figur wird
+deren Code und Variante geöffnet; **Werte der Level-Figur…** bearbeitet ihre
+Platzierung, **Im Level hinzufügen** übernimmt das gewählte Monster in die Karte.
+Weitere Hinweise stehen in [LEVEL_EDITOR.md](LEVEL_EDITOR.md).
+Die vorhandenen Arbeits-PNGs bleiben erhalten. Original und Redesign verwenden
+denselben nativen Bewegungsablauf; PhotoCraft-Änderungen werden live neu geladen.
 
 ## So benutzt du sie
 
@@ -19,7 +23,7 @@ neu geladen.
    enthalten die zugeordneten Posen. **Aktion abspielen** startet eine geprüfte
    Originalroutine. Der Knochenwurf gehört zum Angriff von M-0012: Körper und
    alle drei Knochen-Drehbilder stehen zusammen.
-4. Eine PNG auswählen und **PNG öffnen** anklicken. In Photoshop im selben
+4. Eine PNG auswählen und **PNG öffnen** anklicken. In PhotoCraft im selben
    `artwork`-Ordner speichern. Rechts erscheint die Änderung automatisch.
    **PNG ersetzen** übernimmt eine fertige Datei und sichert die vorige Fassung.
 5. **Einzelteile** zeigt die Teile einer Pose. **Grafikvarianten** zeigt weitere
@@ -32,7 +36,7 @@ neu geladen.
 
 Arbeitsordner: `D:/Super Castlevania IV Recomp/Assets (ausgeschnitten)/Gegner/Werkstatt`.
 Dateinamen bereits vorhandener Arbeitsdateien bleiben erhalten, damit offene
-Photoshop-Dateien weiter passen. Neu angelegte Dateien und exportierte Sets
+PhotoCraft-Dateien weiter passen. Neu angelegte Dateien und exportierte Sets
 verwenden Codes. Die angezeigten Monster-Namen bestimmst du selbst.
 
 Die PNGs haben eine vollständig transparente Leinwand, meist 387×387 Pixel.
