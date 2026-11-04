@@ -1,5 +1,19 @@
 # Arbeitsstand & Übergabe (2026-10-23, lokale KI-Spritekorrektur)
 
+## Stage-01-Quellordner geordnet (04.11., nach v6-Einbau)
+
+Nutzer beauftragte alle Stage01-Arbeitsdateien zu ordnen und wahrscheinlichen Muell in einen Ordner zu legen. Keine Loeschung/keine Medienbearbeitung.622Originaldateien/896104607Bytes vorab SHA-erfasst; alle exakt erhalten.564 Dateiumbenennungen/-verschiebungen, davon473Dateien/366549716Bytes in `Assets (ausgeschnitten)/Stage 01/Aussortiert_2026-11-04`;95 Einordnungen in Arbeitsstruktur (davon4 bereits am Ziel),54 Keep.150 aktive Dateien (installierte Pakete/EXEs/HD-Auswahl/Saves/aktuelle8Import-PNGs) SHA-identisch.
+
+Aktuelle8PNG-Importpfade bleiben unveraendert. Root-HD-Legacy-PNGs fuer Eingang/A01 und gemeinsame Root-Originalboegen behalten ihre benoetigten Importpfade. Beide Importrezepte stage_01.recipe.json und stage_01_a02.recipe.json als UTF8 gelesen und alle Bildpfade validiert. Kein Code-/Paketneubau erforderlich.
+
+Neu: A03/A04 Original-Hintergruende unter Original/Hintergrund, Originalnummern1..5 bzw1..4 unter Original/Ausschnitte. Fertige Hintergruende aus bisherigem Hintergrund-HD-Workflow/HD_Output jetzt unter A03/HD/Hintergrund und A04/HD/Hintergrund. A05/HD/Hintergrund/VERWENDET_A03.txt verweist auf gemeinsame Motive. Je Abschnitt HD/Bauteile enthaelt eine kanonische Fassung der fertigen Wand-Einzelbilder; A03 davon aus korrigiertem v4-Workflow, SHA gegen korrigierte Kandidaten/ZIP-Auszug geprueft. HD/16x9 enthaelt nur separate Randstreifen. Zwei unterschiedliche Root-Gesamt-PSDs unter Projekte/Gesamt erhalten; Steine/Treppe/Untitled-Projekt unter A03/Projekte. Zusatzmotive unter A03/Einzelteile. Byteidentisches A03-gestueckelt-PSD und3 Bauteil-Dubletten archiviert. PSD-Infos aller betroffenen Projekte zeigten nur eingebettete Smart Objects, keine externen Verknuepfungen.
+
+Fertiges Stage01_A03_A04_HD.zip unter Lieferungen; letzter Hintergrund-Prompt unter Dokumentation/Prompts; Liefermetadaten/Wasserhinweise unter Dokumentation. Alte ChatGPT-/HD_Work-/draft/candidates/qa/masks-Ordner, kombinierte Randvorschauen/ZIP-Dubletten und alte54px-/10x-Anleitungen im Sammelordner unter frueherer relativer Struktur. Historische Belege koennen alte Pfade nennen, Zuordnung steht im Journal.
+
+ORDNUNG.txt im Stage01-Root. Aussortiert enthaelt Verschiebungen.json (vollstaendiger622-Dateiplan, SHA, Grund, Ziel, Status complete), CSV und RUECKGAENGIG.py/.cmd. Rueckgaengig macht nur Dateiumbenennungen und erstellt alte leere Ordner; bricht bei geaenderten verschobenen Dateien/Konflikten vor Bewegungen ab und beruehrt unveraendert liegengebliebene aktive Dateien nicht. Nur Syntax geprueft, nicht ausgefuehrt.
+
+Audit `artwork-local/stage01-cleanup-2026-11-04`: before/plan/completed-plan/protected/report.json und operations.jsonl. Protokollkopie ausserhalb Stage01 unter `D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-11-04-stage01-ordnung`. Alle Bewegungen einzeln per Path.rename nach absoluter Root-Pruefung, keine rekursiven Deletes/Moves; nur leere alte Ordner per rmdir entfernt. Keine Bilder angesehen. Fremde CMake/Web/Landschaftsaenderungen und deren Doku weiter erhalten.
+
 ## V6: komplette Nutzer-PNGs, keine Wandkachel-Pools (04.11.)
 
 V5 war visuell fehlerhaft: der aus Paletten2/4 gesammelte 8px-Texturpool ersetzte auch architektonische Wand-/Randkacheln. Die vorherigen Renderer-/State-Tests bewiesen keine Treue zur fertigen PSD. Nutzer hat vorlaeufig Korrekturen gestoppt, danach neue Dateien vorbereitet und am04.11. Einbau durch Datenbereitstellung fortgesetzt. Nur A03 war fertig manuell gesetzt; A04/A05 sind automatische Motive.

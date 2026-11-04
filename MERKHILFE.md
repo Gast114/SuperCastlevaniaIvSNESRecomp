@@ -1021,3 +1021,22 @@ sind im Spiel gegen die vorbereiteten Bilder verglichen. Gehen, Angriff, Tod,
 Neuladen und Wasseranimation funktionieren; Logik/Kollision unveraendert.
 A05 mit Gehen+Angriff etwa60FPS im Test ohne Ton.
 Sicherung: `D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-11-04-saubere-Spielebenen-v6`.
+
+## Stage-01-Arbeitsordner aufgeraeumt (04.11.)
+
+Uebersicht: `Assets (ausgeschnitten)\Stage 01\ORDNUNG.txt`. Die aktuellen
+Spielebenen unter A03/A04/A05\HD und HD\Gemeinsame-Teile bleiben an denselben
+Pfaden. Die fertigen Hintergrund-PNGs liegen jetzt unter A03 bzw. A04\HD\Hintergrund.
+Originalzuschnitte liegen unter Abschnitt\Original\Ausschnitte und
+Original\Hintergrund. Einzelne fertige HD-Wandteile unter HD\Bauteile. Separate
+Randgrafiken unter HD\16x9. Weitere A03-Motive liegen unter Einzelteile; die
+Steine-/Treppen-PSDs unter A03\Projekte. Beide unterschiedlichen Gesamt-PSDs
+liegen unter Projekte\Gesamt. Das fertige Hintergrund-ZIP liegt unter Lieferungen.
+
+473 alte Dateien (rund350MiB) liegen in `Aussortiert_2026-11-04`: KI-Zwischenstaende,
+verworfene Entwuerfe, alte Anleitungen und Dubletten. Nichts geloescht. Alle622
+urspruenglichen Dateien sind mit unveraendertem SHA256 erhalten. Verschiebungen.csv
+und Verschiebungen.json zeigen die alten/neuen Positionen samt Grund.
+RUECKGAENGIG.cmd dort stellt die frueheren Positionen wieder her; geaenderte
+Dateien oder Namenskonflikte werden vor dem Verschieben erkannt.
+Spielinstallation, Spielstaende und alle aktuellen Importdateien sind unveraendert.
