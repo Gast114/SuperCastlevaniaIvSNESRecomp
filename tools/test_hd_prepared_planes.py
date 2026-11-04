@@ -18,11 +18,17 @@ def check(pack,source,audit):
     s=NativeSession(folder=work/'game');cfg=configparser.ConfigParser();cfg.read(s.folder/'config.ini');cfg['Graphics']['Widescreen']='1'
     with (s.folder/'config.ini').open('w') as f:cfg.write(f)
     report=[]
+    grid_path=source/'raster.json'
+    grid=json.loads(grid_path.read_text(encoding='utf-8')) if grid_path.exists() else None
     try:
         s.start(ROOT/'build-play/game/saves/save2.sav');s.command('enemy','workshop off');s.command('hd','pack '+str(pack));s.command('hd','on');s.command('hd','scale 4');s.command('layers',1)
         for stage,slot in [('A03',2),('A04',3),('A05',4)]:
             im=Image.open(source/stage/'HD/Spielebene.png').convert('RGBA')
-            normalized=np.array(im.resize((round(im.width*128/129),round(im.height*128/129)),Image.Resampling.LANCZOS))
+            if grid:
+                assert grid['planes'][stage]['source_scale']==4
+                normalized=np.array(im)
+                assert im.height==896 and im.width%4==0
+            else:normalized=np.array(im.resize((round(im.width*128/129),round(im.height*128/129)),Image.Resampling.LANCZOS))
             final=np.array(Image.open(audit/(stage+'-complete.png')).convert('RGBA'))
             mask=np.array(Image.open(audit/(stage+'-object-mask.png')))>0
             assert np.array_equal(final[~mask],normalized[~mask]),stage+' wall pixels altered'
@@ -35,7 +41,9 @@ def check(pack,source,audit):
             height=Image.open(pack/stage.lower()/regions[0]['image']).height
             registered=Image.new('RGBA',(width*4,height))
             for r in regions:registered.paste(Image.open(pack/stage.lower()/r['image']),((r['x']-x)*4,(r['y']-y)*4))
-            assert np.array_equal(np.array(registered)[0:final.shape[0],3:3+final.shape[1]],final)
+            pad=0 if grid else 3
+            assert np.array_equal(np.array(registered)[0:final.shape[0],pad:pad+final.shape[1]],final)
+            if grid:assert (x,y)==(-43,0) and np.array(registered).shape==final.shape
             # Only prior shared OBJ and moon keys may remain in this scene atlas.
             _,_,tiles=load_pack(pack/stage.lower());assert len(tiles)==len(set(meta['shared_objects']))+4
             s.command('loadfile',ROOT/f'build-play/game/saves/save{slot}.sav');play.advance(s.lua,1)

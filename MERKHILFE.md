@@ -4,6 +4,43 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Exaktes 4×-Raster für A03/A04/A05 (04.11.)
+
+Aktiv ist `hd_packs/stage-01-user-grid-v7` in beiden Windows-Spielordnern.
+Zum Laden das Spiel neu starten. Der Grafikmaßstab bleibt 4×.
+Die EXE wurde nicht verändert.
+
+Neue bearbeitbare Quellen: `Assets (ausgeschnitten)\Stage 01\Exporte-4x`.
+Dort Abschnitt\HD\Spielebene.png und HD\Gemeinsame-Teile verwenden.
+Maße der Spielebenen einschließlich beider 16:9-Ränder:
+A03: 5464×896, A04: 4440×896, A05: 3416×896 Pixel.
+Ursprung: x=-43 Originalpixel, y=0. Je Seite sind 43 Originalpixel bzw.
+172 HD-Pixel Rand bereits enthalten. Nicht erneut anfügen.
+Stein und Block/Treppen-Anschluss: 64×64; Stufe: 32×32 Pixel.
+Der linke Anschluss ist gespiegelt.
+
+Die bisherigen PNGs und PSDs sind unverändert und bleiben im alten Raster.
+Ein erneuter Export daraus braucht wieder die registrierte Umrechnung.
+Nicht alte und exakte 4×-Dateien ungeprüft mischen. Die PNGs unter Exporte-4x
+werden im Import nicht erneut skaliert. raster.json definiert Spielmaße,
+Quellauflösung und Ursprung; Details stehen in Exporte-4x\LIES_MICH.txt.
+Der Generator tools/hd/prepare_stage01_grid.py verlangt einen neuen Ausgabeordner
+und überschreibt nichts. Er registriert bekannte Abschnittsgrenzen.
+Bei A03 entfällt eine zusätzliche untere Randzeile außerhalb der Originalhöhe
+(175 sichtbare Pixel am linken Rand). Die alte Quelle bleibt vollständig erhalten.
+Falsch gezeichnete Details innerhalb eines Motivs werden dadurch nicht korrigiert.
+
+8× ist als Quellformat vorbereitet: ein 16×16-Stein bekommt 128×128 Pixel,
+eine 8×8-Stufe 64×64 Pixel. source_scale in raster.json kann für Einzelmotive
+8 sein. Der aktuelle Importer verkleinert diese einmal auf den 4×-Pack.
+Gemischte echte 8×-Detailausgabe im Landschaftsrenderer ist noch nicht umgesetzt.
+
+Der Bildvergleich aller drei Spielebenen im Spiel ist pixelgenau. Gehen, Angriff,
+Tod, Neuladen und Wasseranimation wurden geprüft; Spiellogik unverändert.
+A05 beim Gehen und Angreifen: etwa 60,1 FPS ohne Logikwiederholungen im privaten
+Test (ohne Ton, CPU-Timing 2).
+Sicherung: backup\hd-artwork\2026-11-04-exaktes-4x-raster-v7.
+
 ## Wiederholbarer A03-HD-Ablauf
 
 Vorbereitet unter Assets (ausgeschnitten)\Stage 01\A03\ChatGPT-Vorlagen-v1.

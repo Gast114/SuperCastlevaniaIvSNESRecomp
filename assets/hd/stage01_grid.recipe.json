@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "native_height": 224,
+  "margin_native": 43,
+  "source_margin": 174,
+  "source_height": 903,
+  "stages": {
+    "A03": {"source_size": [5507, 904], "source_panel_widths": [1032, 1032, 1161, 902, 1032], "native_panel_widths": [256, 256, 288, 224, 256]},
+    "A04": {"source_size": [4477, 903], "source_panel_widths": [1032, 1161, 1032, 903], "native_panel_widths": [256, 288, 256, 224]},
+    "A05": {"source_size": [3444, 903], "source_panel_widths": [903, 903, 774, 516], "native_panel_widths": [224, 224, 192, 128]}
+  },
+  "motifs": {
+    "Stein-01.png": {"source_size": [65, 65], "native_size": [16, 16]},
+    "Stufe-Rechts.png": {"source_size": [32, 33], "native_size": [8, 8]},
+    "Stufe-Links.png": {"source_size": [32, 33], "native_size": [8, 8]},
+    "Block-Treppe-Rechts.png": {"source_size": [65, 65], "native_size": [16, 16]},
+    "Block-Treppe-Links.png": {"source_size": [65, 65], "native_size": [16, 16], "mirror_from": "Block-Treppe-Rechts.png"}
+  }
+}

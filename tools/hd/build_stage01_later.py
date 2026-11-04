@@ -55,6 +55,27 @@ def normalize(plane):
     return plane.resize(size,Image.Resampling.LANCZOS),round(-LEFT_RESERVE*ratio),0
 
 
+def grid_asset(source,spec,native_size):
+    """Explicit source density is independent from the fixed gameplay footprint.
+
+    8x source motifs are retained on disk and downsampled once for this 4x pack.
+    A future mixed-density renderer can use the same footprint/anchor metadata.
+    """
+    density=spec['source_scale']
+    if type(density) is not int or density not in (4,8) or spec['native_size']!=list(native_size):
+        raise ValueError('Invalid explicit asset density or native footprint')
+    relative=Path(spec['image'])
+    if relative.is_absolute() or '..' in relative.parts:
+        raise ValueError('Grid image must stay inside source folder')
+    path=(source/relative).resolve()
+    if source not in path.parents:raise ValueError('Grid image escapes source folder')
+    image=rgba(path)
+    if image.size!=tuple(n*density for n in native_size):
+        raise ValueError(f'{path}: expected exact {density}x canvas for {native_size}')
+    target=tuple(n*SCALE for n in native_size)
+    return path,image if image.size==target else image.resize(target,Image.Resampling.LANCZOS)
+
+
 def flip(im,flags):
     if flags&0x4000:im=ImageOps.mirror(im)
     if flags&0x8000:im=ImageOps.flip(im)
@@ -139,28 +160,47 @@ def build(source,prior,output,audit):
         path=Path(path)
         receipts.append(dict(source=str(path),sha256=sha(path),backup_relative_path=path.relative_to(source).as_posix()))
         return path
+    grid_path=source/'raster.json'
+    grid=None
+    if grid_path.exists():
+        grid=json.loads(remember(grid_path).read_text(encoding='utf-8'))
+        if grid.get('version')!=1 or grid.get('kind')!='registered-stage01-grid' or grid.get('export_scale')!=4:
+            raise ValueError('Unsupported registered grid manifest')
     shared=source/'HD/Gemeinsame-Teile'
     paths={'block':'Stein-01.png','step_right':'Stufe-Rechts.png','step_left':'Stufe-Links.png',
            'junction_right':'Block-Treppe-Rechts.png','junction_left':'Block-Treppe-Links.png'}
-    motifs={k:rgba(remember(shared/v)) for k,v in paths.items()}
+    motifs={}
+    for key,name in paths.items():
+        if grid:
+            spec=grid['motifs'][name]
+            if spec.get('anchor_native')!=[0,0]:raise ValueError('Gameplay motifs require top-left anchor')
+            size=(16,16) if key.startswith('junction') or key=='block' else (8,8)
+            path,motifs[key]=grid_asset(source,spec,size);remember(path)
+        else:motifs[key]=rgba(remember(shared/name))
     mirrored=np.array_equal(np.array(motifs['junction_right']),np.array(motifs['junction_left']))
     if mirrored:
         # Human authorization 04.11: mirror one direction of the duplicate pair.
         motifs['junction_left']=ImageOps.mirror(motifs['junction_right'])
     for key,im in motifs.items():
-        expected=(65,65) if key.startswith('junction') or key=='block' else (32,33)
+        expected=((64,64) if key.startswith('junction') or key=='block' else (32,32)) if grid else ((65,65) if key.startswith('junction') or key=='block' else (32,33))
         if im.size!=expected:raise ValueError(f'{key}: measured authoring size {expected} required')
     collection=json.loads((prior/'pack.json').read_text())
     if not {'entrance','a02','a03','a04','a05'}<=set(collection['scenes']):
         raise ValueError('Prior collection must contain the verified backgrounds of all five sections')
     before={str(p.relative_to(prior)):sha(p) for p in prior.rglob('*') if p.is_file()}
     shutil.copytree(prior,output)
-    report={'junction_left_mirrored_from_right':mirrored,'stages':{}}
+    report={'junction_left_mirrored_from_right':mirrored,'registered_grid':bool(grid),'stages':{}}
     for stage in ('A03','A04','A05'):
-        src=remember(source/stage/'HD/Spielebene.png');plane=rgba(src)
-        if abs(plane.width-(WIDTHS[stage]*DENSITY+2*LEFT_RESERVE))>2 or plane.height not in (903,904):
-            raise ValueError(f'{stage}: unexpected cropped canvas; registration needs review')
-        base,gx,gy=normalize(plane)
+        if grid:
+            spec=grid['planes'][stage]
+            if spec.get('origin_native')!=[-43,0]:raise ValueError('Unexpected registered plane origin')
+            src,base=grid_asset(source,spec,(WIDTHS[stage]+86,224));remember(src)
+            plane=rgba(src);gx,gy=-172,0
+        else:
+            src=remember(source/stage/'HD/Spielebene.png');plane=rgba(src)
+            if abs(plane.width-(WIDTHS[stage]*DENSITY+2*LEFT_RESERVE))>2 or plane.height not in (903,904):
+                raise ValueError(f'{stage}: unexpected cropped canvas; registration needs review')
+            base,gx,gy=normalize(plane)
         a=Assets(ROOT/'artwork-local/level-editor/rooms'/f'{int(stage[1:])-1:02d}')
         if stage=='A03':
             painted=base.copy();mask=np.zeros((base.height,base.width),bool)
@@ -194,7 +234,7 @@ def build(source,prior,output,audit):
                                   foreground_chunks=len(regions),background_images_unchanged=True,foreground_tile_replacements=0,**detail)
     assert all(sha(p['source'])==p['sha256'] for p in receipts),'Source changed during import'
     assert before=={str(p.relative_to(prior)):sha(p) for p in prior.rglob('*') if p.is_file()},'Prior pack changed'
-    collection['name']='Stage 01 HD: complete artist planes and explicit gameplay motifs'
+    collection['name']='Stage 01 HD: '+('exact 4x grid, ' if grid else '')+'complete artist planes and explicit gameplay motifs'
     (output/'pack.json').write_text(json.dumps(collection,indent=2))
     receipt=dict(art_scale=4,presentation_scale=4,sources=receipts,builder_sha256=sha(__file__),preserved_existing_collection=str(prior),
                  prior_sha256=before,report=report,source_files_unchanged=True)
