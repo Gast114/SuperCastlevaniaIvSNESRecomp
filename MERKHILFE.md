@@ -4,6 +4,25 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## Breitbild: Gegner warten auf ihre Kollisionsdaten (04.11.)
+
+Der F10-Fehler ist behoben und in beiden Windows-Spielordnern installiert.
+Bitte Spiel neu starten und F10 laden. Das Skelett erscheint wieder auf seiner
+Plattform. Die Korrektur gilt für die ursprüngliche Ereignisverarbeitung aller
+Abschnitte, nicht nur für dieses eine Skelett.
+
+Die alte Breitbild-Anpassung hatte Gegner zu früh erzeugt: Im F10-Vergleich
+38 Frames früher, bevor die Plattform in den Kollisionsring geladen war.
+Jetzt bleibt der Aktivierungsbereich wie im Original. Die breitere Darstellung
+und das längere Sichtbarbleiben bereits erzeugter Objekte bleiben erhalten.
+
+Geprüft: Skelett erscheint in 4:3 und 16:9 bei Frame 74 an (1120,136),
+Bewegung über 161 Frames gleich, 4:3 gegenüber alter EXE unverändert.
+Rückwärtslauf erzeugt keine doppelten Gegner; Treppenausgang und Abschnittswechsel
+funktionieren. A04-Abgrundkorrektur aus F6 ebenfalls erneut geprüft.
+Spielstände, Einstellungen und HD-Paket v9 sind unverändert.
+Sicherung: backup\hd-artwork\2026-11-04-Breitbild-Gegner-Spawn.
+
 ## A04-Abgrund: kein vorzeitiges A03-Bild mehr (04.11.)
 
 Der Fehler aus F6 ist behoben und in beiden Windows-Spielordnern installiert.

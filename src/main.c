@@ -76,7 +76,7 @@ extern uint8 g_ram[0x20000];
  * The inset must INCREASE: [-96,352) becomes [-144,400). Shrinking it to
  * 48 made reverse-spawned exit events immediately despawn outside the
  * object's narrower left bound, leaving stairs without their room exit. */
-enum { kCv4WidePatchCount = 8 };
+enum { kCv4WidePatchCount = 4 };
 static GuardedPatch g_cv4_wide_patches[kCv4WidePatchCount];
 /* The cartridge image the patches are bound to. The guest executes from
  * cart->rom, a copy SnesInit makes after on_rom_loaded, so the patches are
@@ -108,18 +108,12 @@ static void Cv4BindWidescreenObjectBounds(void)
           { 0xe9, 0x60, 0x00 }, { 0xe9, 0x90, 0x00 } },
         { 0x4991u, "SCIV widescreen object span",
           { 0x69, 0xc0, 0x01 }, { 0x69, 0x20, 0x02 } },
-        /* The event stream has its own camera-relative read window. Without
-         * widening both forward and reverse traversal, scripted enemies,
-         * doors, candles and moving set pieces still appear/disappear at the
-         * retail 256-pixel edge even though their object slots can survive. */
-        { 0x557eu, "SCIV widescreen event right trailing edge",
-          { 0xe9, 0x20, 0x00 }, { 0xe9, 0x50, 0x00 } },
-        { 0x55a1u, "SCIV widescreen event right leading edge",
-          { 0x69, 0x20, 0x01 }, { 0x69, 0x50, 0x01 } },
-        { 0x55d4u, "SCIV widescreen event left leading edge",
-          { 0x69, 0x20, 0x01 }, { 0x69, 0x50, 0x01 } },
-        { 0x55f2u, "SCIV widescreen event left trailing edge",
-          { 0xe9, 0x20, 0x00 }, { 0xe9, 0x50, 0x00 } },
+        /* Leave the event reader at its retail [-32,288) window. Its timing
+         * is coupled to the streamed collision ring, not just the picture.
+         * Expanding it to [-80,336) activated platform enemies before their
+         * ground existed: F10's skeleton fell from Y136 to Y176. Retain the
+         * wider object lifetime above and OAM emission below, while native
+         * events/AI begin only in the original collision-safe window. */
         /* The metasprite emitter independently rejects each 8/16px OAM
          * component outside [-16,256). Both comparisons are signed (BMI/BPL),
          * so extend both ends by 48px. Object/event lifetime alone does not

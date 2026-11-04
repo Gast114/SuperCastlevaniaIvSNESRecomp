@@ -1,5 +1,15 @@
 # Arbeitsstand & Übergabe (2026-10-23, lokale KI-Spritekorrektur)
 
+## F10-Breitbild-Spawn: native Ereignisgrenzen wiederhergestellt (04.11.)
+
+Nutzer meldete Skelett auf Boden statt Plattform nur in16:9, auch andere Stellen betroffen. F10/save9.sav SHA36cc216a071a958da94d9fe08ed6fb5e5eef8d1773407ee6107d45b752a94849, A02/block1, Kamera741, Spieler869/173. Skelett ist Typ0x11, Spawn1120/136. Alter Wide-Eventpatch erzeugte es bei Frame36/Kamera785 statt Frame74/Kamera833 in4:3. BG2-Kollisionsring A000 am Fußpunkt1120/160 war dabei noch0; kommt erst bei Kamera816. Frühe Physik lässt Gegner nachY176 fallen. Nachweise build-lua/wide-skeleton-probe-87hwojfi und wide-collision-probe-50pov_6q. Kein Bild angesehen.
+
+src/main.c entfernt ausschließlich vier Eventstream-Patches bei ROM-PC557e/55a1/55d4/55f2. Native Ereignisfenster bleibt[-32,288), statt[-80,336). Vier andere guarded patches bleiben: Objektlebensdauer C98B/C991 erweitert und OAM-Ausgabe8ED2/8EDA erweitert. Damit bleibt Breitbildzeichnung/Objektlebensdauer, aber native Aktivierungs-/KI-Taktung wartet auf kollisionssicheren Bereich. Kein einzelner Gegner-Teleport, keine ROM-Dateiänderung, kein Vorab-Füllen dynamischer Kollisionsdaten. Eigene Editorraum-Spawnverwaltung unberührt.
+
+Neuer tools/test_widescreen_spawn.py: rot mit vorheriger EXE bei Frame36, Kollision0. PASS build-lua/wide-spawn-check-hm9l9qq3/report.json:4:3/16:9 Spawn beideFrame74,1120/136, durch161Frames exakte gleiche Skeletttrajektorie/Spieler-/Kamerazustände;4:3 gegen vorherige EXE volle State-/WRAM-/Native-PNG-Identität. Zusätzlich Right100/Left150/Right200:2Spawns, höchstens1Skelett, keine Duplikate. Historischer Reverse-Exit-Test hält genau1Typ15 achtFrames; repariertes altes F5 führt nach80Up nachblock6, Gameplay setzt fort. Kombinierte F6-Abgrundregression erneut PASS build-lua/hd-death-picture-bvmww52q/report.json.
+
+Release-Lua EXE SHA d8e18a9e31311afe8b88d001b6a666b28af18b74c928319ac956673fa77987e1 in build-play/game und build installiert, Paket weiter stage-01-user-grid-v9. Beide zuletzt laufenden Änderungen (A04-Tod und F10-Spawn) enthalten. Spielerprozess nicht beendet, Neustart erforderlich. Geschützte Saves/Config/Keybinds/Charaktere/Enemy-Packs unmittelbar vor/nach Austausch identisch. Backup D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-11-04-Breitbild-Gegner-Spawn mit vorigen EXEs/Einstellungen/Saves/Tests. Audit artwork-local/widescreen-spawn-2026-11-04 mit Originalfixture und voriger A04-korrigierter EXE. Fremde CMake/Web/Landschaftsarbeit unberührt. Kein kompletter Spieldurchlauf.
+
 ## A04-Pittod aus F6: Phase12 hält ausgehendes Bild (04.11.)
 
 Realer neuer F6/save5.sav SHA57af464eb04bbad76014c033f025c7541a0de1ebf6a348a14c88f27464162a93. Nach etwa32Frames fällt A04/block3 in native Phase12, checkpoint/block2 bereits gesetzt, aber VRAM und Kamera zeigen noch A04. PictureBlock sperrte nur Phase6, deshalb A03-HD sichtbar vor dem Ausblenden. OutgoingPicturePhase() in hd_render.cpp schützt nun12 und6; lastPictureBlock wird während beider Phasen nicht überschrieben.
