@@ -16,8 +16,9 @@ from level_assets import Assets,ensure_room,ensure_source,collision_value
 from level_parts import CATEGORIES,builtin_parts,repeat_part,capture_part,validate_part,pick_connected_part
 from level_playtest import Playtest,OriginalPlaytest
 from enemy_workshop_native import NativeSession,ROOT
-from monster_model import definitions
-from level_objects import SpriteLibrary,MOVING_PLATFORMS,is_platform,platform_path,validate_platform
+from monster_model import definitions,ai_notes
+from level_actor_values import LIMITS,values_for
+from level_objects import SpriteLibrary,MOVING_PLATFORMS,is_platform,platform_path,validate_platform,scene_objects
 
 
 class Editor:
@@ -32,12 +33,13 @@ class Editor:
         self.loading_assets=set();self.failed_assets=set();self.empty_tile=Image.new('RGBA',(8,8));self.missing_tile=Image.new('RGBA',(8,8),'#74596d')
         self.zoom=tk.DoubleVar(value=2);self.layer=tk.StringVar(value='front');self.tool=tk.StringVar(value='Zeichnen')
         self.show_back=tk.BooleanVar(value=True);self.show_front=tk.BooleanVar(value=True);self.show_collision=tk.BooleanVar(value=False)
-        self.show_object_names=tk.BooleanVar(value=False)
+        self.show_object_names=tk.BooleanVar(value=True)
+        self.actor_stats=tk.StringVar();self.stats_window=None;self.stat_fields={}
         self.auto_collision=tk.BooleanVar(value=True);self.grid=tk.BooleanVar(value=True);self.collision=tk.IntVar(value=1);self.palette=tk.IntVar(value=2)
         self.status=tk.StringVar(value='Grafiksatz wird vorbereitet …');self.origin_room=tk.IntVar(value=0);self.filter=tk.StringVar()
         self.source_room=tk.IntVar(value=self.current()['tileset']);self.source_layer=tk.StringVar(value='front')
         self.source_choice=tk.StringVar(value=f'{self.source_room.get()} · {source_name(self.source_room.get())}')
-        self.name=tk.StringVar();self.width=tk.IntVar();self.height=tk.IntVar();self.collision_mode=tk.StringVar();self.props={k:tk.StringVar() for k in ('x','y','variant','target_x','target_y','target','trigger','plane','motion')}
+        self.name=tk.StringVar();self.width=tk.IntVar();self.height=tk.IntVar();self.collision_mode=tk.StringVar();self.props={k:tk.StringVar() for k in ('x','y','variant','target_x','target_y','target','trigger','plane','motion','name')}
         self.ui=max(1.,min(1.7,root.winfo_screenwidth()/1920));root.tk.call('tk','scaling',96/72*self.ui)
         root.title('Castlevania IV · Level-Editor');root.geometry(f'{min(round(1680*self.ui),root.winfo_screenwidth()-80)}x{min(round(1020*self.ui),root.winfo_screenheight()-100)}')
         root.minsize(round(1080*self.ui),round(680*self.ui));style=ttk.Style();style.configure('.',font=('Segoe UI',11));style.configure('Treeview',rowheight=round(28*self.ui))
@@ -116,13 +118,13 @@ class Editor:
         ttk.Entry(monsters,textvariable=self.filter).pack(fill='x');self.filter.trace_add('write',lambda *a:self.filter_monsters())
         style.configure('Sprites.Treeview',rowheight=round(66*self.ui))
         self.monsters=ttk.Treeview(monsters,show='tree',style='Sprites.Treeview');self.monsters.pack(fill='both',expand=True);self.monsters.bind('<<TreeviewSelect>>',lambda e:self.tool.set('Monster'))
-        ttk.Label(monsters,text='Bosse sind zunächst Planungsmarker.\nSpieltest-Spezialadapter folgen.',wraplength=290).pack(anchor='w',pady=5)
+        ttk.Label(monsters,text='Auswählen, dann in die Karte klicken. Mit „Auswahl“ ziehen; Werte / KI öffnet alle Einstellungen.',wraplength=290).pack(anchor='w',pady=5)
         objects=ttk.Frame(self.tabs);self.tabs.add(objects,text='Objekte')
         object_scroll=ttk.Scrollbar(objects);object_scroll.pack(side='right',fill='y')
         self.object_picker=ttk.Treeview(objects,show='tree',style='Sprites.Treeview',yscrollcommand=object_scroll.set);object_scroll.configure(command=self.object_picker.yview);self.object_picker.pack(fill='both',expand=True);self.object_picker.bind('<<TreeviewSelect>>',self.choose_object)
         ttk.Label(objects,text='O-0017: bewegliche Plattform, waagerecht oder senkrecht. Weitere Objekte laufen mit ihrer Originalfunktion.',wraplength=round(290*self.ui)).pack(fill='x',pady=5)
         props=ttk.LabelFrame(right,text='Auswahl / Ausgang',padding=7);self.object_props=props
-        for n,(label,key) in enumerate([('X','x'),('Y','y'),('Variante','variant'),('Bewegung','motion'),('Zielraum','target'),('Ziel X','target_x'),('Ziel Y','target_y'),('Auslöser','trigger'),('Ebene / Zielebene','plane')]):
+        for n,(label,key) in enumerate([('X','x'),('Y','y'),('Variante','variant'),('Bewegung','motion'),('Zielraum','target'),('Ziel X','target_x'),('Ziel Y','target_y'),('Auslöser','trigger'),('Ebene / Zielebene','plane'),('Dein Name','name')]):
             ttk.Label(props,text=label).grid(row=n,column=0,sticky='w')
             if key in ('target','trigger','plane','motion'):
                 control=ttk.Combobox(props,textvariable=self.props[key],width=20,state='readonly',values=('up','touch') if key=='trigger' else ('front','back') if key=='plane' else ('Waagerecht','Senkrecht') if key=='motion' else ())
@@ -131,15 +133,20 @@ class Editor:
             else:control=ttk.Entry(props,textvariable=self.props[key],width=16)
             if key=='variant':self.variant_entry=control
             control.grid(row=n,column=1,sticky='ew')
-        ttk.Button(props,text='Übernehmen',command=self.apply_object).grid(row=9,column=0,sticky='ew',pady=5);ttk.Button(props,text='Löschen',command=self.delete).grid(row=9,column=1,sticky='ew')
+        ttk.Button(props,text='Übernehmen',command=self.apply_object).grid(row=10,column=0,sticky='ew',pady=5);ttk.Button(props,text='Löschen',command=self.delete).grid(row=10,column=1,sticky='ew')
+        ttk.Label(props,textvariable=self.actor_stats,wraplength=round(290*self.ui)).grid(row=11,column=0,columnspan=2,sticky='w')
+        ttk.Button(props,text='Werte / KI / Boss-Einstellungen …',command=self.actor_details).grid(row=12,column=0,columnspan=2,sticky='ew',pady=4)
         self.tabs.bind('<<NotebookTabChanged>>',self.part_tab_changed)
         ttk.Label(root,textvariable=self.status,padding=8,wraplength=1500).pack(fill='x')
         for key,fn in [('<Control-s>',self.save),('<Control-o>',self.open),('<Control-n>',self.new),('<Control-z>',self.undo),('<Control-y>',self.redo),('<F5>',self.test)]:root.bind(key,lambda e,f=fn:f())
         for key,fn in [('<Control-c>',self.copy),('<Control-v>',self.paste),('<Delete>',self.delete)]:self.canvas.bind(key,lambda e,f=fn:f())
         self.canvas.bind('<h>',lambda e:self.flip(True));self.canvas.bind('<v>',lambda e:self.flip(False));root.protocol('WM_DELETE_WINDOW',self.close)
+        for key,delta in [('Left',(-1,0)),('Right',(1,0)),('Up',(0,-1)),('Down',(0,1))]:
+            self.canvas.bind('<'+key+'>',lambda e,d=delta:self.nudge_actor(*d))
+            self.canvas.bind('<Shift-'+key+'>',lambda e,d=delta:self.nudge_actor(d[0]*8,d[1]*8))
         raw=NativeSession.__new__(NativeSession);raw.bytes=(ROOT/'Super Castlevania IV (USA).sfc').read_bytes();catalog=raw.read_catalog()
-        from enemy_catalog_profiles import boss_profiles
-        self.catalog=catalog+boss_profiles(raw);self.definitions=definitions(self.catalog,raw.bytes);self.object_types={e['type'] for e in self.catalog if e.get('category')=='object'};self.filter_monsters();self.filter_objects()
+        from level_bosses import profiles
+        self.rom=raw.bytes;base_catalog=catalog+profiles(raw);self.catalog=base_catalog+scene_objects(raw,catalog);self.definitions=definitions(base_catalog,raw.bytes);self.object_types={e['type'] for e in self.catalog if e.get('category')=='object'};self.filter_monsters();self.filter_objects()
         self.refresh_rooms();self.load_assets([self.source_room.get(),1,2]);self.tick_id=root.after(60,self.tick)
         if self.original_view:self.originals.selection_set('0')
 
@@ -251,6 +258,7 @@ class Editor:
                     else:self.status.set(f'R-{result["number"]:02d}: {self.original_error} · F5 startet den Originalabschnitt; Grafikquellen bleiben verfügbar.')
                     self.schedule()
                 elif value[0]=='play':
+                    self.sprites.cache.clear();self.filter_monsters();self.filter_objects();self.schedule()
                     self.play_pending=False;self.playtest=value[1];self.playtest.session.lua.command('resume');self.status.set('Spieltest läuft in einem separaten Fenster'+(' ohne Ton (kein Audiogerät)' if self.playtest.audio_unavailable else '')+'. Mit „Test beenden“ schließen.')
         except queue.Empty:pass
         self.tick_id=self.root.after(60,self.tick)
@@ -321,8 +329,13 @@ class Editor:
             if selected or missing:
                 bounds=self.actor_bounds(a);self.canvas.create_rectangle(*(v*z for v in bounds),outline='#f5db83' if selected else '#e8ae64',width=2)
             if selected or self.show_object_names.get() or missing:
-                self.canvas.create_text(x,self.actor_bounds(a)[1]*z-4,text=self.actor_code(a),fill='#eff4ed',anchor='s',font=('Segoe UI',10))
+                self.canvas.create_text(x,self.actor_bounds(a)[1]*z-4,text=self.actor_label(a),fill='#eff4ed',anchor='s',font=('Segoe UI',max(10,round(10*self.ui))))
             if selected and is_platform(a):self.canvas.create_line(*(v*z for v in platform_path(a)),fill='#75e4d6',dash=(5,3),arrow='last',width=2)
+            if selected and a['type']>=128:
+                entry=next((e for e in self.catalog if e['type']==a['type']),a);ox=entry.get('x',128)-a['x'];oy=entry.get('y',96)-a['y']
+                left=max(-ox,max(0,min(r['width']*8-256,a['x']-128)));top=max(-oy,max(0,min(r['height']*8-224,a['y']-96)))
+                self.canvas.create_rectangle(left*z,top*z,(left+256)*z,(top+224)*z,outline='#c5a0fc',dash=(6,4),width=2)
+                self.canvas.create_text(left*z,top*z,text='Boss-Begegnung',fill='#d5baff',anchor='nw')
         for d in r['doors']:
             self.canvas.create_rectangle(d['x']*z,d['y']*z,(d['x']+d['w'])*z,(d['y']+d['h'])*z,outline='#7ebeff',width=3)
             self.canvas.create_text(d['x']*z,d['y']*z,text='→ '+d['target'],anchor='sw',fill='#9bd0ff')
@@ -474,17 +487,19 @@ class Editor:
     def filter_monsters(self):
         self.monsters.delete(*self.monsters.get_children());term=self.filter.get().casefold();self.monster_photos=[]
         for m in self.definitions:
-            label=m['code']+(' · Boss / Planung' if m['boss'] else '')
+            label=m['code']+(' · Boss' if m['boss'] else '')
             if term in label.casefold():
                 photo=ImageTk.PhotoImage(self.sprites.thumbnail(m,(round(58*self.ui),round(58*self.ui))));self.monster_photos.append(photo)
                 self.monsters.insert('','end',iid=m['code'],text=label,image=photo)
     def filter_objects(self):
-        rows={f'object-{e["type"]:02x}-{e["variant"]:02x}':dict(e,name=f'O-{e["type"]:04X}') for e in self.catalog if e.get('category')=='object' and e['type']!=0x17 and self.sprites.sprite(e)}
+        monster_types={m['type'] for m in self.definitions}
+        rows={f'object-{e["type"]:02x}-{e["variant"]:02x}':dict(e,name=f'O-{e["type"]:04X} · V{e["variant"]}') for e in self.catalog if e['type'] not in monster_types and e['type']!=0x17}
+        rows['candle']=dict(type=14,variant=0x18,kind='candle',name='O-000E · Kerze')
         rows.update({p['id']:p for p in MOVING_PLATFORMS});self.object_rows=rows;self.object_photos=[]
         self.object_picker.delete(*self.object_picker.get_children())
         for key,row in rows.items():
             photo=ImageTk.PhotoImage(self.sprites.thumbnail(row,(round(58*self.ui),round(58*self.ui))));self.object_photos.append(photo)
-            self.object_picker.insert('','end',iid=key,text=row['name'],image=photo)
+            self.object_picker.insert('','end',iid=key,text=row['name']+(' · Grafik noch nicht erfasst' if not self.sprites.sprite(row) else '')+(' · Szenenobjekt' if row.get('kind')=='event' else ''),image=photo)
     def choose_object(self,e=None):
         selection=self.object_picker.selection()
         if selection:self.select_object_template(self.object_rows[selection[0]])
@@ -492,6 +507,7 @@ class Editor:
         self.object_template=copy.deepcopy(row);self.tool.set('Objekt');self.selected_object=None;self.object_props.pack_forget();self.refresh_brush()
         self.status.set(row['name']+' · Linksklick setzt ein Spielobjekt · F5 startet seine echte Bewegung.')
     def actor_code(self,actor):return ('M-' if any(d['type']==actor['type'] for d in self.definitions) else 'O-')+f'{actor["type"]:04X}'
+    def actor_label(self,actor):return self.actor_code(actor)+(' · '+actor['name'] if actor.get('name') else '')
     def actor_bounds(self,actor):
         sprite=self.sprites.sprite(actor)
         if sprite:
@@ -516,7 +532,8 @@ class Editor:
                     bounds=self.actor_bounds(item) if kind=='actor' else (item['x'],item['y'],item['x']+item['w'],item['y']+item['h'])
                     if bounds[0]<=x*8<bounds[2] and bounds[1]<=y*8<bounds[3]:self.selected_object=(kind,item['id']);break
                 if self.selected_object:break
-            if self.selected_object:self.object_fields()
+            if self.selected_object:
+                item=self.object();self.object_drag_offset=(item['x']-x*8,item['y']-y*8);self.object_fields()
             else:self.selection=(x,y,x,y)
         elif tool in ('Zeichnen','Bauteil','Kollision'):self.stamp(x,y)
         elif tool=='Fläche':self.selection=(x,y,x,y)
@@ -526,9 +543,14 @@ class Editor:
             if selected:
                 t=int(selected[0][2:],16);entry=next(e for e in self.catalog if e['type']==t)
                 item=dict(id='E-'+uuid.uuid4().hex[:8],type=t,variant=entry['variant'],x=x*8,y=y*8,flags=(entry['flags']&0x7fff)|(0x8000 if self.layer.get()=='front' else 0))
+                if entry.get('boss'):item.update(kind='boss',boss_start='direct',boss_end='continue')
                 r['actors'].append(item);self.selected_object=('actor',item['id']);self.object_fields()
         elif tool=='Objekt' and self.object_template:
             entry=self.object_template;item=dict(id='O-'+uuid.uuid4().hex[:8],type=entry['type'],variant=entry.get('variant',0),x=x*8,y=y*8,flags=0x8000 if self.layer.get()=='front' else 0)
+            for key in ('kind','boss_start','boss_end','stats','native_family'):
+                if key in entry:item[key]=copy.deepcopy(entry[key])
+            if entry.get('_instance'):item['name']=entry.get('name','')
+            if entry.get('kind')=='candle':item['kind']='candle'
             if is_platform(item):item['kind']='platform'
             try:validate_platform(item,r['width']*8,r['height']*8)
             except ValueError as exc:self.status.set(str(exc));return
@@ -555,7 +577,7 @@ class Editor:
         elif tool in ('Fläche','Auswahl') and not self.selected_object:self.selection=(max(0,min(self.start[0],x)),max(0,min(self.start[1],y)),min(r['width']-1,max(self.start[0],x)),min(r['height']-1,max(self.start[1],y)))
         elif tool=='Auswahl' and self.selected_object:
             if self.original_view:return
-            item=self.object();xx,yy=max(0,min(r['width']*8-1,x*8)),max(0,min(r['height']*8-1,y*8))
+            item=self.object();ox,oy=getattr(self,'object_drag_offset',(0,0));xx,yy=max(0,min(r['width']*8-1,x*8+ox)),max(0,min(r['height']*8-1,y*8+oy))
             if item.get('kind')=='platform':
                 xx=max(96 if item.get('variant',0)==0 else 16,min(r['width']*8-16,xx));yy=max(88 if item.get('variant',0)==1 else 8,min(r['height']*8-8,yy))
             item['x'],item['y']=xx,yy;self.object_fields()
@@ -575,6 +597,15 @@ class Editor:
     def object(self):
         if not self.selected_object:return None
         kind,identifier=self.selected_object;return next((a for a in self.current()['actors' if kind=='actor' else 'doors'] if a['id']==identifier),None)
+    def nudge_actor(self,dx,dy):
+        if not self.editable():return
+        item=self.object()
+        if not item or self.selected_object[0]!='actor':return
+        r=self.current();candidate=dict(item,x=max(0,min(r['width']*8-1,item['x']+dx)),y=max(0,min(r['height']*8-1,item['y']+dy)))
+        try:validate_platform(candidate,r['width']*8,r['height']*8)
+        except ValueError as exc:self.status.set(str(exc));return
+        self.project.begin('Objekt verschieben');item.update(candidate);self.project.commit();self.object_fields();self.schedule()
+        return 'break'
     def object_fields(self):
         item=self.object()
         if item:
@@ -584,8 +615,57 @@ class Editor:
             self.motion_box.configure(state='readonly' if moving else 'disabled');self.variant_entry.configure(state='readonly' if moving else 'normal')
             self.props['motion'].set(('Waagerecht' if item.get('variant',0)==0 else 'Senkrecht') if moving else '')
             self.props['plane'].set(('back' if item.get('flags',0)&0x8000==0 else 'front') if self.selected_object[0]=='actor' else ('back' if item.get('target_plane',0) else 'front'))
+            if self.selected_object[0]=='actor':
+                val=values_for(self.rom,item,self.current()['tileset']);self.actor_stats.set(f'HP: {val["hp"] if val["hp"] is not None else "Bossinitialisierung"} · Kontaktschaden: {val["contact_damage"]} · Trefferbereich: {val["half_width"]*2} × {val["half_height"]*2}')
+            else:self.actor_stats.set('')
             if 'target' in item:
                 target=self.project.get(item['target']);self.props['target'].set(target['id']+' · '+target['name'])
+    def actor_details(self):
+        item=self.object()
+        if not item or self.selected_object[0]!='actor':return
+        if self.stats_window and self.stats_window.winfo_exists():self.stats_window.destroy()
+        window=tk.Toplevel(self.root);self.stats_window=window;window.title(self.actor_label(item)+' · Werte / KI');window.transient(self.root)
+        box=ttk.Frame(window,padding=16);box.pack(fill='both',expand=True)
+        ttk.Label(box,text=self.actor_label(item),font=('Segoe UI',16,'bold')).pack(anchor='w')
+        table=ttk.Treeview(box,columns=('label','normal','ng','own'),show='headings',height=4)
+        for key,label in [('label','Wert'),('normal','Normal'),('ng','New Game+'),('own','Wirksam (Normal)')]:table.heading(key,text=label);table.column(key,width=round(145*self.ui))
+        table.pack(fill='x',pady=8);self.stats_table=table
+        form=ttk.Frame(box);form.pack(fill='x');self.stat_fields={}
+        for n,(key,label) in enumerate([('hp','Gesundheit'),('contact_damage','Kontaktschaden'),('half_width','Trefferbereich: halbe Breite'),('half_height','Trefferbereich: halbe Höhe')]):
+            v=tk.StringVar(value=str(item.get('stats',{}).get(key,'')));self.stat_fields[key]=v
+            ttk.Label(form,text=label).grid(row=n,column=0,sticky='w',padx=(0,12));ttk.Entry(form,textvariable=v,width=16,state='readonly' if self.original_view else 'normal').grid(row=n,column=1,sticky='ew')
+        ttk.Label(box,text='Leeres Feld = Originalwert einschließlich Raum-/New-Game+-Bonus.\nEigene Werte ersetzen den Startwert dieses Exemplars im F5-Spieltest.',wraplength=round(610*self.ui)).pack(anchor='w',pady=8)
+        self.boss_start=tk.StringVar(value=item.get('boss_start','direct'));self.boss_end=tk.StringVar(value=item.get('boss_end','continue'))
+        if item['type']>=128:
+            for label,var,choices in [('Bossstart',self.boss_start,('direct','sequence')),('Nach dem Sieg',self.boss_end,('continue','exit'))]:
+                row=ttk.Frame(box);row.pack(fill='x');ttk.Label(row,text=label).pack(side='left');ttk.Combobox(row,textvariable=var,values=choices,state='readonly',width=18).pack(side='right')
+            ttk.Label(box,text='direct: vorbereiteter Kampf · sequence: native Einleitung\ncontinue: Raum weiter erkunden · exit: erster Raumausgang nach dem Sieg\nEin Bosskampf ist eine einzelne Begegnung mit fester Kamera. Andere Gegner pausieren währenddessen.',wraplength=round(610*self.ui)).pack(anchor='w',pady=6)
+        entry=next((e for e in self.catalog if e['type']==item['type']),item)
+        notes='Kerzen verwenden die native Objekt-KI; Variante steuert den Inhalt (Original-Byte, dezimal).' if item['type']==14 else 'Originales Szenenobjekt: Variante und Position sind bearbeitbar. Solche Controller können Kamera, Kulisse oder Levelablauf steuern; ihre freie Kombination ist noch nicht vollständig geprüft.' if item.get('kind')=='event' else ai_notes(entry)
+        if item['type']>=128:notes='Die originale Boss-KI läuft in einer einzelnen Begegnung gegen den spielbaren Simon. Körper, Geschosse und Hilfsteile bleiben zusammen. Native Angriffsphasen und feste Bewegungsgrenzen gelten weiterhin. Eigene Werte ändern den Startwert; eine neue KI oder vollständige Original-Levelsequenz entsteht dadurch nicht automatisch.'
+        notes=notes.replace('„Natürlich“ zeigt den echten Ablauf.','F5 zeigt den echten Ablauf im eigenen Raum.')
+        ttk.Label(box,text=notes,wraplength=round(610*self.ui),justify='left').pack(fill='x',pady=10)
+        bar=ttk.Frame(box);bar.pack(fill='x');ttk.Button(bar,text='Werte übernehmen',state='disabled' if self.original_view else 'normal',command=lambda:self.apply_actor_stats(item['id'])).pack(side='left')
+        ttk.Button(bar,text='Originalwerte wiederherstellen',state='disabled' if self.original_view else 'normal',command=lambda:self.reset_actor_stats(item['id'])).pack(side='left',padx=8)
+        ttk.Button(bar,text='Schließen',command=window.destroy).pack(side='right');self.refresh_actor_stats(item)
+    def refresh_actor_stats(self,item):
+        self.stats_table.delete(*self.stats_table.get_children())
+        n=values_for(self.rom,dict(item,stats={}),self.current()['tileset']);ng=values_for(self.rom,dict(item,stats={}),self.current()['tileset'],1);effective=values_for(self.rom,item,self.current()['tileset'])
+        for key,label in [('hp','Gesundheit'),('contact_damage','Kontaktschaden'),('half_width','Halbe Trefferbreite'),('half_height','Halbe Trefferhöhe')]:
+            self.stats_table.insert('','end',iid=key,values=(label,*('Initialisierung' if v[key] is None else v[key] for v in (n,ng,effective))))
+    def apply_actor_stats(self,identifier):
+        if not self.editable():return
+        item=next((a for a in self.current()['actors'] if a['id']==identifier),None)
+        if not item:return
+        try:
+            values={k:int(v.get()) for k,v in self.stat_fields.items() if v.get().strip()}
+            candidate=dict(item,stats=values,boss_start=self.boss_start.get(),boss_end=self.boss_end.get())
+            from level_actor_values import validate_values
+            validate_values(candidate);self.project.begin('Monsterwerte');item.update(candidate);self.project.commit();self.refresh_actor_stats(item);self.object_fields();self.schedule()
+        except ValueError as exc:messagebox.showerror('Monsterwerte',str(exc),parent=self.stats_window)
+    def reset_actor_stats(self,identifier):
+        for value in self.stat_fields.values():value.set('')
+        self.apply_actor_stats(identifier)
     def apply_object(self):
         if not self.editable():return
         item=self.object()
@@ -593,7 +673,7 @@ class Editor:
         try:
             values={k:int(self.props[k].get()) for k in ('x','y')}
             if self.selected_object[0]=='actor':
-                values.update(variant=int(self.props['variant'].get()),flags=(item.get('flags',0)&0x7fff)|(0x8000 if self.props['plane'].get()=='front' else 0))
+                values.update(name=self.props['name'].get().strip(),variant=int(self.props['variant'].get()),flags=(item.get('flags',0)&0x7fff)|(0x8000 if self.props['plane'].get()=='front' else 0))
                 if is_platform(item):values.update(kind='platform',variant=0 if self.props['motion'].get()=='Waagerecht' else 1)
             else:values.update(target=self.props['target'].get().split(' · ')[0],target_x=int(self.props['target_x'].get()),target_y=int(self.props['target_y'].get()),trigger=self.props['trigger'].get(),target_plane=int(self.props['plane'].get()=='back'))
             self.project.begin('Objektwerte');item.update(values)
@@ -613,12 +693,16 @@ class Editor:
                 for x in range(x1,x2+1):paint(r,self.layer.get(),x,y,[EMPTY],[0])
         self.project.commit();self.schedule()
     def copy(self):
+        if self.selected_object and self.selected_object[0]=='actor':
+            self.actor_clipboard=dict(copy.deepcopy(self.object()),_instance=True);self.status.set(self.actor_label(self.actor_clipboard)+' kopiert · Strg+V, dann in die Karte klicken.');return
         if not self.selection:return
-        r=self.current();x1,y1,x2,y2=self.selection;w=x2-x1+1
+        self.actor_clipboard=None;r=self.current();x1,y1,x2,y2=self.selection;w=x2-x1+1
         self.clipboard=([bind(r['layers'][self.layer.get()][y*r['width']+x],r['tileset'],self.layer.get()) for y in range(y1,y2+1) for x in range(x1,x2+1)],
                         [r['collision'][self.layer.get()][y*r['width']+x] for y in range(y1,y2+1) for x in range(x1,x2+1)],w)
         self.status.set(f'Ausschnitt {w*8} × {(y2-y1+1)*8} Pixel kopiert.')
     def paste(self):
+        if getattr(self,'actor_clipboard',None):
+            self.select_object_template(dict(self.actor_clipboard,name=self.actor_clipboard.get('name') or self.actor_code(self.actor_clipboard)));return
         if self.clipboard:self.brush,self.brush_collision,self.brush_width=copy.deepcopy(self.clipboard);self.brush_mask=None;self.tool.set('Zeichnen');self.refresh_brush();self.status.set('Ausschnitt mit Linksklick platzieren.')
     def flip(self,horizontal):
         w=self.brush_width;h=len(self.brush)//w;indices=[(y*w+(w-1-x) if horizontal else (h-1-y)*w+x) for y in range(h) for x in range(w)]
@@ -657,7 +741,7 @@ class Editor:
         if self.play_pending:return
         if self.playtest:self.stop_test()
         parent=ROOT/'artwork-local/level-editor/tests';parent.mkdir(parents=True,exist_ok=True);folder=Path(tempfile.mkdtemp(prefix='play-',dir=parent));data=copy.deepcopy(self.project.data)
-        self.play_pending=True;scale=round(3*self.ui);self.status.set('Spieltest wird vorbereitet …')
+        self.play_pending=True;scale=round(3*self.ui);self.status.set('Bossbegegnungen werden bei Bedarf einmalig vorbereitet; danach startet der Spieltest …' if not self.original_view and any(a['type']>=128 for r in data['rooms'] for a in r['actors']) else 'Spieltest wird vorbereitet …')
         if self.original_view:
             number=self.original_number;self.background(lambda:('play',OriginalPlaytest(number,folder,window_scale=scale)))
         else:self.background(lambda:('play',Playtest(data,folder,window_scale=scale)))

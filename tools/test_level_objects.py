@@ -42,7 +42,7 @@ def check(native=True):
             expected=Image.new('RGBA',(256,224),'#202632');expected.alpha_composite(sprite,(80-anchor[0],96-anchor[1]))
             assert np.array_equal(np.array(image),np.array(expected))
             assert np.count_nonzero(np.any(np.array(image)[:,:,:3]!=[32,38,50],axis=2))>100
-            assert not app.show_object_names.get()
+            assert app.show_object_names.get()
             passed('Monster/object picker has sprite images; actual map pixels match the native body PNG at its world anchor')
             r['actors']=[]
             app.part_category.set('Bewegliche Plattformen');app.refresh_parts();app.parts_gallery.selection_set('moving-vertical');app.choose_part()

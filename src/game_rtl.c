@@ -285,6 +285,7 @@ void GameDrawPpuFrame(void)
             trigger = g_snes->vIrqEnabled ? (int)g_snes->vTimer : -1;
         }
         Cv4CampaignRasterLine(line);
+        Cv4LevelBeforeLine(g_ppu,line);
         /* Retail block 1-1 switches BG2 to the water scroll at line 192.
          * With its -1 vertical scroll that exposes the last repeating earth
          * row of the rock backdrop across the open lake, above the water.

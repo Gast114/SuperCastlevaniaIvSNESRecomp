@@ -1174,3 +1174,14 @@ und Verschiebungen.json zeigen die alten/neuen Positionen samt Grund.
 RUECKGAENGIG.cmd dort stellt die frueheren Positionen wieder her; geaenderte
 Dateien oder Namenskonflikte werden vor dem Verschieben erkannt.
 Spielinstallation, Spielstaende und alle aktuellen Importdateien sind unveraendert.
+
+## Level-Editor: Monsterwerte, Kerzen und Boss-Begegnungen (04.11.2026)
+
+- Editor neu über `Level_Editor_starten.cmd` starten. Im Originalkatalog zuerst „Als eigene Kopie bearbeiten“, dann das eigene Projekt speichern.
+- Beschriftungen sind standardmäßig an. „Auswahl“ zum Ziehen; Pfeile verschieben um 1 Pixel, Umschalt + Pfeile um 8. Strg+C/Strg+V kopiert auch Namen und eigene Werte, danach in die Karte klicken.
+- „Werte / KI / Boss-Einstellungen“ zeigt Normal und New Game+ separat. Eigene HP, Kontaktschaden und Trefferbereich gelten pro Exemplar im F5-Spieltest. Leeres Feld = Original-Startwert. Noch nicht gemessene NG+-Bosswerte bleiben ausdrücklich unbekannt.
+- Kerzen: Objekte / O-000E. Variante ist das native Inhaltsbyte in Dezimal. Originalimporte übernehmen jetzt auch Kerzen und Szenenobjekte. Nicht erfasste Vorschaubilder werden gekennzeichnet.
+- Alle 14 Boss-Codes M-0080..M-008D sind platzierbar. `direct` = vorbereiteter Kampf, `sequence` = früher Bossablauf; vollständige originale Kamerasequenzen sind damit nicht automatisch enthalten.
+- Ein Boss ist eine einzelne Begegnung mit festem Ausschnitt. Andere Gegner und dynamische Objekte pausieren und kehren danach zurück. `continue` = im Raum bleiben; `exit` = erster Raumausgang. Spielertod/Sturz startet am eigenen Startpunkt.
+- Native Bewegungsgrenzen, besondere Bossphasen und Abhängigkeiten mancher Szenenobjekte bleiben bestehen. Das ist noch kein freier Baukasten für sämtliche Original-Levelskripte.
+- Keine neuen HD-Bilder nötig; Original-/Künstlerdateien bleiben unverändert. Details: `docs/LEVEL_EDITOR.md`.

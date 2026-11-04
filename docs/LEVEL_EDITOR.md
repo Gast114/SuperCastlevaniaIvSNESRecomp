@@ -86,8 +86,8 @@ ihre Funktion kann zusätzliche native Levelskripte benötigen.
 Monster und Objekte haben jetzt Sprite-Bilder in der Auswahl **und in der Karte**.
 Die Bilder verwenden ihre native Größe und ihren Originalanker. Figuren der
 hinteren Spielebene werden vor dem Vordergrund gezeichnet, etwa hinter dem Zaun.
-**Objektnamen** blendet die Codes zusätzlich ein; ausgewählte Objekte zeigen ihren
-Code immer. Vorhandene Originalposen werden nur gelesen. Für unsichtbare
+**Objektnamen** ist zunächst eingeschaltet und zeigt Codes sowie selbst vergebene
+Namen. Ausgewählte Objekte zeigen ihre Beschriftung immer. Vorhandene Originalposen werden nur gelesen. Für unsichtbare
 Controller oder fehlende Vorschaubilder wird keine Ersatzgrafik erfunden.
 
 ### Grafiken frei aus allen Abschnitten mischen
@@ -155,6 +155,44 @@ Monster werden in der Karte mit einer vorhandenen nativen Pose gezeigt; ihre
 echte KI und Animation laufen im Spieltest. Die Codes entsprechen der Monsterwerkstatt.
 Geschosse und belegte Hilfsteile bleiben bei ihrem Monster.
 
+Mit **Auswahl** anklicken und ziehen. Die Pfeiltasten verschieben ein ausgewähltes
+Objekt um einen Pixel, Umschalt + Pfeiltaste um acht. Strg+C / Strg+V kopiert die
+Figur einschließlich Name und eigener Werte; anschließend in die Karte klicken.
+Die Werkzeugwahl **Monster** oder **Objekt** bleibt zum mehrfachen Platzieren aktiv.
+
+**Werte / KI / Boss-Einstellungen** öffnet den Detaildialog. Normal und New Game+
+stehen separat neben dem wirksamen Normalwert. Eigene Gesundheit, Kontaktschaden
+und halbe Trefferbreite/-höhe gelten pro platziertem Exemplar im F5-Spieltest und
+werden im Projekt gespeichert. Ein leeres Feld übernimmt den Originalwert;
+**Originalwerte wiederherstellen** leert die Überschreibungen. Bei Bossen stammt
+die normale Gesundheit aus der vorbereiteten nativen Initialisierung. Noch nicht
+gemessene New-Game+-Bosswerte werden ausdrücklich als Initialisierung angezeigt.
+
+Kerzen erscheinen unter **Objekte / O-000E** und werden beim Originalimport
+übernommen. Ihre Variante ist das ursprüngliche Inhaltsbyte (dezimal). Die native
+Flamme und das Zerstören/Erzeugen des Inhalts übernimmt die Spielengine.
+Szenencontroller sind ebenfalls auswählbar; fehlende Grafikaufnahmen sind in der
+Liste gekennzeichnet. Ihre speziellen Levelskripte sind noch nicht alle portabel.
+
+### Boss-Begegnungen
+
+M-0080 bis M-008D lassen sich platzieren und verschieben. Ein ausgewählter Boss
+zeigt zusätzlich den Begegnungsbereich. Beim ersten Spieltest wird sein eigener
+nativer Körper samt Hilfsteilen, Original-KI, Grafik- und Rasterkontext vorbereitet
+und lokal zwischengespeichert. Der F5-Test muss dafür keinen ursprünglichen
+Bosslevel starten. Bei mehreren Bossen gibt es jeweils eine aktive Begegnung.
+Andere Gegner und dynamische Objekte pausieren währenddessen und werden anschließend fortgesetzt;
+dadurch bleiben ihre Grafikressourcen von den Bossressourcen getrennt.
+
+Im Detaildialog steuert `direct` einen vorbereiteten Kampfstart, `sequence` den
+frühen nativen Bossablauf. Das sind Boss-Einleitungen; vollständige ursprüngliche
+Level-Kamerafahrten und Szenenskripte werden damit nicht automatisch nachgebaut.
+`continue` führt nach dem Kampf im selben Raum weiter, `exit` benutzt den ersten
+Ausgang des Raums (ohne Ausgang bleibt man im Raum). Ein Tod startet die eigene
+Karte erneut. Mode7-Körper werden nativ gezeichnet und haben eine eigene
+Grafikbehandlung. Originale feste Bewegungsgrenzen und Bossphasen gelten weiterhin;
+neue KI oder frei definierbare Angriffsabläufe sind damit noch nicht verbunden.
+
 **Start** setzt Simons Startpunkt im gewählten Raum. **Ausgang** setzt einen
 markierten Bereich. Mit **Auswahl** anklicken, Zielraum aus der Liste wählen,
 Ziel X/Y und Zielebene einstellen und **Übernehmen** drücken.
@@ -172,10 +210,10 @@ Spezial-/Dekorobjekte erscheint ein Hinweis.
 - Vertikale Originalkarten und Mode7-Räume lassen sich noch nicht vollständig
   als Karte importieren. Ihre Grafiken stehen in der freien Quellauswahl bereit.
   Eigene hohe Räume und gemischte Grafiken sind bereits spielbar.
-- Geskriptete Tore, Brückenanimationen, Treppenverbindungen, bewegte
-  Levelobjekte und Boss-Abschlüsse brauchen eigene Werkzeuge und Adapter.
-- Boss-Codes können als Planungsmarker gespeichert werden. Ein Projekt mit
-  Bossmarker wird beim Spieltest mit einer Erklärung abgewiesen.
+- Vollständige Levelskripte für Tore, Brückenanimationen und Treppenverbindungen
+  sind noch nicht frei kombinierbar. Die Szenenobjekte lassen sich ansehen und
+  bearbeiten; eine eigene Platzierung übernimmt nicht automatisch ihren ganzen
+  Original-Levelablauf. Bosskämpfe laufen als einzelne vorbereitete Begegnungen.
 - Monster aus anderen Levels können platziert werden. Derzeit teilen alle
   Räume eines Projekts elf native Grafikseiten. Unpassende Grafikbudgets oder
   kollidierende Originalpaletten werden vor Testbeginn abgewiesen. Eine
@@ -215,3 +253,13 @@ Bildauswahl und Plattformparameter, den Startkatalog mit allen 68 Abschnitten,
 Originalvorschau/Kopiergrenze und Original-Spieltests. Native Tests prüfen beide
 Plattformachsen einschließlich Umkehren, Mitfahren und Abspringen sowie einen
 Mode7-Originalabschnitt. Auch hier überspringt `--no-native` die Spieltests.
+
+`tools/test_level_actors.py` prüft Fledermaus-Kontext, Beschriftung, echte
+Bedienaktionen, eigene Werte, Duplizieren, Speichern und Kerzenimport. Nativ werden
+Gesundheit, tatsächlicher Kontaktschaden und beide Flammenposen geprüft; für alle
+14 Boss-Codes werden 90 Felder mit Zustandsänderungen und wirklich gezeichneten
+OBJ-/Mode7-Pixeln geprüft. Das ist kein vollständiger Durchlauf aller Angriffs-
+und Todesphasen. `tools/test_level_boss_end.py` prüft zusätzlich Einleitung,
+Rückkehr, Ausgang, Spielertod und Sturz, einschließlich Wiederherstellung der
+gewöhnlichen Objektgrafik und Kerzenflags. Alle Bildprüfungen laufen ohne
+Bildbetrachter über die tatsächlichen Pixel.

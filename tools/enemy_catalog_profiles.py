@@ -89,7 +89,7 @@ def hold_boss_stage(session,entry):
                    0x70:5,0x86:entry['room']})
 
 
-def spawn_boss(session,entry,neutral=False):
+def spawn_boss(session,entry,neutral=False,introduction=False):
     """Start a retail boss through its own asset-loading controller.
 
     Uses an isolated NativeSession. Executes the original graphics loader and
@@ -126,6 +126,7 @@ def spawn_boss(session,entry,neutral=False):
             session.write({0x5a4:0})
         if session.read(entry.get('main_slot',0x580)+0x10)==entry.get('main_type',entry['type']):break
     else:raise RuntimeError('Der originale Bosscontroller hat den Hauptkörper nicht gestartet.')
+    if introduction and entry['type']!=0x81:return snapshot
     # Some original introductions spend over a hundred fields with pose zero.
     # Keep the UI loading until the group actually draws, without forcing AI.
     for _ in range(240):

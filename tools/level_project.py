@@ -44,6 +44,8 @@ def validate(data):
             if len(xy)!=2 or any(type(v) is not int for v in xy) or not 0<=xy[0]<w*8 or not 0<=xy[1]<h*8:raise ValueError('Startpunkt/Gegner liegt außerhalb des Raums.')
         if len(r['actors'])>128 or len(r['doors'])>64:raise ValueError('Zu viele Gegner oder Ausgänge in einem Raum.')
         for a in r['actors']:
+            from level_actor_values import validate_values
+            validate_values(a)
             if type(a['type']) is not int or not 0<a['type']<=0x8d or type(a.get('variant',0)) is not int or not 0<=a.get('variant',0)<=255:
                 raise ValueError('Ungültiger Monster-Code oder Variante.')
             if type(a.get('flags',0)) is not int or not 0<=a.get('flags',0)<=65535:raise ValueError('Ungültige Monster-Ebene.')

@@ -131,8 +131,8 @@ def check():
             assert matches>1000
             passed(f'Native playtest renders {matches} exact pixels from 17 source/palette combinations including Mode7; transparent front texels reveal foreign BG2')
             # Corrupt an atlas cell index in an otherwise well-formed packet.
-            packet=bytearray((g.folder/'level.bin').read_bytes());assert packet[:8]==b'CV4LVL2\0'
-            count=struct.unpack_from('<I',packet,14)[0];at=18+count*128+22+0xd600;struct.pack_into('<I',packet,at,0x7fffffff)
+            packet=bytearray((g.folder/'level.bin').read_bytes());assert packet[:8]==b'CV4LVL4\0'
+            count=struct.unpack_from('<I',packet,14)[0];at=18+count*128+2+22+0x10200;struct.pack_into('<I',packet,at,0x7fffffff)
             bad=folder/'bad-atlas.bin';bad.write_bytes(packet);s.command('dump',folder/'before.bin')
             try:s.command('level_project',bad)
             except RuntimeError:pass

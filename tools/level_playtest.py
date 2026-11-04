@@ -11,12 +11,15 @@ from level_assets import Assets,ensure_room
 from level_project import validate
 from level_graphics import compile_graphics
 from level_objects import resource_entry
+from level_actor_values import values_for
 
 
 def monster_plan(raw,placements,index):
     family=set()
     for a in placements:
-        t=a['type'];family.add(t)
+        t=a['type']
+        if t>=128:continue
+        family.add(t)
         profile=next((p for p in index['profiles'] if p['type']==t and p.get('variant',0)==a.get('variant',0)),{})
         family.update(profile.get('child_types',[]))
         death=raw[0x8000+((0xae00+t)&0x7fff)]
@@ -35,16 +38,22 @@ def compile_project(data,destination,rom=None,build=None,quest=0):
     for r in data['rooms']:
         templates[r['tileset']]=Assets(ensure_room(r['tileset'],rom,build))
         for a in r['actors']:
-            if a['type']>=128:raise ValueError('Bossmarker sind speicherbar. Der Level-Spieltest braucht dafür noch den jeweils passenden Boss-/Levelabschlussadapter.')
             actors.setdefault((a['type'],a.get('variant',0),bool(a.get('flags',0)&0x8000)),a)
+    from level_bosses import prepare_bosses
+    bosses=prepare_bosses({a['type'] for a in actors.values() if a['type']>=128},rom,build)
+    boss_indices={t:i for i,t in enumerate(bosses)}
     plan=monster_plan(raw,actors.values(),index)
     owners={};bank_data={}
     for a in actors.values():
         t=a['type']
-        entry=resource_entry(a);colors=palette(library,entry)
+        if t>=128 or t in (14,0x6c,0x73,0x77) or a.get('kind')=='event':continue
+        entry=resource_entry(a)
         profile=next((p for p in index['profiles'] if p['type']==t and p.get('variant',0)==entry['variant']),{})
+        actor_poses=set(poses.get(t,[]))|set(profile.get('poses',[]))
+        if not actor_poses:continue
+        colors=palette(library,entry)
         banks={}
-        for pose in set(poses.get(t,[]))|set(profile.get('poses',[])):
+        for pose in actor_poses:
             for _,_,attr in descriptor(raw,pose):
                 bank=attr>>9&7
                 banks[bank]=colors[256+bank*32:256+(bank+1)*32]
@@ -55,10 +64,11 @@ def compile_project(data,destination,rom=None,build=None,quest=0):
     word=lambda address:int.from_bytes(raw[(address>>16)*0x8000+(address&0x7fff):(address>>16)*0x8000+(address&0x7fff)+2],'little')
     stop=word(0x00d81b)
     while word(0x050000|stop)!=65535:stop+=6
-    mixed=any(value>65535 for r in data['rooms'] for layer in ('front','back') for value in r['layers'][layer])
-    out=bytearray(b'CV4LVL2\0' if mixed else b'CV4LVL1\0')+struct.pack('<HHH',len(data['rooms']),next(i for i,r in enumerate(data['rooms']) if r['id']==data['start_room']),stop)
+    mixed=bool(bosses) or any(value>65535 for r in data['rooms'] for layer in ('front','back') for value in r['layers'][layer])
+    out=bytearray(b'CV4LVL4\0' if mixed else b'CV4LVL3\0')+struct.pack('<HHH',len(data['rooms']),next(i for i,r in enumerate(data['rooms']) if r['id']==data['start_room']),stop)
     if mixed:
         atlas,maps=compile_graphics(data,rom,build);out+=struct.pack('<I',len(atlas))+b''.join(atlas)
+    out+=struct.pack('<H',len(bosses))+b''.join(bosses.values())
     for room_index,r in enumerate(data['rooms']):
         asset=templates[r['tileset']]
         if not asset.meta['supported'] or any(x.get('big') for x in asset.meta['ppu']['layers'][:2]):
@@ -67,15 +77,19 @@ def compile_project(data,destination,rom=None,build=None,quest=0):
         bases=[x['tiles'] for x in asset.meta['ppu']['layers'][:2]];colors=bytearray(asset.video[0x10000:0x10200])
         for bank,value in bank_data.items():colors[256+bank*32:256+(bank+1)*32]=value
         out+=struct.pack('<11H',r['width'],r['height'],r['tileset'],*r['spawn'],*bases,asset.meta['ppu']['bgmode'],r.get('collision_mode',0),len(r['actors']),len(r['doors']))
-        out+=asset.video[:0xd400]+colors
+        video=bytearray(asset.video[:0x10000])
+        if plan:
+            for block in plan['blocks']:video[block['vram_word']*2:block['vram_word']*2+len(block['data'])]=block['data']
+        out+=video+colors
         for kind in ('layers','collision'):
             for layer_index,layer in enumerate(('front','back')):
                 values=maps[room_index][layer_index] if kind=='layers' and mixed else r[kind][layer]
                 out+=struct.pack(f'<{len(values)}'+('I' if kind=='layers' and mixed else 'H'),*values)
         for a in r['actors']:
             t=a['type'];word=lambda addr:int.from_bytes(raw[0x8000+(addr&0x7fff):0x8000+(addr&0x7fff)+2],'little')
-            hit=word(0xab00+t*2);bonus=raw[0x8000+((0xa88f+r['tileset'])&0x7fff)]+16*quest
-            out+=struct.pack('<10H',t,a.get('variant',0),a['x'],a['y'],a.get('flags',0),hit&255,hit>>8,min(32767,word(0xac00+t*2)+bonus),word(0xad00+t*2),plan['tile_add'].get(t,0))
+            value=values_for(raw,a,r['tileset'],quest)
+            options=int(a.get('boss_start','direct')=='sequence')|2*int(a.get('boss_end','continue')=='exit')|4*int('hp' in a.get('stats',{}))|8*int('half_width' in a.get('stats',{}))|16*int('half_height' in a.get('stats',{}))
+            out+=struct.pack('<14H',t,a.get('variant',0),a['x'],a['y'],a.get('flags',0),value['half_width'],value['half_height'],value['hp'] or 0,0x26 if t==14 else word(0xad00+t*2),plan['tile_add'].get(t,0) if plan else 0,a.get('stats',{}).get('contact_damage',65535),2 if t>=128 else 1 if t==14 else 0,boss_indices.get(t,0),options)
         for d in r['doors']:
             target=next(i for i,row in enumerate(data['rooms']) if row['id']==d['target'])
             out+=struct.pack('<9H',d['x'],d['y'],d['w'],d['h'],target,d['target_x'],d['target_y'],int(d.get('trigger','up')=='touch'),d.get('target_plane',0))
@@ -113,7 +127,7 @@ class Playtest:
                 index=json.loads((ROOT/'artwork-local/enemy-library/library.json').read_text(encoding='utf-8'))
                 plan=monster_plan(raw,placements,index)
                 # Compiler and runtime must use the same deterministic order.
-                for b in plan['blocks']:s.write({0x13a0+b['slot']*2:b['pointer']&65535})
+                for b in plan['blocks'] if plan else ():s.write({0x13a0+b['slot']*2:b['pointer']&65535})
             s.command('level_project',level)
         except BaseException:self.close();raise
 

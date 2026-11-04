@@ -135,12 +135,20 @@ class Assets:
         from monster_model import definitions
         allowed={m['type'] for m in definitions(raw.read_catalog(),raw.bytes)}
         if include_objects:allowed.update(range(1,0x8e))
+        from level_bosses import profiles
+        bosses={b['controller_variant']:b for b in profiles(raw) if b.get('controller',42)==42}
         pointer=raw.word(0,0xd81b+self.meta['room']*2);special=0
         for n in range(1024):
             at=5*0x8000+((pointer+n*6)&0x7fff);flags,yy,t,var=struct.unpack_from('<HHBB',raw.bytes,at)
             if flags==65535:break
             xx=flags&0xffc;yy&=0xffc
-            if flags&3 or t not in allowed:special+=1;continue
-            if xx<width*8 and yy<256:r['actors'].append(dict(id=f'E-{len(r["actors"]):03d}',type=t,variant=var,x=xx,y=yy,flags=flags))
+            family=flags&3;extra={}
+            if family==1 and include_objects:extra=dict(kind='candle',drop_index=t);t=14
+            elif family==2 and include_objects:
+                extra=dict(kind='event',native_family=2)
+            elif family or t not in allowed:special+=1;continue
+            if t==0x2a and include_objects and var in bosses:t=bosses[var]['type'];var=0;extra=dict(kind='boss',boss_start='sequence',boss_end='continue')
+            if t==0x48 and include_objects and self.meta['room']==17:t=0x82;var=0;extra=dict(kind='boss',boss_start='sequence',boss_end='continue')
+            if 0<t<=0x8d and xx<width*8 and yy<256:r['actors'].append(dict(id=f'E-{len(r["actors"]):03d}',type=t,variant=var,x=xx,y=yy,flags=flags,**extra))
         r['source_note']=f'{special} native Spezial-/Dekorobjekte benötigen noch eigene Editorwerkzeuge.' if special else ''
         return r
