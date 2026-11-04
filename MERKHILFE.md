@@ -4,6 +4,18 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## A04-Abgrund: kein vorzeitiges A03-Bild mehr (04.11.)
+
+Der Fehler aus F6 ist behoben und in beiden Windows-Spielordnern installiert.
+Das Spiel neu starten, damit die neue EXE verwendet wird.
+Beim Sturz setzt das Original bereits während Todesphase 12 den Wiederbeginn
+auf A03. Der HD-Renderer hält jetzt A04 während dieser Phase und des Ausblendens
+fest. Erst beim tatsächlichen Neuladen erscheint A03.
+F6 mit Stillhalten und Rechtsbewegung geprüft: ausgehendes A04 pixelgenau,
+Neustart in A03 korrekt; native Spielzustände mit/ohne HD identisch.
+Grafikpaket bleibt v9. Spielstände, Quellgrafiken und Einstellungen unverändert.
+Sicherung: backup\hd-artwork\2026-11-04-A04-Abgrund.
+
 ## HD-Mond aus A01 übernommen (04.11.)
 
 Aktiv ist jetzt `hd_packs/stage-01-user-grid-v9` in beiden Windows-Spielordnern.

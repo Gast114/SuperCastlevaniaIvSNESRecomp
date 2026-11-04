@@ -1,5 +1,13 @@
 # Arbeitsstand & Übergabe (2026-10-23, lokale KI-Spritekorrektur)
 
+## A04-Pittod aus F6: Phase12 hält ausgehendes Bild (04.11.)
+
+Realer neuer F6/save5.sav SHA57af464eb04bbad76014c033f025c7541a0de1ebf6a348a14c88f27464162a93. Nach etwa32Frames fällt A04/block3 in native Phase12, checkpoint/block2 bereits gesetzt, aber VRAM und Kamera zeigen noch A04. PictureBlock sperrte nur Phase6, deshalb A03-HD sichtbar vor dem Ausblenden. OutgoingPicturePhase() in hd_render.cpp schützt nun12 und6; lastPictureBlock wird während beider Phasen nicht überschrieben.
+
+Neuer tools/test_hd_death_scene.py vergleicht tatsächliche BG1-Bilder gegen A04-Paketebene inklusive Scanline-Helligkeit bis Fade, danach gegen A03. Alter Build rot bei Frame36/Phase12 mit889529 falschen HD-Pixeln. Neuer Build PASS build-lua/hd-death-picture-y5wboz11/report.json: Stillhalten/Rechts, je11sichtbare ausgehende Bildchecks exakt, A03-Neustart,140nativeStates HDoff/on identisch. Breite Regression PASS build-lua/hd-later-stage01-5jz1xgmk/report.json:9Stand/Gehen/Angriff, Wasser/Reload, alle3Tode/Restarts, nativeRaster/WRAM/State identisch. Keine Bilder angesehen.
+
+Release-Lua neu gebaut, EXE SHA a957ca856b0aed482ef9e9634f0125d7aff61a2bceebccfb77150a7aac9380b7 in build-play/game und build installiert (beide vorher ebenfalls gleiche Lua-EXE). Aktives HD-Paket weiter stage-01-user-grid-v9. Spielerprozess lief noch mit altem geladenem Image; Austausch per normalem pending.replace erfolgreich, nicht beendet. Neustart erforderlich. Geschützte Dateien unmittelbar vor/nach Austausch hashgleich. Nutzer erzeugte während Tests F10 neu; deshalb Vorher-Hashliste vor Installation aktualisiert, keine alten Saves zurückgespielt. Backup D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-11-04-A04-Abgrund mit EXEs/HD-Auswahl/Saves/Tests. Audit artwork-local/a04-fall-2026-11-04 und build-lua/a04-fall-probe-gqx7u3h8. Neues F10-Skelettproblem 4:3/16:9 danach separat in Arbeit.
+
 ## V9: A01-HD-Mond für A03/A04/A05 (04.11.)
 
 Nutzer wünscht statt der bisherigen schlechten Mondgrafik den A01-Mond. Quelle Stage01/HD/04_MOND_HD_190x190.png, RGBA-BBox[20,20,170,170]; zugehörige Originalvorlage19x19 hat BBox[2,2,17,17]. Deren15x15-Alpha stimmt exakt mit allen drei späteren nativen Monden überein (71 native Pixel). Daher nur transparente2nativePx-Ränder entfernen, sichtbare150x150->60x60 konvertieren und bei(0,0) in64x64-Canvas registrieren; kein Größen-/Positionswechsel des Spielobjekts.

@@ -98,10 +98,15 @@ bool LevelPictureActive() {
     return g_ram[0x32]==4;
 }
 int lastPictureBlock=-1;
+bool OutgoingPicturePhase() {
+    // Pit deaths enter phase 12 and select the checkpoint before phase 6
+    // fades the picture. Both phases still display the room being left.
+    return g_ram[0x70]==6 || g_ram[0x70]==12;
+}
 int PictureBlock() {
     // Map addresses are reused across rooms. During an exit fade the game
     // can already name the destination while still displaying the old room.
-    return g_ram[0x70]==6 && lastPictureBlock>=0 ? lastPictureBlock : g_ram[0x86];
+    return OutgoingPicturePhase() && lastPictureBlock>=0 ? lastPictureBlock : g_ram[0x86];
 }
 bool SceneActive(Ppu *p=g_ppu) {
     if(pack.block<0)return true;
@@ -1142,7 +1147,7 @@ extern "C" int Cv4HdPresentationScale(void) { Init(); return enabled && (HasArt(
 extern "C" void Cv4HdRenderBegin(Ppu *p) {
     Init();
     if(!LevelPictureActive())lastPictureBlock=-1;
-    else if(g_ram[0x70]!=6)lastPictureBlock=g_ram[0x86];
+    else if(!OutgoingPicturePhase())lastPictureBlock=g_ram[0x86];
     SelectScene(p);
     frameFenceOffset=pack.a02?A02FenceOffset(p):0;
     const auto *character=Cv4CharacterHd();
