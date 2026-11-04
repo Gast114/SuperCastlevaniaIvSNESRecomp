@@ -1,4 +1,4 @@
-"""Back up and install the verified entrance/A02 collection in both player folders."""
+"""Back up and install a verified scene collection in both player folders."""
 import argparse
 import hashlib
 import json
@@ -66,7 +66,7 @@ def install(pack, exe, backup):
         settings = json.loads(settings_path.read_text(encoding='utf-8-sig')) if settings_path.exists() else {}
         if settings_path.exists():
             shutil.copy2(settings_path, saved / settings_path.name)
-        if folder / EXE != exe:
+        if folder / EXE != exe and sha(folder / EXE) != report['exe_sha256']:
             pending = folder / (EXE + '.a02-new')
             shutil.copy2(exe, pending)
             pending.replace(folder / EXE)

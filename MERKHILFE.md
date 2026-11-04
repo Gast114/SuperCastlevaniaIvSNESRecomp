@@ -1000,3 +1000,24 @@ Originale, PSDs, Spielersaves, Tasten und sonstige Einstellungen erhalten.
 Altes Paket bleibt vorhanden. Zusaetzliche Sicherung mit vorheriger Auswahl,
 EXEs, altem und neuem Paket sowie verwendeten Quellen liegt unter:
 `D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-11-03-A03-A04-A05-installation`.
+
+## Saubere Spielebenen und automatische Einzelmotive (04.11.)
+
+Aktiv ist jetzt `stage-01-user-clean-planes-v6` in beiden Windows-Spielordnern.
+Spiel neu starten; F3=A03, F4=A04, F5=A05. Die fehlerhafte Wandkachel-Ersetzung
+aus v5 ist entfernt. A03 kommt als zusammenhaengendes Bild direkt aus deiner
+`A03\HD\Spielebene.png`; dort werden keine Bloecke oder Wandstuecke ersetzt.
+A04/A05 benutzen ebenfalls ihre vollstaendigen `HD\Spielebene.png`. Nur die
+Originalpositionen der Spielbloecke, Einzelstufen und Anschluesse werden mit
+deinen Dateien aus `Stage 01\HD\Gemeinsame-Teile` ergaenzt. Stein-01.png ist
+der normale Block. Beide Block-Treppe-Dateien waren gleich: beim Import wird
+die Gegenrichtung wie besprochen gespiegelt, deine Dateien bleiben unveraendert.
+Die 16:9-Erweiterungen sind schon in den Spielebenen und werden nicht angehaengt.
+Die aktuellen zugeschnittenen PNG-Leinwaende und Positionen bitte beibehalten.
+
+Geprueft: A03 im Spiel exakt wie der angepasste PNG-Export; A04/A05 ausserhalb
+der eingesetzten Motive pixelgleich. Alle drei kompletten Vordergrundbilder
+sind im Spiel gegen die vorbereiteten Bilder verglichen. Gehen, Angriff, Tod,
+Neuladen und Wasseranimation funktionieren; Logik/Kollision unveraendert.
+A05 mit Gehen+Angriff etwa60FPS im Test ohne Ton.
+Sicherung: `D:\Super Castlevania IV Recomp\backup\hd-artwork\2026-11-04-saubere-Spielebenen-v6`.

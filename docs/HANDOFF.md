@@ -1,5 +1,19 @@
 # Arbeitsstand & Übergabe (2026-10-23, lokale KI-Spritekorrektur)
 
+## V6: komplette Nutzer-PNGs, keine Wandkachel-Pools (04.11.)
+
+V5 war visuell fehlerhaft: der aus Paletten2/4 gesammelte 8px-Texturpool ersetzte auch architektonische Wand-/Randkacheln. Die vorherigen Renderer-/State-Tests bewiesen keine Treue zur fertigen PSD. Nutzer hat vorlaeufig Korrekturen gestoppt, danach neue Dateien vorbereitet und am04.11. Einbau durch Datenbereitstellung fortgesetzt. Nur A03 war fertig manuell gesetzt; A04/A05 sind automatische Motive.
+
+Nun aktiv in build und build-play/game: `hd_packs/stage-01-user-clean-planes-v6`, HD an,4x. EXE unveraendert7b001b281ea4d33fd6904d1aa41d03ba86bcff53ae4bfb337aeedd488c31ed63. Keine C++-Aenderung in diesem Schritt. `install_a02_pack.py` ueberspringt EXE-Ersatz bei gleichem SHA.
+
+Builder `tools/hd/build_stage01_later.py` neu: benutzt ausschliesslich die drei `HD/Spielebene.png` (A03 5507x904,A04 4477x903,A05 3444x903), bereits inklusive16:9, linkerArbeitsrand174,Dichte129/32->4, UrsprungHD[-173,0]. Keine PSD-Neuinterpretation, kein Palette2/4-Wandpool, kein native_fallback an Vordergruenden, keinerlei Vordergrund-Tile-Eintraege mehr. Atlas nur16 vorhandene crumbling-OBJ+4Mondkeys. Alte Hintergrundbilder/Wasserphasen bytegleich aus v5.
+
+A03 ohne Aenderung/Autostempel direkt exportiert. A04/A05 nur komplette Normalblock-Quartette[2801,2802;2803,2804], Anschlussquartett[2801,2802;2805,2804], Einzelstufen14/15 und eindeutig bekannte Teilblock-IDs1..4/5/6/8/9/131 auf Palette2. In exakten Mischtiles6/8/9/131 bleiben Mauer-Pixelindices3/4/5 frei; kein globaler Farbschluessel. Die Motive stammen allein aus `Stage 01/HD/Gemeinsame-Teile/{Stein-01,Stufe-Rechts,Stufe-Links,Block-Treppe-Rechts,Block-Treppe-Links}.png`.65x65 bzw32x33 Autorformate. Links/Rechts-Anschluesse identisch; Nutzer antwortete explizit „Eine Richtung spiegeln“. Links wird bei identischen Inputs aus Rechts gespiegelt; Quell-PNGs nicht geaendert.63Normalbloecke+1vollerAnschluss+4Ecken+20Stufen in A04;76Normalbloecke+26Stufen+8Teilgesichter in A05. Quellen/PSDs unveraendert.
+
+Neuer entscheidender Regressionstest `tools/test_hd_prepared_planes.py`: unabh. Normalisierung der echten PNGs, A03 voll exakt, A04/A05 ausserhalb Motiv-Alpha exakt; zusammengesetzte Pack-Plane inklusive Teilgrenzen gleich; native_fallback/Overlay verboten; keine BG1-Atlas-Ersatzkacheln; echte BG1-only-Laufzeitcaptures alle drei exakt wie vorbereitete Gesamtbilder. PASS `build-lua/prepared-plane-l_w2w82v`. Zusaetzlich `test_hd_later_stage01.py`, PASS `build-lua/hd-later-stage01-fv55mxdq`:9Idle/Walk/Attack Raster/WRAM/namedstate an/aus identisch, Wasser/Reload, A02 und3Falltode/Neustarts. A05-Profil4x/CPU2/Right+Y:60.10287FPS,239/239Updates,0Repeats (`fps-profile-3dupt_4w`), ohne Ton.
+
+Audit `artwork-local/stage01-clean-planes-2026-11-04`, final completion.json. Externe Sicherung `D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-11-04-saubere-Spielebenen-v6`: neue8Quell-PNGs, alter/neuerPack, Einstellungen, EXEs und Pruefberichte. Zwei kleine notwendige Motivansichten, keine grossen Screenshotansichten. Keine neuen Bilder generiert. Fremde CMake/Web/Landschaftsarbeit und deren Doku erhalten; nicht committen.
+
 ## A03/A04/A05 HD installiert (03.11.)
 
 Aktive Windows-Kollektion in build und build-play/game: `hd_packs/stage-01-user-a03-a05-v5`, enabled1/scale4/layers31. Beide EXEs aus aktuellem Release. Vorhandene Eingang/A02-Szenen bytegleich kopiert, nicht neu aus alten Rezepten gebaut; manuelle A02-Gargoyle-Korrekturen erhalten.

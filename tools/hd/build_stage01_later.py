@@ -1,362 +1,208 @@
-"""Register finished A03/A04/A05 artwork; preserve source files and existing scenes.
+"""Import complete artist planes and explicitly identified gameplay motifs.
 
-PhotoCraft exports private PSD copies. Background pieces follow decoded native
-map motifs; palette-driven water uses native tile keys, not a host clock.
+The prior collection supplies backgrounds, native water phases and OBJ art.
+No wall texture is inferred, sampled into tiles or replaced by palette.
 """
 import argparse
+import collections
 import hashlib
 import json
 from pathlib import Path
 import shutil
-import subprocess
 import sys
-import zipfile
-
-import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / 'tools'))
+ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0,str(ROOT/'tools'))
 from level_assets import Assets
+from hd_common import load_pack
 from hd_preview import fnv_key
 from hd_tiles import write_pack
-from hd_common import load_pack
 
-SCALE = 4
-DENSITY = 129 / 32
-ORIGINS = {'A03': (346, 346), 'A04': (605, 354), 'A05': (1065, 339)}
-WIDTHS = {'A03': 1280, 'A04': 1024, 'A05': 768}
-# Palette 2 contains the framed blocks and diagonal steps; palette 4 the grey
-# structural trim. Keep partial faces and destructible stone tied to native tiles.
-GROUPS = {
-    'A03': [(1, 4, 608, 95, 97), (2, 1, 268, 97, 0)],
-    'A04': [(1, 2, 417, 63, 161), (2, 3, 508, 33, 128),
-            (3, 3, 508, 16, 112), (4, 2, 326, 112, 0)],
-}
+SCALE=4
+DENSITY=129/32
+LEFT_RESERVE=174
+WIDTHS={'A03':1280,'A04':1024,'A05':768}
+BLOCK_QUAD=(0x2801,0x2802,0x2803,0x2804)
+JUNCTION_QUAD=(0x2801,0x2802,0x2805,0x2804)
 
 
-def sha(p):
-    return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def sha(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def rgba(p):
-    with Image.open(p) as im:
-        return im.convert('RGBA')
+def rgba(path):
+    with Image.open(path) as im:
+        if im.mode!='RGBA':raise ValueError(f'{path}: RGBA PNG required')
+        return im.copy()
 
 
-def joined(paths):
-    parts = [rgba(p) for p in paths]
-    assert len({p.height for p in parts}) == 1
-    im = Image.new('RGBA', (sum(p.width for p in parts), parts[0].height))
-    x = 0
-    for part in parts:
-        im.paste(part, (x, 0)); x += part.width
+def tile_indices(assets,word,base=8192):
+    at=base+(word&1023)*16;rows=[]
+    for y in range(8):
+        a,b=assets.vram[at+y],assets.vram[at+y+8]
+        rows.append([(a>>bit&1)|(a>>(bit+8)&1)<<1|(b>>bit&1)<<2|(b>>(bit+8)&1)<<3 for bit in range(7,-1,-1)])
+    result=np.array(rows,np.uint8)
+    if word&0x4000:result=result[:,::-1]
+    if word&0x8000:result=result[::-1]
+    return result
+
+
+def normalize(plane):
+    ratio=SCALE/DENSITY
+    size=(round(plane.width*ratio),round(plane.height*ratio))
+    return plane.resize(size,Image.Resampling.LANCZOS),round(-LEFT_RESERVE*ratio),0
+
+
+def flip(im,flags):
+    if flags&0x4000:im=ImageOps.mirror(im)
+    if flags&0x8000:im=ImageOps.flip(im)
     return im
 
 
-def leaves(items):
-    for layer in items:
-        yield layer
-        yield from leaves(layer.get('children', []))
+def transformed_quad(quad,flags):
+    a=np.array(quad,np.uint16).reshape(2,2)
+    if flags&0x4000:a=a[:,::-1]
+    if flags&0x8000:a=a[::-1]
+    return tuple(int(w)^flags for w in a.flat)
 
 
-def photo_export(source, audit, stage, hidden):
-    cli = r'C:\Program Files\PhotoCraft\photocraft-cli.exe'
-    info = json.loads(subprocess.check_output([cli, 'info', str(source)]))
-    args = [cli, 'run', str(source)]
-    for layer in leaves(info['layers']):
-        if layer['id'] in hidden and layer['visible']:
-            args += ['--cmd', 'layer.hideLayers', '--params', json.dumps({'layer': layer['id']})]
-    target = audit / (stage + '-foreground.png')
-    log = subprocess.check_output(args + ['--out', str(target)])
-    (audit / (stage + '-export.jsonl')).write_bytes(log)
-    return rgba(target)
+def stamp_objects(base,gx,gy,assets,motifs):
+    """Whole blocks, individual steps and exact partial block patterns only."""
+    room=assets.import_room()
+    words=np.array(room['layers']['front'],np.uint16).reshape(32,room['width'])
+    covered=np.zeros(words.shape,bool)
+    result=base.copy();allowed=np.zeros((base.height,base.width),bool);placements=[]
+    block=motifs['block'].resize((64,64),Image.Resampling.LANCZOS)
+    right=motifs['junction_right'].resize((64,64),Image.Resampling.LANCZOS)
+    left=motifs['junction_left'].resize((64,64),Image.Resampling.LANCZOS)
+    step_right=motifs['step_right'].resize((32,32),Image.Resampling.LANCZOS)
+    step_left=motifs['step_left'].resize((32,32),Image.Resampling.LANCZOS)
+
+    def put(im,x,y,role,signature):
+        px,py=x*4-gx,y*4-gy
+        if px<0 or py<0 or px+im.width>base.width or py+im.height>base.height:
+            raise ValueError('Motif outside supplied complete plane')
+        allowed[py:py+im.height,px:px+im.width]|=np.array(im)[:,:,3]>0
+        result.alpha_composite(im,(px,py))
+        placements.append(dict(x=x,y=y,role=role,signature=signature,width=im.width,height=im.height))
+
+    # Match an entire original quartet. Similar colours elsewhere confer no match.
+    patterns={}
+    for flags in (0,0x4000):
+        patterns[transformed_quad(BLOCK_QUAD,flags)]=(flip(block,flags),'block')
+        patterns[transformed_quad(JUNCTION_QUAD,flags)]=(left if flags else right,'block-stair-junction')
+    for y in range(0,28,2):
+        for x in range(0,room['width'],2):
+            key=tuple(int(w) for w in words[y:y+2,x:x+2].flat)
+            if key not in patterns:continue
+            art,role=patterns[key];put(art,x*8,y*8,role,list(key));covered[y:y+2,x:x+2]=True
+
+    partial_quadrants={1:(0,0),2:(1,0),3:(0,1),4:(1,1),6:(1,0),8:(1,0),9:(1,1),131:(1,1)}
+    for y in range(28):
+        for x in range(room['width']):
+            if covered[y,x]:continue
+            word=int(words[y,x]);ident=word&1023;flags=word&0xc000
+            if word>>10&7!=2:continue
+            if ident==14:
+                im=flip(step_right,flags);role='stair-step-right'
+            elif ident==15:
+                # Retail left steps use a horizontally flipped tile 15.
+                im=flip(ImageOps.mirror(step_left),flags);role='stair-step-left'
+            elif ident==5:
+                im=flip(right.crop((0,32,32,64)),flags);role='junction-corner'
+            elif ident in partial_quadrants:
+                qx,qy=partial_quadrants[ident]
+                im=flip(block.crop((qx*32,qy*32,qx*32+32,qy*32+32)),flags)
+                if ident in (6,8,9,131):
+                    # These exact known mixed tiles include original brick
+                    # indices 3/4/5. Leave those pixels on the complete wall.
+                    mask=~np.isin(tile_indices(assets,word),[0,3,4,5])
+                    a=np.array(im);a[:,:,3]*=mask.repeat(4,0).repeat(4,1);im=Image.fromarray(a)
+                role='partial-block-face'
+            else:continue
+            put(im,x*8,y*8,role,[word]);covered[y,x]=True
+
+    old,new=np.array(base),np.array(result)
+    assert np.array_equal(old[~allowed],new[~allowed]),'Wall pixels changed outside sprite alpha'
+    report=dict(placements=placements,counts=dict(collections.Counter(v['role'] for v in placements)),
+                changed_pixels=int(np.count_nonzero(np.any(old!=new,axis=2))),walls_outside_object_alpha_exact=True)
+    return result,allowed,report
 
 
-def native_map(assets):
-    out = Image.new('RGBA', (512, 256))
-    words = np.zeros((32, 64), np.uint16)
-    for y in range(32):
-        for x in range(64):
-            at = assets.meta['ppu']['layers'][1]['map'] + (x // 32) * 1024 + y * 32 + x % 32
-            word = assets.vram[at & 32767]
-            words[y, x] = word
-            out.paste(assets.tile(word, 'back'), (x*8, y*8))
-    a = np.array(out)
-    a[a[:, :, 3] == 0] = (0, 0, 0, 255)
-    return a, words
+def build(source,prior,output,audit):
+    source,prior,output,audit=[Path(p).resolve() for p in (source,prior,output,audit)]
+    if output.exists() or audit.exists():raise FileExistsError('Use new output and audit directories')
+    audit.mkdir(parents=True);receipts=[]
+    def remember(path):
+        path=Path(path)
+        receipts.append(dict(source=str(path),sha256=sha(path),backup_relative_path=path.relative_to(source).as_posix()))
+        return path
+    shared=source/'HD/Gemeinsame-Teile'
+    paths={'block':'Stein-01.png','step_right':'Stufe-Rechts.png','step_left':'Stufe-Links.png',
+           'junction_right':'Block-Treppe-Rechts.png','junction_left':'Block-Treppe-Links.png'}
+    motifs={k:rgba(remember(shared/v)) for k,v in paths.items()}
+    mirrored=np.array_equal(np.array(motifs['junction_right']),np.array(motifs['junction_left']))
+    if mirrored:
+        # Human authorization 04.11: mirror one direction of the duplicate pair.
+        motifs['junction_left']=ImageOps.mirror(motifs['junction_right'])
+    for key,im in motifs.items():
+        expected=(65,65) if key.startswith('junction') or key=='block' else (32,33)
+        if im.size!=expected:raise ValueError(f'{key}: measured authoring size {expected} required')
+    collection=json.loads((prior/'pack.json').read_text())
+    if not {'entrance','a02','a03','a04','a05'}<=set(collection['scenes']):
+        raise ValueError('Prior collection must contain the verified backgrounds of all five sections')
+    before={str(p.relative_to(prior)):sha(p) for p in prior.rglob('*') if p.is_file()}
+    shutil.copytree(prior,output)
+    report={'junction_left_mirrored_from_right':mirrored,'stages':{}}
+    for stage in ('A03','A04','A05'):
+        src=remember(source/stage/'HD/Spielebene.png');plane=rgba(src)
+        if abs(plane.width-(WIDTHS[stage]*DENSITY+2*LEFT_RESERVE))>2 or plane.height not in (903,904):
+            raise ValueError(f'{stage}: unexpected cropped canvas; registration needs review')
+        base,gx,gy=normalize(plane)
+        a=Assets(ROOT/'artwork-local/level-editor/rooms'/f'{int(stage[1:])-1:02d}')
+        if stage=='A03':
+            painted=base.copy();mask=np.zeros((base.height,base.width),bool)
+            detail=dict(placements=[],counts={},changed_pixels=0,walls_outside_object_alpha_exact=True,complete_artist_plane_exact=True)
+        else:painted,mask,detail=stamp_objects(base,gx,gy,a,motifs)
+        base.save(audit/(stage+'-normalized-source.png'));painted.save(audit/(stage+'-complete.png'))
+        Image.fromarray(mask.astype(np.uint8)*255).save(audit/(stage+'-object-mask.png'))
 
-
-def strip_to_map(original, painted, native, width, height, y, extra_masks=()):
-    """Place native 32px motifs from a source sheet, tolerating its repeat order.
-
-    Larger coherent strips are preferred; only a differing native motif is split.
-    The HD pixels come from the corresponding original-source coordinates.
-    """
-    a = np.array(original.convert('RGB'))
-    xx = np.minimum(((np.arange(width)+.5)*a.shape[1]/width).astype(int), a.shape[1]-1)
-    yy = np.minimum(((np.arange(height)+.5)*a.shape[0]/height).astype(int), a.shape[0]-1)
-    source = (a[yy[:, None], xx[None, :]] >> 3).astype(np.float32)
-    target = (native[y:y+height, :, :3] >> 3).astype(np.float32)
-    art = np.array(painted.resize((width*SCALE, height*SCALE), Image.Resampling.LANCZOS))
-    masks = [np.array(im.resize((width*SCALE, height*SCALE), Image.Resampling.NEAREST)) for im in extra_masks]
-    result = np.zeros((height*SCALE, 512*SCALE, 4), np.uint8)
-    mask_results = [np.zeros_like(result) for _ in masks]
-    placements = []
-
-    def block(x, size):
-        chunk = target[:, x:x+size]
-        values = cv2.matchTemplate(source, chunk, cv2.TM_SQDIFF)
-        _, _, pos, _ = cv2.minMaxLoc(values)
-        sx = pos[0]
-        error = float(np.mean((source[:, sx:sx+size]-chunk)**2))
-        if size > 8 and error > .30:
-            block(x, size//2); block(x+size//2, size//2)
-            return
-        result[:, x*SCALE:(x+size)*SCALE] = art[:, sx*SCALE:(sx+size)*SCALE]
-        for out, mask in zip(mask_results, masks):
-            out[:, x*SCALE:(x+size)*SCALE] = mask[:, sx*SCALE:(sx+size)*SCALE]
-        placements.append(dict(x=x, width=size, source_x=sx, original_colour_mse=error))
-
-    for x in range(0, 512, 32):
-        block(x, 32)
-    return result, mask_results, placements
-
-
-def build(source, prior, output, audit):
-    source, prior, output, audit = map(lambda p: Path(p).resolve(), (source, prior, output, audit))
-    if output.exists() or audit.exists():
-        raise FileExistsError('Use new output and audit directories')
-    audit.mkdir(parents=True)
-    receipts = []
-
-    def remember(p):
-        p = Path(p)
-        item = dict(source=str(p.resolve()), sha256=sha(p), size=p.stat().st_size,
-                    backup_relative_path=p.resolve().relative_to(source).as_posix())
-        if item not in receipts: receipts.append(item)
-        return p
-
-    background_zip = remember(source / 'Hintergrund-HD-Workflow-2026-11-02/Stage01_A03_A04_HD.zip')
-    backgrounds = audit / 'backgrounds'
-    with zipfile.ZipFile(background_zip) as z:
-        for name in z.namelist():
-            p = Path(name)
-            if len(p.parts) == 2 and p.parts[0] in ('A03', 'A04') and p.suffix == '.png':
-                dst = backgrounds / p
-                dst.parent.mkdir(parents=True, exist_ok=True)
-                dst.write_bytes(z.read(name))
-    assets = {}; rooms = {}; composites = {}; fg = {}; report = {}
-    for stage in ('A03', 'A04', 'A05'):
-        src = remember(source / stage / (stage+'.psd'))
-        copy = audit / (stage+'-source.psd'); shutil.copy2(src, copy)
-        assets[stage] = Assets(ROOT / 'artwork-local/level-editor/rooms' / f'{int(stage[1:])-1:02d}')
-        rooms[stage] = assets[stage].import_room()
-        if stage != 'A05':
-            composites[stage] = photo_export(copy, audit, stage, {40, 43, 5} if stage == 'A03' else {2, 3})
-            x, y = ORIGINS[stage]
-            if stage == 'A03':
-                core = composites[stage].crop((x, y, x+WIDTHS[stage]*DENSITY, y+903))
-            else:
-                # Source cut 03 starts 32 native pixels below the other cuts.
-                # The PSD's large pixel layer is still SD; preserve only its
-                # separately placed HD stones/stairs above the finished HD cuts.
-                core = Image.new('RGBA', (4128, 903))
-                for n, px, py in [(1,0,0),(2,1032,0),(3,2193,129),(4,3225,0)]:
-                    piece = rgba(remember(source/stage/'HD'/f'A04_{n:02d}_HD_background.png'))
-                    core.alpha_composite(piece,(px,py))
-                core.alpha_composite(composites[stage].crop((x,y,x+4128,y+903)))
-            fg[stage] = core.resize((WIDTHS[stage]*4, 896), Image.Resampling.LANCZOS)
-        else:
-            parts = [remember(source / stage / 'HD' / f'A05_{n:02d}_HD_background.png') for n in range(1, 5)]
-            fg[stage] = joined(parts).resize((WIDTHS[stage]*4, 896), Image.Resampling.LANCZOS)
-
-    # Native hashes identify reusable hand-painted gameplay stone/stair tiles.
-    pool = {}; pool_scores = {}
-    for stage in ('A03', 'A04'):
-        room, a = rooms[stage], assets[stage]
-        info = json.loads(subprocess.check_output([r'C:\Program Files\PhotoCraft\photocraft-cli.exe', 'info', str(audit/(stage+'-source.psd'))]))
-        # Prefer actual hand-placed stone/step layers over generative fill that
-        # deliberately removed those motifs. Bounds are in original PSD pixels.
-        placed = []
-        def manual_bounds(items, inside_steps=False):
-            for layer in items:
-                steps=inside_steps or layer['name'].startswith('Treppe')
-                if layer.get('children'):
-                    manual_bounds(layer['children'],steps)
-                elif layer.get('visible') and layer.get('bounds') and (steps or layer['name'].startswith(('Stein','Layer ')) and layer['id']!=3):
-                    placed.append(layer['bounds'])
-        manual_bounds(info['layers'])
-        ox,oy=ORIGINS[stage]
-        for yy in range(28):
-            for xx in range(room['width']):
-                word = room['layers']['front'][yy*room['width']+xx]
-                if word >> 10 & 7 not in (2,4) or not np.array(a.tile(word))[:,:,3].any(): continue
-                canonical = word & 0x3fff
-                cx,cy=ox+(xx*8+4)*DENSITY,oy+(yy*8+4)*DENSITY
-                score=int(any(x<=cx<x+w and y<=cy<y+h for x,y,w,h in placed))
-                if canonical in pool and score<=pool_scores[canonical]: continue
-                tile = np.array(fg[stage].crop((xx*32, yy*32, xx*32+32, yy*32+32)))
-                if word & 0x4000: tile = tile[:, ::-1]
-                if word & 0x8000: tile = tile[::-1]
-                # The native silhouette also handles all partial stair faces.
-                mask=np.array(a.tile(canonical))[:,:,3].repeat(4,0).repeat(4,1)
-                tile[:,:,3]=np.minimum(tile[:,:,3],mask)
-                pool[canonical] = tile.copy()
-                pool_scores[canonical]=score
-
-    shutil.copytree(prior, output)
-    collection = json.loads((output/'pack.json').read_text())
-    assert collection['scenes'] == ['entrance', 'a02']
-    entrance = json.loads((prior/'entrance/pack.json').read_text())
-    _, _, entrance_tiles = load_pack(prior/'entrance')
-    shared_keys=entrance.get('shared_objects',[])
-    bg_cache = {}
-    for stage in ('A03', 'A04', 'A05'):
-        folder = output / stage.lower(); folder.mkdir()
-        a, room = assets[stage], rooms[stage]
-        original_fg = fg[stage].copy()
-        core = np.array(original_fg)
-        tiles = {}
-        # Reuse the already installed crumbling-stone animation rather than
-        # losing shared object HD when entering one of the newly authored rooms.
-        for key in shared_keys:
-            tiles[key]=np.array(Image.fromarray(entrance_tiles[key]).resize((32,32),Image.Resampling.LANCZOS))
-        dynamic_cells = []
-        for yy in range(28):
-            for xx in range(room['width']):
-                word = room['layers']['front'][yy*room['width']+xx]
-                if word >> 10 & 7 not in (2,4) or not np.array(a.tile(word))[:,:,3].any(): continue
-                canonical = word & 0x3fff
-                tile = pool[canonical]
-                address = (a.meta['ppu']['layers'][0]['tiles']+(word & 1023)*16)&32767
-                # Decode canonical unflipped pixels for the native hash.
-                pal_base=(word>>10&7)*16
-                pal = list(a.colors[pal_base:pal_base+16])
-                # Hash raw colour indices rather than reverse-matching colours.
-                data = a.vram; px = []
-                for row in range(8):
-                    p01, p23 = data[(address+row)&32767], data[(address+row+8)&32767]
-                    for bit in range(7, -1, -1):
-                        px.append((p01>>bit&1)|(p01>>(bit+8)&1)<<1|(p23>>bit&1)<<2|(p23>>(bit+8)&1)<<3)
-                key = fnv_key(4, px, pal)
-                tiles.setdefault(key, tile)
-                core[yy*32:yy*32+32, xx*32:xx*32+32] = 0
-                dynamic_cells.append([xx*8, yy*8])
-
-        # Moon: original OBJ remains responsible for position, visibility and priority.
-        moon = rgba(backgrounds / ('A03' if stage == 'A05' else stage) / 'Mond_HD.png')
-        assert moon.size == (60, 60)
-        moon_canvas = Image.new('RGBA', (64, 64)); moon_canvas.paste(moon, (0, 0))
+        folder=output/stage.lower();meta=json.loads((folder/'pack.json').read_text())
+        backgrounds=[r for r in meta['regions'] if r['layer']!=0]
+        # Remove ALL inferred foreground tile replacements. Keep only real OBJ art.
+        _,_,old_tiles=load_pack(folder);keep=set(meta.get('shared_objects',[]))
         for cy in range(2):
             for cx in range(2):
-                addr = 0x6000+(170+cx+cy*16)*16
-                px = []
-                for row in range(8):
-                    p01, p23 = a.vram[addr+row], a.vram[addr+row+8]
-                    for bit in range(7, -1, -1):
-                        px.append((p01>>bit&1)|(p01>>(bit+8)&1)<<1|(p23>>bit&1)<<2|(p23>>(bit+8)&1)<<3)
-                tiles[fnv_key(4, px, list(a.colors[240:256]))] = np.array(moon_canvas.crop((cx*32, cy*32, cx*32+32, cy*32+32)))
-        write_pack(tiles, folder, 4)
-        meta = json.loads((folder/'pack.json').read_text())
-        meta.update(scene_block=int(stage[1:])-1, native_maps=[0,4096], requires=['scene-regions-v1', 'native-fallback-v1'])
-        meta['shared_objects']=shared_keys
-        meta['requires'].append('shared-objects-v1')
-        regions = []
-
-        def emit(im, x, y, layer, **extra):
-            # Work at 4x; pad only right/bottom, preserve exact subpixel placement.
-            im = im.convert('RGBA')
-            canvas = Image.new('RGBA', ((im.width+3)//4*4, (im.height+3)//4*4)); canvas.paste(im, (0, 0))
-            for left in range(0, canvas.width, 4096):
-                part = canvas.crop((left, 0, min(canvas.width,left+4096),canvas.height))
-                name = f'region_{len(regions):02d}.png'; part.save(folder/name)
-                regions.append(dict(image=name, layer=layer, x=x+left//4, y=y,
-                                    coordinates='world' if layer==0 else 'map', wrap_x=0 if layer==0 else 512,
-                                    wrap_y=0 if layer==0 else 512, modes=[1], **extra))
-
-        # Keep artist-authored 16:9 margins, but never include PSD reference layers.
-        lefts = list((source/stage/'HD/16x9').glob('*ERWEITERUNG_LINKS*.png'))
-        rights = list((source/stage/'HD/16x9').glob('*ERWEITERUNG_RECHTS*.png'))
-        if stage=='A03':
-            left=composites[stage].crop((172,346,346,1249)).resize((172,896),Image.Resampling.LANCZOS)
-            right=composites[stage].crop((5506,346,5680,1249)).resize((172,896),Image.Resampling.LANCZOS)
-        else:
-            left = rgba(remember(lefts[0])).resize((172,896),Image.Resampling.LANCZOS)
-            right = rgba(remember(rights[0])).resize((172,896),Image.Resampling.LANCZOS)
-        full = Image.new('RGBA',(core.shape[1]+344,896)); full.paste(left,(0,0));full.paste(Image.fromarray(core),(172,0));full.paste(right,(172+core.shape[1],0))
-        emit(full,-43,0,0,native_fallback=1)
-
-        source_stage = 'A03' if stage == 'A05' else stage
-        if source_stage not in bg_cache:
-            native, words = native_map(assets[source_stage])
-            background = np.repeat(np.repeat(native,4,axis=0),4,axis=1)
-            water_mask = np.zeros(background.shape[:2],bool)
-            placements = []
-            for group, count, nw, nh, y in GROUPS[source_stage]:
-                names = [f'Hintergrund-{group:02d} ({n})' for n in range(1,count+1)] if count>1 else [f'Hintergrund-{group:02d}']
-                refs = [remember(source/source_stage/'Hintergrund'/(name+'.png')) for name in names]
-                hd_paths = [backgrounds/source_stage/(name+'_HD.png') for name in names]
-                for ref, hdpath in zip(refs, hd_paths):
-                    assert rgba(ref).size == rgba(hdpath).size
-                extra = [joined([backgrounds/source_stage/(name+'_Wasser_HD.png') for name in names])] if source_stage=='A04' and group==2 else []
-                art, masks, matched = strip_to_map(joined(refs),joined(hd_paths),native,nw,nh,y,extra)
-                background[y*4:(y+nh)*4] = art
-                if masks: water_mask[y*4:(y+nh)*4] = masks[0][:,:,3]>0
-                placements.append(dict(group=group, source_native_size=[nw,nh], y=y, pieces=matched))
-            bg_cache[source_stage] = (background,native,words,water_mask,placements)
-        background,native,words,water_mask,placements = bg_cache[source_stage]
-        if stage == 'A04':
-            # Three palette states affect original ripple indices 3/4/5 only.
-            indices = np.zeros((256,512),np.uint8)
-            for yy in range(32):
-                for xx in range(64):
-                    word = int(words[yy,xx])
-                    if word>>10&7 != 6: continue
-                    addr = 8192+(word&1023)*16; raw=[]
-                    for row in range(8):
-                        p01,p23=a.vram[addr+row],a.vram[addr+row+8]
-                        for bit in range(7,-1,-1):raw.append((p01>>bit&1)|(p01>>(bit+8)&1)<<1|(p23>>bit&1)<<2|(p23>>(bit+8)&1)<<3)
-                    block = np.array(raw,np.uint8).reshape(8,8)
-                    if word&0x4000:block=block[:,::-1]
-                    if word&0x8000:block=block[::-1]
-                    indices[yy*8:yy*8+8,xx*8:xx*8+8]=block
-            probe_word=int(words[18,16]);probe=8192+(probe_word&1023)*16
-            probe_px=[]
-            for row in range(8):
-                p01,p23=a.vram[probe+row],a.vram[probe+row+8]
-                for bit in range(7,-1,-1):probe_px.append((p01>>bit&1)|(p01>>(bit+8)&1)<<1|(p23>>bit&1)<<2|(p23>>(bit+8)&1)<<3)
-            pal=list(a.colors[96:112]); cycling=np.array(pal[3:6]);index4=indices.repeat(4,0).repeat(4,1)
-            expand=lambda c:np.array([(c&31)*255/31,((c>>5)&31)*255/31,((c>>10)&31)*255/31])
-            changed=[]
-            for phase in range(3):
-                rotated=np.roll(cycling,phase);phase_pal=pal.copy();phase_pal[3:6]=[int(v) for v in rotated]
-                painted=background.copy()
-                for n in range(3):
-                    mask=(index4==n+3)&water_mask
-                    delta=expand(int(rotated[n]))-expand(int(cycling[n]))
-                    painted[:,:,:3][mask]=np.clip(background[:,:,:3][mask].astype(float)+delta*.85,0,255).astype(np.uint8)
-                assert np.array_equal(painted[~water_mask],background[~water_mask])
-                changed.append(int(np.count_nonzero(np.any(painted!=background,axis=2))))
-                emit(Image.fromarray(painted),0,0,1,source_palette=96,select_address=probe,select_keys=[fnv_key(4,probe_px,phase_pal)])
-            report['water'] = dict(probe_address=probe, changed_hd_pixels=changed, banks_unchanged=True, clock='native CGRAM key')
-        emit(Image.fromarray(background),0,0,1)
-        meta['regions']=regions;(folder/'pack.json').write_text(json.dumps(meta,indent=2))
-        collection['scenes'].append(stage.lower())
-        report[stage]=dict(dynamic_cells=dynamic_cells,tiles=len(tiles),regions=len(regions),background_source=source_stage,background_registration=placements)
-    collection['name']='Stage 01 HD entrance + A02 + A03 + A04 + A05'
+                px=tile_indices(a,170+cx+cy*16,0x6000).ravel().tolist()
+                keep.add(fnv_key(4,px,list(a.colors[240:256])))
+        write_pack({k:old_tiles[k] for k in keep},folder,4)
+        atlas=json.loads((folder/'pack.json').read_text())
+        meta['tiles']=atlas['tiles'];meta['requires']=['scene-regions-v1','shared-objects-v1']
+        px,py=gx%4,gy%4
+        canvas=Image.new('RGBA',((px+painted.width+3)//4*4,(py+painted.height+3)//4*4))
+        canvas.paste(painted,(px,py));regions=[]
+        for x in range(0,canvas.width,4096):
+            name=f'foreground_{x//4096:02d}.png'
+            canvas.crop((x,0,min(canvas.width,x+4096),canvas.height)).save(folder/name)
+            regions.append(dict(image=name,layer=0,x=gx//4+x//4,y=gy//4,coordinates='world',wrap_x=0,wrap_y=0,modes=[1]))
+        meta['regions']=regions+backgrounds
+        (folder/'pack.json').write_text(json.dumps(meta,indent=2))
+        assert all(sha(folder/r['image'])==sha(prior/stage.lower()/r['image']) for r in backgrounds)
+        report['stages'][stage]=dict(source_size=list(plane.size),registered_origin_hd=[gx,gy],normalized_size=list(base.size),
+                                  foreground_chunks=len(regions),background_images_unchanged=True,foreground_tile_replacements=0,**detail)
+    assert all(sha(p['source'])==p['sha256'] for p in receipts),'Source changed during import'
+    assert before=={str(p.relative_to(prior)):sha(p) for p in prior.rglob('*') if p.is_file()},'Prior pack changed'
+    collection['name']='Stage 01 HD: complete artist planes and explicit gameplay motifs'
     (output/'pack.json').write_text(json.dumps(collection,indent=2))
-    for item in receipts:
-        if sha(item['source'])!=item['sha256']:raise RuntimeError('Source changed during import: '+item['source'])
-    receipt=dict(art_scale=4,presentation_scale=4,sources=receipts,builder_sha256=sha(__file__),
-                 preserved_existing_collection=str(prior),report=report,source_files_unchanged=True)
-    (output/'import.json').write_text(json.dumps(receipt,indent=2),encoding='utf-8')
-    (audit/'report.json').write_text(json.dumps(report,indent=2))
-    print(json.dumps(dict(output=str(output),sources=len(receipts),scenes=collection['scenes'],water=report.get('water'))))
+    receipt=dict(art_scale=4,presentation_scale=4,sources=receipts,builder_sha256=sha(__file__),preserved_existing_collection=str(prior),
+                 prior_sha256=before,report=report,source_files_unchanged=True)
+    (output/'import.json').write_text(json.dumps(receipt,indent=2));(audit/'report.json').write_text(json.dumps(report,indent=2))
+    print(json.dumps(dict(output=str(output),mirrored_left=mirrored,stages={s:v['counts'] for s,v in report['stages'].items()})))
 
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('source','prior','out','audit'):p.add_argument('--'+name,type=Path,required=True)
-    args=p.parse_args();build(args.source,args.prior,args.out,args.audit)
+    a=p.parse_args();build(a.source,a.prior,a.out,a.audit)
