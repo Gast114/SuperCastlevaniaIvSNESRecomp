@@ -27,6 +27,15 @@ def read_rgba(path, size):
         return image.copy()
 
 
+def moon_from_a01(image, spec):
+    """Keep the same 15x15 visible moon, removing only A01's 2px native border."""
+    if list(image.size)!=spec['source_size'] or list(image.getbbox() or ())!=spec['source_crop']:
+        raise ValueError('A01 moon canvas/border changed; registration needs review')
+    canvas=Image.new('RGBA',tuple(n*4 for n in spec['native_size']))
+    canvas.paste(image.crop(spec['source_crop']).resize((60,60),Image.Resampling.LANCZOS),(0,0))
+    return canvas
+
+
 def register_plane(image, spec, recipe):
     """Each authored panel and both margins have exact registered endpoints."""
     scale = 4
@@ -75,6 +84,8 @@ def prepare(source, output, recipe_path=RECIPE):
         planes[stage] = load(f'{stage}/HD/Spielebene.png', spec['source_size'])
     for name, spec in recipe['motifs'].items():
         motifs[name] = load(f'HD/Gemeinsame-Teile/{name}', spec['source_size'])
+    moon=load(recipe['moon']['source'],recipe['moon']['source_size'])
+    moon=moon_from_a01(moon,recipe['moon'])
     output.mkdir(parents=True)
     manifest = dict(version=1, kind='registered-stage01-grid', export_scale=4,
                     recipe_sha256=sha(recipe_path), sources=sources, planes={}, motifs={})
@@ -104,6 +115,10 @@ def prepare(source, output, recipe_path=RECIPE):
         result.save(path)
         manifest['motifs'][name] = dict(image=relative, native_size=spec['native_size'],
             source_scale=4, anchor_native=[0, 0], method=method, initial_sha256=sha(path))
+    relative='HD/Gemeinsame-Teile/Mond.png'
+    moon.save(output/relative)
+    manifest['moon']=dict(image=relative,native_size=[16,16],source_scale=4,
+                          anchor_native=[0,0],source='A01 HD moon',initial_sha256=sha(output/relative))
     assert all(sha(item['source']) == item['sha256'] for item in sources), 'Source modified'
     (output / 'raster.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding='utf-8')
     (output / 'LIES_MICH.txt').write_text(
@@ -117,6 +132,7 @@ def prepare(source, output, recipe_path=RECIPE):
         'Separate Steine und Stufen werden beim Packbau fuer A03, A04 und A05\n'
         'an ihren Originalpositionen ergaenzt. Spielebene.png allein ist deshalb\n'
         'keine vollstaendige Vorschau aller Spielbloecke.\n'
+        'Mond.png uebernimmt den HD-Mond aus A01 auf einer 64x64-Canvas.\n'
         'A03: eine untere Ueberstandszeile ausserhalb der 903px-Originalhoehe\n'
         'ist im Export entfallen (175 sichtbare Pixel, nur am Rand).\n\n'
         'Hier kannst du weiterarbeiten. PNGs beim Import nicht erneut skalieren.\n'

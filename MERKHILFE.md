@@ -4,6 +4,19 @@ Hier stehen kurze Anleitungen für dich.
 Ich ergänze diese Datei, wenn neue wichtige Hinweise dazukommen.
 Stand: 27. Oktober 2026.
 
+## HD-Mond aus A01 übernommen (04.11.)
+
+Aktiv ist jetzt `hd_packs/stage-01-user-grid-v9` in beiden Windows-Spielordnern.
+Das Spiel neu starten. A03, A04 und A05 verwenden den HD-Mond aus A01.
+Die Quelle `HD\04_MOND_HD_190x190.png` bleibt unverändert.
+Neue gemeinsame 4×-Fassung: Exporte-4x\HD\Gemeinsame-Teile\Mond.png.
+Die 20 Pixel transparenten Quellränder wurden entfernt; das sichtbare Motiv
+bleibt 15×15 Originalpixel groß, also 60×60 HD-Pixel in einer 64×64-Canvas.
+Position, Bewegung und Sichtbarkeit stammen weiterhin vom ursprünglichen
+Spielobjekt. Die anderen Grafiken, Spielstände und EXE sind unverändert.
+Bildvergleich in allen drei Abschnitten beim Stehen und Gehen bestanden.
+Sicherung: backup\hd-artwork\2026-11-04-A01-Mond-v9.
+
 ## A03: fehlende Steine und Stufen ergänzt (04.11.)
 
 Aktiv ist jetzt `hd_packs/stage-01-user-grid-v8` in beiden Windows-Spielordnern.

@@ -8,11 +8,22 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'hd'))
-from prepare_stage01_grid import register_plane
+from prepare_stage01_grid import register_plane, moon_from_a01
 from build_stage01_later import grid_asset
 
 
 class GridTests(unittest.TestCase):
+    def test_a01_moon_border_is_removed_without_enlarging_visible_moon(self):
+        image=Image.new('RGBA',(190,190))
+        image.paste((120,160,200,255),(20,20,170,170))
+        spec=dict(source_size=[190,190],source_crop=[20,20,170,170],native_size=[16,16])
+        result=moon_from_a01(image,spec)
+        self.assertEqual(result.size,(64,64))
+        self.assertEqual(result.getbbox(),(0,0,60,60))
+        self.assertEqual(result.getpixel((30,30)),(120,160,200,255))
+        image.putpixel((0,0),(255,0,0,255))
+        with self.assertRaises(ValueError):moon_from_a01(image,spec)
+
     def test_panel_endpoints_and_bottom_overhang(self):
         # Unequal authored widths must still land on the exact native grid.
         image = Image.new('RGBA', (35, 10), (90, 120, 150, 255))

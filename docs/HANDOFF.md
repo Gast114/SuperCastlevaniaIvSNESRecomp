@@ -1,5 +1,15 @@
 # Arbeitsstand & Übergabe (2026-10-23, lokale KI-Spritekorrektur)
 
+## V9: A01-HD-Mond für A03/A04/A05 (04.11.)
+
+Nutzer wünscht statt der bisherigen schlechten Mondgrafik den A01-Mond. Quelle Stage01/HD/04_MOND_HD_190x190.png, RGBA-BBox[20,20,170,170]; zugehörige Originalvorlage19x19 hat BBox[2,2,17,17]. Deren15x15-Alpha stimmt exakt mit allen drei späteren nativen Monden überein (71 native Pixel). Daher nur transparente2nativePx-Ränder entfernen, sichtbare150x150->60x60 konvertieren und bei(0,0) in64x64-Canvas registrieren; kein Größen-/Positionswechsel des Spielobjekts.
+
+Neue bearbeitbare Quelle Exporte-4x/HD/Gemeinsame-Teile/Mond.png, top-level moon in raster.json mit source_scale4/native_size[16,16]/anchor[0,0]. Original A01-PNG unverändert. Vorbereitung/Rezept um dauerhaft wiederholbare Moon-Registrierung ergänzt; vorhandene4x-Spielebenen und5Bauteile nicht neu gerechnet. raster.json vor Ergänzung im Audit/Backup erhalten. Builder überschreibt nur die4Mond-Atlasteile je Szene, Auswahl per tatsächlichem VRAM/CGRAM-Schlüssel; Position/Timing/Priorität bleiben native OBJ. A01 selbst unverändert.
+
+tools/test_hd_grid.py jetzt4Tests inklusive Mondrand/Footprint und Ablehnung veränderter Ränder. Neuer tools/test_hd_moon.py PASS build-lua/hd-moon-p084atzz/report.json: alle3zusammengesetzten Atlasmonde exakt zu unabhängiger A01-Konvertierung; Live3Abschnitte mal Stand/60FramesRight, jeweils1136 geänderte HD-Pixel nur innerhalb nativer Mond-OAM-Bounds, native Screenshots alt/neu identisch. Test isoliert OBJs mit layers16, da im F3-Kamerastand eine Wand den Mond verdeckt. Keine Bilder angesehen. Gesamter Dateivergleich v8->v9: nur import.json und a03/a04/a05/atlas_000.png verändert; alle übrigen Dateien bytegleich, auch Vordergrund/Steine/Wasser/Hintergründe.
+
+Aktiv in build und build-play/game `hd_packs/stage-01-user-grid-v9`, enabled1/scale4/layers31. EXE unverändert; Installer bestätigt geschützte Spielstände/Konfiguration unverändert. Backup D:/Super Castlevania IV Recomp/backup/hd-artwork/2026-11-04-A01-Mond-v9 enthält vorige HD-Auswahl/EXEs,10Importquellen, alten Rastermanifeststand, Original-A01-Mond und Testbericht. Audit artwork-local/stage01-a01-moon-2026-11-04. Keine Runtime-/Performanceänderung und keine Bildgenerierung.
+
 ## V8: A03-Steine und Treppen wieder vollständig (04.11.)
 
 Nutzer meldete fehlende Steine in A03. Ursache: build_stage01_later.py nahm A03 seit v6 ausdrücklich von stamp_objects aus, aufgrund falscher Annahme, alle separaten Spielblöcke seien bereits im vollständigen Künstler-PNG enthalten. V7 übernahm dies. Der vorherige Bildtest verlangte sogar A03==Wandquelle und prüfte damit die falsche Vollständigkeitsannahme. Jetzt stamp_objects für alle drei Abschnitte; weiterhin nur exakte native Block-/Treppensignaturen, keine allgemeinen Mauer-Kachelpools.

@@ -4,6 +4,12 @@
   "margin_native": 43,
   "source_margin": 174,
   "source_height": 903,
+  "moon": {
+    "source": "HD/04_MOND_HD_190x190.png",
+    "source_size": [190, 190],
+    "source_crop": [20, 20, 170, 170],
+    "native_size": [16, 16]
+  },
   "stages": {
     "A03": {"source_size": [5507, 904], "source_panel_widths": [1032, 1032, 1161, 902, 1032], "native_panel_widths": [256, 256, 288, 224, 256]},
     "A04": {"source_size": [4477, 903], "source_panel_widths": [1032, 1161, 1032, 903], "native_panel_widths": [256, 288, 256, 224]},

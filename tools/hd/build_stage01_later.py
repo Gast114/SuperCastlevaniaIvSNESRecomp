@@ -184,12 +184,16 @@ def build(source,prior,output,audit):
     for key,im in motifs.items():
         expected=((64,64) if key.startswith('junction') or key=='block' else (32,32)) if grid else ((65,65) if key.startswith('junction') or key=='block' else (32,33))
         if im.size!=expected:raise ValueError(f'{key}: measured authoring size {expected} required')
+    moon=None
+    if grid and 'moon' in grid:
+        if grid['moon'].get('anchor_native')!=[0,0]:raise ValueError('Unexpected moon anchor')
+        path,moon=grid_asset(source,grid['moon'],(16,16));remember(path)
     collection=json.loads((prior/'pack.json').read_text())
     if not {'entrance','a02','a03','a04','a05'}<=set(collection['scenes']):
         raise ValueError('Prior collection must contain the verified backgrounds of all five sections')
     before={str(p.relative_to(prior)):sha(p) for p in prior.rglob('*') if p.is_file()}
     shutil.copytree(prior,output)
-    report={'junction_left_mirrored_from_right':mirrored,'registered_grid':bool(grid),'stages':{}}
+    report={'junction_left_mirrored_from_right':mirrored,'registered_grid':bool(grid),'moon_from_explicit_source':moon is not None,'stages':{}}
     for stage in ('A03','A04','A05'):
         if grid:
             spec=grid['planes'][stage]
@@ -211,12 +215,13 @@ def build(source,prior,output,audit):
         folder=output/stage.lower();meta=json.loads((folder/'pack.json').read_text())
         backgrounds=[r for r in meta['regions'] if r['layer']!=0]
         # Remove ALL inferred foreground tile replacements. Keep only real OBJ art.
-        _,_,old_tiles=load_pack(folder);keep=set(meta.get('shared_objects',[]))
+        _,_,old_tiles=load_pack(folder);keep=set(meta.get('shared_objects',[]));moon_tiles={}
         for cy in range(2):
             for cx in range(2):
                 px=tile_indices(a,170+cx+cy*16,0x6000).ravel().tolist()
-                keep.add(fnv_key(4,px,list(a.colors[240:256])))
-        write_pack({k:old_tiles[k] for k in keep},folder,4)
+                key=fnv_key(4,px,list(a.colors[240:256]));keep.add(key)
+                if moon is not None:moon_tiles[key]=np.array(moon.crop((cx*32,cy*32,cx*32+32,cy*32+32)))
+        write_pack({**{k:old_tiles[k] for k in keep},**moon_tiles},folder,4)
         atlas=json.loads((folder/'pack.json').read_text())
         meta['tiles']=atlas['tiles'];meta['requires']=['scene-regions-v1','shared-objects-v1']
         px,py=gx%4,gy%4
