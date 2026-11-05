@@ -256,6 +256,7 @@ void GameDrawPpuFrame(void)
      * rather than mixing new actor RAM with the previous field's objects. */
     Cv4LevelBeforeDraw(g_ppu);
     if(Cv4EnemyWorkshop())Cv4EnemyBegin(g_ppu,g_ram);
+    Cv4LevelSprites(g_ppu);
     Cv4HdRenderBegin(g_ppu);
     Cv4LevelTrack(g_ppu);
     Cv4WorkshopCaptureBegin(g_ppu,g_ram);

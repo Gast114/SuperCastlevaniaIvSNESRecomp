@@ -15,6 +15,13 @@ REVISION=5
 RANGES=((0x580,0x940),(0x1200,0x80),(0x13c0,0x30),(0x1e00,0x200))
 STATE_BYTES=sum(size for _,size in RANGES)
 
+def arena_floor(room,actor):
+    layer='front' if actor.get('flags',0)&0x8000 else 'back';column=min(room['width']-1,actor['x']//8)
+    for y in range(actor['y']//8,room['height']):
+        value=room['collision'][layer][y*room['width']+column]
+        if value and value!=65535:return y*8
+    return max(64,min(room['height']*8-8,actor['y']+96))
+
 def preview_from_template(payload,cache):
     t,bx,by,slot,body=struct.unpack_from('<5H',payload)
     path=cache/f'{t:02x}-group.png'

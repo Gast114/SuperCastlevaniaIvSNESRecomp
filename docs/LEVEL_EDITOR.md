@@ -205,6 +205,17 @@ Objekt um einen Pixel, Umschalt + Pfeiltaste um acht. Strg+C / Strg+V kopiert di
 Figur einschließlich Name und eigener Werte; anschließend in die Karte klicken.
 Auch **Duplizieren** links kopiert eine ausgewählte Figur samt eigenen Werten.
 
+Ein Raum kann bis zu **4096 Figuren** enthalten. Ihre Grafiken und Paletten
+liegen beim eigenen Spieltest getrennt von der Levelgrafik; verschiedene
+Gegnerfamilien teilen sich nicht mehr elf Grafikseiten für das gesamte Projekt.
+Die Original-KI hat weiterhin **37 aktive Objektplätze**, einschließlich
+Geschossen, Hilfsteilen und dynamischen Objekten. Entfernte Platzierungen
+belegen diese Plätze nicht dauerhaft: Lebende Gegner werden vor dem nativen
+Entfernen ausgelagert und beim Zurückgehen mit ihrem Zustand fortgesetzt.
+Sind alle Plätze belegt, warten weitere Platzierungen auf einen freien Platz.
+Damit sind viele Figuren im Raum möglich, aber keine unbegrenzt große
+gleichzeitig aktive Gruppe. Native OAM-Sichtbarkeits- und Blinkregeln bleiben erhalten.
+
 **Werte / KI / Boss…** öffnet den Detaildialog. Normal und New Game+
 stehen separat neben dem wirksamen Normalwert. Eigene Gesundheit, Kontaktschaden
 und halbe Trefferbreite/-höhe gelten pro platziertem Exemplar im F5-Spieltest und
@@ -216,8 +227,13 @@ gemessene New-Game+-Bosswerte werden ausdrücklich als Initialisierung angezeigt
 Kerzen erscheinen unter **Objekte / O-000E** und werden beim Originalimport
 übernommen. Ihre Variante ist das ursprüngliche Inhaltsbyte (dezimal). Die native
 Flamme und das Zerstören/Erzeugen des Inhalts übernimmt die Spielengine.
-Szenencontroller sind ebenfalls auswählbar; fehlende Grafikaufnahmen sind in der
-Liste gekennzeichnet. Ihre speziellen Levelskripte sind noch nicht alle portabel.
+Szenencontroller sind ebenfalls auswählbar. Im freien Spieltest erscheinen ihre
+bereits aufgenommenen Bilder als **Kulisse**. Ihre Levelskripte werden dabei
+nicht als gewöhnliche Gegner gestartet: Solche Skripte könnten fremde Kamera-,
+Grafik- oder Levelwechsel auslösen. Der Startstatus und der Werte-/KI-Dialog
+weisen darauf hin. Ohne vorhandene Grafik bleibt die betreffende Kulisse im
+Spieltest unsichtbar; die Bibliothek kennzeichnet fehlende Aufnahmen. Für
+interaktive Szenenabläufe fehlen noch eigene geprüfte Adapter.
 
 ### Boss-Begegnungen
 
@@ -228,6 +244,13 @@ und lokal zwischengespeichert. Der F5-Test muss dafür keinen ursprünglichen
 Bosslevel starten. Bei mehreren Bossen gibt es jeweils eine aktive Begegnung.
 Andere Gegner und dynamische Objekte pausieren währenddessen und werden anschließend fortgesetzt;
 dadurch bleiben ihre Grafikressourcen von den Bossressourcen getrennt.
+Die Höhe des Kampfbodens folgt dem Boden unter dem Platzierungspunkt. Viele
+Original-Bossdaten beschreiben einen unsichtbaren Szenencontroller; dessen
+Höhe darf nicht den Kampf gegen den Boden verschieben. Die Karten-Vorschau
+und der Begegnungsrahmen berücksichtigen diese Ausrichtung. Die Y-Angabe
+wählt damit den Boden der Begegnung; sie definiert keine neue freie Boss-KI.
+Die eigene Levelgrafik bleibt auch während Mode7-Kämpfen sichtbar. HUD und
+Mode7-Körper verwenden getrennte Rasterabschnitte und Farben.
 
 Im Detaildialog steuert `direct` einen vorbereiteten Kampfstart, `sequence` den
 frühen nativen Bossablauf. Das sind Boss-Einleitungen; vollständige ursprüngliche
@@ -259,10 +282,10 @@ Spezial-/Dekorobjekte erscheint ein Hinweis.
   sind noch nicht frei kombinierbar. Die Szenenobjekte lassen sich ansehen und
   bearbeiten; eine eigene Platzierung übernimmt nicht automatisch ihren ganzen
   Original-Levelablauf. Bosskämpfe laufen als einzelne vorbereitete Begegnungen.
-- Monster aus anderen Levels können platziert werden. Derzeit teilen alle
-  Räume eines Projekts elf native Grafikseiten. Unpassende Grafikbudgets oder
-  kollidierende Originalpaletten werden vor Testbeginn abgewiesen. Eine
-  automatische Palettenumlegung fehlt noch.
+- Die frühere gemeinsame OBJ-Grafik-/Palettengrenze entfällt im eigenen
+  Leveltest. Die native Objekt-KI mit 37 aktiven Plätzen sowie jeweils eine
+  aktive Bossbegegnung bleiben Grenzen dieser Fassung. Es gibt noch keine
+  unabhängig gleichzeitig laufenden Instanzen verschiedener Boss-KIs.
 - Es gibt noch keinen Export als fertige Kampagne/Mod oder als ROM-Patch.
   HD-PNGs werden weiterhin in den bestehenden HD-Werkzeugen bearbeitet; die
   Kartenansicht und dieser Spieltest verwenden Originalgrafiken.
@@ -323,3 +346,10 @@ zusätzlichen Bosscontroller und das tatsächliche Pausieren des Hintergrundtest
 Die Tests verwenden eine private Kopie der Werkstatt und prüfen, dass die
 Künstlerdaten unverändert bleiben. Die eigenständige Werkstatt wird weiterhin
 mit `tools/test_monster_workshop.py` geprüft.
+
+`tools/test_level_isolation.py` prüft 237 Platzierungen einschließlich O-000F,
+eine Mischung oberhalb des früheren Grafikbudgets, unabhängig verglichene
+Gegnerpixel und unveränderte Levelpixel. Er prüft außerdem das Aktivieren ferner
+Gegner, Zustandserhalt beim Zurückgehen, Kerzen hinter dem 128. Eintrag,
+Szenenkulissen, den Boden während zweier Bossarten und originale HUD-Glyphen
+beim Mode7-Boss. Die Tests lesen Pixel und Speicher ohne Bildbetrachter.

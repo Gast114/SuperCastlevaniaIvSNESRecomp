@@ -16,6 +16,8 @@ typedef struct Cv4EnemyHdFrame {
 extern "C" {
 #endif
 void Cv4EnemyInit(const uint8_t *rom, unsigned size);
+typedef int (*Cv4EnemyPixelSource)(unsigned,unsigned,unsigned,unsigned,int,int,int,unsigned*,unsigned*);
+void Cv4EnemySetPixelSource(Cv4EnemyPixelSource source);
 void Cv4EnemyBegin(struct Ppu *ppu, const uint8_t *ram);
 void Cv4EnemyEnd(struct Ppu *ppu);
 const Cv4EnemyHdFrame *Cv4EnemyHd(unsigned index);

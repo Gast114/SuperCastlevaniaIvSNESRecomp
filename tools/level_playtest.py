@@ -1,12 +1,10 @@
 """Compile editor projects and run them in a private native game instance."""
 import configparser
 import hashlib
-import json
 from pathlib import Path
 import struct
 from enemy_workshop_native import NativeSession,ROOT
-from enemy_resources import ordinary_plan,palette,write_bundle,ROM_SHA256
-from enemy_sprite_export import descriptor
+from enemy_resources import ordinary_plan,write_bundle,ROM_SHA256
 from level_assets import Assets,ensure_room
 from level_project import validate
 from level_graphics import compile_graphics
@@ -31,9 +29,7 @@ def compile_project(data,destination,rom=None,build=None,quest=0):
     validate(data);destination=Path(destination);destination.mkdir(parents=True,exist_ok=True)
     raw=Path(rom or ROOT/'Super Castlevania IV (USA).sfc').read_bytes()
     if len(raw)!=0x100000 or hashlib.sha256(raw).hexdigest()!=ROM_SHA256:raise ValueError('Der Editor benötigt die ungeheaderte USA-ROM des Projekts.')
-    library=ROOT/'artwork-local/enemy-library';index=json.loads((library/'library.json').read_text())
-    inventory=json.loads((ROOT/'assets/enemy_sprite_inventory.json').read_text())
-    poses={a['type']:a.get('poses',[]) for a in inventory['actors']}
+    library=ROOT/'artwork-local/enemy-library'
     actors={};templates={}
     for r in data['rooms']:
         templates[r['tileset']]=Assets(ensure_room(r['tileset'],rom,build))
@@ -42,29 +38,13 @@ def compile_project(data,destination,rom=None,build=None,quest=0):
     from level_bosses import prepare_bosses
     bosses=prepare_bosses({a['type'] for a in actors.values() if a['type']>=128},rom,build)
     boss_indices={t:i for i,t in enumerate(bosses)}
-    plan=monster_plan(raw,actors.values(),index)
-    owners={};bank_data={}
-    for a in actors.values():
-        t=a['type']
-        if t>=128 or t in (14,0x6c,0x73,0x77) or a.get('kind')=='event':continue
-        entry=resource_entry(a)
-        profile=next((p for p in index['profiles'] if p['type']==t and p.get('variant',0)==entry['variant']),{})
-        actor_poses=set(poses.get(t,[]))|set(profile.get('poses',[]))
-        if not actor_poses:continue
-        colors=palette(library,entry)
-        banks={}
-        for pose in actor_poses:
-            for _,_,attr in descriptor(raw,pose):
-                bank=attr>>9&7
-                banks[bank]=colors[256+bank*32:256+(bank+1)*32]
-        for bank,value in banks.items():
-            if bank in bank_data and bank_data[bank]!=value:
-                raise ValueError(f'M-{t:04X} und M-{owners[bank]:04X} benötigen verschiedene Farben in Palette {bank}. Diese Kombination braucht noch eine Palettenumlegung.')
-            bank_data[bank]=value;owners[bank]=t
+    from level_sprite_resources import compile_resources
+    virtual,adds=compile_resources(raw,actors.values(),library,templates[data['rooms'][0]['tileset']].video)
     word=lambda address:int.from_bytes(raw[(address>>16)*0x8000+(address&0x7fff):(address>>16)*0x8000+(address&0x7fff)+2],'little')
     stop=word(0x00d81b)
     while word(0x050000|stop)!=65535:stop+=6
-    mixed=bool(bosses) or any(value>65535 for r in data['rooms'] for layer in ('front','back') for value in r['layers'][layer])
+    # Immutable host background texels cannot be overwritten by OBJ uploads or boss DMA.
+    mixed=True
     out=bytearray(b'CV4LVL4\0' if mixed else b'CV4LVL3\0')+struct.pack('<HHH',len(data['rooms']),next(i for i,r in enumerate(data['rooms']) if r['id']==data['start_room']),stop)
     if mixed:
         atlas,maps=compile_graphics(data,rom,build);out+=struct.pack('<I',len(atlas))+b''.join(atlas)
@@ -75,11 +55,8 @@ def compile_project(data,destination,rom=None,build=None,quest=0):
             if not mixed:raise ValueError('Dieser Grafiksatz braucht noch einen eigenen Kartenmodus.')
             asset=Assets(ensure_room(0,rom,build))
         bases=[x['tiles'] for x in asset.meta['ppu']['layers'][:2]];colors=bytearray(asset.video[0x10000:0x10200])
-        for bank,value in bank_data.items():colors[256+bank*32:256+(bank+1)*32]=value
         out+=struct.pack('<11H',r['width'],r['height'],r['tileset'],*r['spawn'],*bases,asset.meta['ppu']['bgmode'],r.get('collision_mode',0),len(r['actors']),len(r['doors']))
         video=bytearray(asset.video[:0x10000])
-        if plan:
-            for block in plan['blocks']:video[block['vram_word']*2:block['vram_word']*2+len(block['data'])]=block['data']
         out+=video+colors
         for kind in ('layers','collision'):
             for layer_index,layer in enumerate(('front','back')):
@@ -89,20 +66,21 @@ def compile_project(data,destination,rom=None,build=None,quest=0):
             t=a['type'];word=lambda addr:int.from_bytes(raw[0x8000+(addr&0x7fff):0x8000+(addr&0x7fff)+2],'little')
             value=values_for(raw,a,r['tileset'],quest)
             options=int(a.get('boss_start','direct')=='sequence')|2*int(a.get('boss_end','continue')=='exit')|4*int('hp' in a.get('stats',{}))|8*int('half_width' in a.get('stats',{}))|16*int('half_height' in a.get('stats',{}))
-            out+=struct.pack('<14H',t,a.get('variant',0),a['x'],a['y'],a.get('flags',0),value['half_width'],value['half_height'],value['hp'] or 0,0x26 if t==14 else word(0xad00+t*2),plan['tile_add'].get(t,0) if plan else 0,a.get('stats',{}).get('contact_damage',65535),2 if t>=128 else 1 if t==14 else 0,boss_indices.get(t,0),options)
+            out+=struct.pack('<14H',t,a.get('variant',0),a['x'],a['y'],a.get('flags',0),value['half_width'],value['half_height'],value['hp'] or 0,0x26 if t==14 else word(0xad00+t*2),adds.get((t,resource_entry(a)['variant']),0),a.get('stats',{}).get('contact_damage',65535),2 if t>=128 else 1 if t==14 else 3 if a.get('kind')=='event' else 0,boss_indices.get(t,0),options)
         for d in r['doors']:
             target=next(i for i,row in enumerate(data['rooms']) if row['id']==d['target'])
             out+=struct.pack('<9H',d['x'],d['y'],d['w'],d['h'],target,d['target_x'],d['target_y'],int(d.get('trigger','up')=='touch'),d.get('target_plane',0))
+    out+=virtual
     file=destination/'level.bin';file.write_bytes(out)
-    colors=bytearray(templates[data['rooms'][0]['tileset']].video[0x10000:0x10200])
-    for bank,value in bank_data.items():colors[256+bank*32:256+(bank+1)*32]=value
-    bundle=write_bundle(destination/'monsters.bin',colors,plan)
+    colors=templates[data['rooms'][0]['tileset']].video[0x10000:0x10200]
+    bundle=write_bundle(destination/'monsters.bin',colors)
     return file,bundle
 
 
 class Playtest:
     def __init__(self,data,folder,rom=None,build=None,fast=False,window_scale=3):
         self.folder=Path(folder);self.session=None;self.audio_unavailable=False
+        self.notes='Szenenobjekte werden als Kulisse dargestellt; ihre Original-Levelskripte sind deaktiviert.' if any(a.get('kind')=='event' for r in data['rooms'] for a in r['actors']) else ''
         level,monsters=compile_project(data,self.folder,rom,build)
         s=NativeSession(rom,build,folder=self.folder/'game');self.session=s
         config=configparser.ConfigParser();config.read(s.folder/'config.ini')
@@ -120,14 +98,9 @@ class Playtest:
                 s.start()
             s.command('enemy','workshop off');s.command('enemy','capture off')
             s.command('enemy_resources',monsters)
-            # Keep the declared slot list for native projectile/child lookups.
-            raw=s.bytes;placements=[a for r in data['rooms'] for a in r['actors']]
+            # Virtual families own their own textures/palettes; guest child lookups
+            # may keep the original fixed effect offset without allocating OBJ VRAM.
             s.lua.eval('for a=0x13a0,0x13b5 do mainmemory.write_u8(a,255) end')
-            if placements:
-                index=json.loads((ROOT/'artwork-local/enemy-library/library.json').read_text(encoding='utf-8'))
-                plan=monster_plan(raw,placements,index)
-                # Compiler and runtime must use the same deterministic order.
-                for b in plan['blocks'] if plan else ():s.write({0x13a0+b['slot']*2:b['pointer']&65535})
             s.command('level_project',level)
         except BaseException:self.close();raise
 

@@ -113,8 +113,15 @@ def check(native=True):
                 assert s.command('level_room')=='1' and s.read(0x54a)==620
                 play.advance(s.lua,60);assert s.read(0x54e)==373 and s.read(0x1c)==492 and s.read(0x1e)==261
                 s.command('dump',folder/'tall-video.bin');video=struct.unpack_from('<32768H',(folder/'tall-video.bin').read_bytes())
-                xx,yy=75,50;assert video[0x4000+(xx%64//32)*1024+(yy%32)*32+xx%32]==tile
-                passed('Touch exit enters tall room; floor y400, horizontal/vertical camera and wrapped native tile ring agree')
+                xx,yy=75,50;assert video[0x4000+(xx%64//32)*1024+(yy%32)*32+xx%32]==0
+                s.command('screenshot',folder/'tall.png');tall=Image.open(folder/'tall.png').convert('RGB')
+                expected=Assets(ensure_room(q['tileset'])).tile(tile);checked=0
+                for yy in range(144,152):
+                    for xx in range(8,224):
+                        pixel=expected.getpixel(((xx+492)%8,(yy+261)%8))
+                        if pixel[3]:assert tall.getpixel((xx,yy))==pixel[:3];checked+=1
+                assert checked>500
+                passed('Touch exit enters tall room; floor y400 and both camera axes agree with the immutable host artwork; native tile ring remains transparent')
                 malformed=folder/'truncated.bin';malformed.write_bytes((g.folder/'level.bin').read_bytes()[:-5]);s.command('dump',folder/'before.bin')
                 try:s.command('level_project',malformed)
                 except RuntimeError:pass

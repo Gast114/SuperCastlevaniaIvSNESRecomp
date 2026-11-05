@@ -47,6 +47,7 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
     int slot;
     if(!strcmp(name,"level_project"))return Cv4LevelLoad(args,result,capacity);
     if(!strcmp(name,"level_room")){snprintf(result,capacity,"%u",Cv4LevelRoom());return 1;}
+    if(!strcmp(name,"level_status")){Cv4LevelStatus(result,capacity);return 1;}
     if(!strcmp(name,"enemy_resources"))return Cv4EnemyResources(g_ppu,g_ram,args,result,capacity);
     if(!strcmp(name,"enemy_surface")) {
         int ok=Cv4WorkshopCaptureSave(args);

@@ -1,5 +1,6 @@
 /* Opt-in custom level playtests. No changes without an explicit project load. */
 #include "level_editor.h"
+#include "enemy_pack.h"
 extern "C" {
 #include "snes/ppu.h"
 #include "snes/interp_bridge.h"
@@ -9,20 +10,26 @@ extern "C" {
 #include <array>
 #include <cstdio>
 #include <cstring>
+#include <deque>
 #include <fstream>
 #include <stdexcept>
 #include <vector>
 extern "C" unsigned char g_ram[0x20000];
 namespace {
-struct Actor {unsigned type,variant,x,y,flags,hw,hh,hp,trait,add;unsigned damage=65535,kind=0,boss=0,options=0;bool spawned=false;unsigned slot=0;};
+struct Actor {unsigned type,variant,x,y,flags,hw,hh,hp,trait,add;unsigned damage=65535,kind=0,boss=0,options=0;bool spawned=false,parked=false;unsigned slot=0,persistence=0;std::array<unsigned char,64> saved{};};
 struct Door {unsigned x,y,w,h,target,tx,ty,trigger,plane;};
 struct Room {unsigned w,h,tileset,sx,sy,base[2],mode,collisionMode;std::vector<unsigned char> video;std::vector<uint32_t> maps[2];std::vector<unsigned short> collision[2];std::vector<Actor> actors;std::vector<Door> doors;};
 struct Boss {unsigned type,x,y,slot,body;std::vector<unsigned char> states[2],video,raster;std::array<unsigned short,9> m7{};};
+struct Resource {unsigned type,variant,add,pose,w,h,ax,ay;std::vector<unsigned char> video;std::vector<uint32_t> pixels;};
+std::vector<Resource> resources;std::vector<unsigned char> spriteRom;
+std::vector<PpuHostSprite> virtualSprites;std::deque<std::array<uint32_t,256>> spritePixels;
 std::vector<Boss> bosses;int encounter=-1,dx=0,dy=0;unsigned encounterAge=0,deadAge=0;bool encounterVideo=false;
 std::array<unsigned char,0x940> suspended;
 std::array<unsigned char,0x2b0> suspendedExtras;
 std::array<unsigned char,256> suspendedRaster;
 std::array<unsigned char,256> suspendedPersistence;
+std::array<unsigned short,128> mode7Colors{};
+unsigned gameplaySubscreen=0;
 unsigned suspendedBossEffect=0;
 constexpr unsigned stateSize=2+0x940+0x80+0x30+0x200;
 std::vector<Room> rooms;unsigned current=0;bool active=false,install=false;unsigned cooldown=0;int cx=0,cy=0;
@@ -31,6 +38,11 @@ unsigned streamEnd=0;
 bool damageHookInstalled=false;
 unsigned word(unsigned at){return g_ram[at]|unsigned(g_ram[at+1])<<8;}
 void put(unsigned at,unsigned value){g_ram[at]=value;g_ram[at+1]=value>>8;}
+unsigned bossFloor(const Room&r,const Actor&a){
+ unsigned layer=a.flags&0x8000?0:1,column=std::min(r.w-1,a.x/8);
+ for(unsigned y=a.y/8;y<r.h;++y){unsigned v=r.collision[layer][y*r.w+column];if(v&&v!=65535)return y*8;}
+ return std::clamp(a.y+96,64u,r.h*8-8);
+}
 void contactDamage(CpuState*cpu,uint32_t){
  if(!active||current>=rooms.size())return;
  if(encounter>=0){const auto&a=rooms[current].actors[encounter];if(a.damage!=65535){cpu->A=(uint16_t)a.damage;return;}}
@@ -41,7 +53,7 @@ void enter(unsigned index,unsigned x,unsigned y,unsigned plane){
  if(encounter>=0){put(0xef0,suspendedBossEffect);std::copy(suspendedPersistence.begin(),suspendedPersistence.end(),g_ram+0x1500);std::copy(suspendedRaster.begin(),suspendedRaster.end(),g_ram+0x100);unsigned cursor=0;for(auto span:{std::pair<unsigned,unsigned>{0x1200,0x80},{0x13c0,0x30},{0x1e00,0x200}}){memcpy(g_ram+span.first,suspendedExtras.data()+cursor,span.second);cursor+=span.second;}}
  current=index;auto&r=rooms[current];install=true;cooldown=30;encounter=-1;dx=dy=0;
  std::fill(g_ram+0x580,g_ram+0xec0,0);std::fill(g_ram+0x1200,g_ram+0x1280,0);
- for(auto&a:r.actors){a.spawned=false;a.slot=0;}
+ for(auto&a:r.actors){a.spawned=false;a.parked=false;a.slot=0;a.persistence=0;}
  put(0x54a,x);put(0x54e,y);put(0x552,0);put(0x542,plane?0:0x8018);
  for(unsigned at=0x558;at<=0x55e;at+=2)put(at,0);
  put(0x13f4,16);put(0xbc,90);put(0xb8,0);put(0x94,streamEnd);put(0x96,streamEnd);
@@ -55,7 +67,9 @@ void beginEncounter(unsigned index){
  unsigned cursor=0;for(auto span:{std::pair<unsigned,unsigned>{0x1200,0x80},{0x13c0,0x30},{0x1e00,0x200}}){std::copy(g_ram+span.first,g_ram+span.first+span.second,suspendedExtras.begin()+cursor);cursor+=span.second;}
  const auto&state=b.states[a.options&1?0:1];put(0xb8,state[0]|unsigned(state[1])<<8);cursor=2;
  for(auto span:{std::pair<unsigned,unsigned>{0x580,0x940},{0x1200,0x80},{0x13c0,0x30},{0x1e00,0x200}}){memcpy(g_ram+span.first,state.data()+cursor,span.second);cursor+=span.second;}
- dx=int(b.x)-int(a.x);dy=int(b.y)-int(a.y);put(0x54a,std::max(24,int(word(0x54a))+dx));put(0x54e,word(0x54e)+dy);
+ // Boss Y records often belong to their invisible scene controller. Align
+ // their native arena floor, not that controller's Y, to the custom terrain.
+ dx=int(b.x)-int(a.x);dy=192-int(bossFloor(r,a));put(0x54a,std::max(24,int(word(0x54a))+dx));put(0x54e,word(0x54e)+dy);
  encounter=(int)index;a.spawned=true;a.slot=b.slot;encounterAge=deadAge=0;encounterVideo=true;
  if(a.options&4)put(b.slot+6,a.hp);if(a.options&8)put(b.slot+0x28,a.hw);if(a.options&16)put(b.slot+0x2a,a.hh);
 }
@@ -100,7 +114,7 @@ extern "C" int Cv4LevelLoad(const char *path,char *result,size_t capacity){
   }
   for(unsigned n=0;n<count;++n){
    Room r;r.w=read();r.h=read();r.tileset=read();r.sx=read();r.sy=read();r.base[0]=read();r.base[1]=read();r.mode=read();r.collisionMode=read();unsigned actors=read(),doors=read();
-   if(r.w<32||r.w>1024||r.h<28||r.h>512||r.w*r.h>262144||r.sx>=r.w*8||r.sy>=r.h*8||r.tileset>=68||r.base[0]>0x3000||r.base[1]>0x3000||(r.mode&7)!=1||r.collisionMode>3||actors>128||doors>64)
+   if(r.w<32||r.w>1024||r.h<28||r.h>512||r.w*r.h>262144||r.sx>=r.w*8||r.sy>=r.h*8||r.tileset>=68||r.base[0]>0x3000||r.base[1]>0x3000||(r.mode&7)!=1||r.collisionMode>3||actors>4096||doors>64)
     throw std::runtime_error("Unsupported custom room geometry or graphics");
    unsigned videoSize=extended?0x10200:0xd600;
    if(at+videoSize>data.size())throw std::runtime_error("Missing room graphics");
@@ -112,21 +126,99 @@ extern "C" int Cv4LevelLoad(const char *path,char *result,size_t capacity){
    }
    for(int layer=0;layer<2;++layer)for(unsigned i=0;i<r.w*r.h;++i)r.collision[layer].push_back((unsigned short)read());
    for(unsigned i=0;i<actors;++i){Actor a;a.type=read();a.variant=read();a.x=read();a.y=read();a.flags=read();a.hw=read();a.hh=read();a.hp=read();a.trait=read();a.add=read();
-    if(extended){a.damage=read();a.kind=read();a.boss=read();a.options=read();if((a.damage>255&&a.damage!=65535)||a.kind>2)throw std::runtime_error("Invalid custom actor values");}
+    if(extended){a.damage=read();a.kind=read();a.boss=read();a.options=read();if((a.damage>255&&a.damage!=65535)||a.kind>3)throw std::runtime_error("Invalid custom actor values");}
     if(!a.type||a.type>0x8d||a.variant>255||a.x>=r.w*8||a.y>=r.h*8||a.add>0x1ff||a.hw>255||a.hh>255||a.hp>32767||a.options>31||(a.type>=128&&(a.kind!=2||a.boss>=nextBosses.size()||nextBosses[a.boss].type!=a.type)))throw std::runtime_error("Invalid custom monster");r.actors.push_back(a);}
    for(unsigned i=0;i<doors;++i){Door d;d.x=read();d.y=read();d.w=read();d.h=read();d.target=read();d.tx=read();d.ty=read();d.trigger=read();d.plane=read();
     if(d.target>=count||d.w<8||d.w>256||d.h<8||d.h>256||d.x>=r.w*8||d.y>=r.h*8||d.trigger>1||d.plane>1)throw std::runtime_error("Invalid custom exit");r.doors.push_back(d);}
    next.push_back(std::move(r));
   }
   for(const auto&r:next)for(const auto&d:r.doors)if(d.tx>=next[d.target].w*8||d.ty>=next[d.target].h*8)throw std::runtime_error("Exit target outside room");
-  if(at!=data.size())throw std::runtime_error("Unexpected custom level data");
+  std::vector<Resource> nextResources;std::vector<unsigned char> nextSpriteRom;
+  if(at<data.size()){
+   if(at+10+32768>data.size()||memcmp(data.data()+at,"CV4VOBJ1",8))throw std::runtime_error("Unexpected custom level data");
+   at+=8;unsigned count=read();if(count>1024)throw std::runtime_error("Too many independent actor contexts");
+   nextSpriteRom.assign(data.begin()+at,data.begin()+at+32768);at+=32768;
+   for(unsigned n=0;n<count;++n){Resource res;res.type=read();res.variant=read();res.add=read();res.pose=read();res.w=read();res.h=read();res.ax=read();res.ay=read();
+    if(!res.type||res.type>=128||res.variant>255||res.add>511||res.w>512||res.h>512||bool(res.w)!=bool(res.h)||res.ax>res.w||res.ay>res.h||at+0x10200+size_t(res.w)*res.h*4>data.size())throw std::runtime_error("Invalid independent actor context");
+    for(const auto&other:nextResources)if(res.type==other.type&&res.variant==other.variant)throw std::runtime_error("Duplicate independent actor context");
+    res.video.assign(data.begin()+at,data.begin()+at+0x10200);at+=0x10200;
+    for(unsigned i=0;i<res.w*res.h;++i){res.pixels.push_back(unsigned(data[at+3])<<24|unsigned(data[at])<<16|unsigned(data[at+1])<<8|data[at+2]);at+=4;}
+    nextResources.push_back(std::move(res));
+   }
+  }
+  if(at!=data.size())throw std::runtime_error("Unexpected independent actor data");
   if(!damageHookInstalled){damageHookInstalled=interp_bridge_add_pre_opcode_hook(0x00dd12,contactDamage);if(!damageHookInstalled)throw std::runtime_error("Cannot install custom actor hook");}
-  rooms=std::move(next);bosses=std::move(nextBosses);atlas=std::move(nextAtlas);mixed=newMixed;streamEnd=stop;active=true;enter(start,rooms[start].sx,rooms[start].sy,0);
+  rooms=std::move(next);bosses=std::move(nextBosses);resources=std::move(nextResources);spriteRom=std::move(nextSpriteRom);atlas=std::move(nextAtlas);mixed=newMixed;streamEnd=stop;active=true;Cv4EnemySetPixelSource(Cv4LevelSpritePixel);enter(start,rooms[start].sx,rooms[start].sy,0);
   snprintf(result,capacity,"%u custom rooms ready",count);return 1;
  }catch(const std::exception&e){snprintf(result,capacity,"%s",e.what());return 0;}
 }
 extern "C" unsigned Cv4LevelRoom(void){return active?current:~0u;}
-extern "C" void Cv4LevelReset(void){active=false;install=false;mixed=false;rooms.clear();atlas.clear();bosses.clear();encounter=-1;dx=dy=0;}
+extern "C" void Cv4LevelStatus(char*result,size_t capacity){
+ unsigned slots=0;for(unsigned at=0x580;at<0xec0;at+=64)if(word(at+16))++slots;
+ snprintf(result,capacity,"{\"active\":%s,\"room\":%u,\"camera_x\":%d,\"camera_y\":%d,\"placements\":%zu,\"resource_contexts\":%zu,\"active_native_slots\":%u,\"native_slot_limit\":37,\"boss_encounter\":%d}",active?"true":"false",current,cx,cy,active?rooms[current].actors.size():0,resources.size(),slots,encounter);
+}
+namespace {
+const Resource *resourceFor(unsigned type,unsigned variant){
+ const Resource*fallback=nullptr;for(const auto&r:resources)if(r.type==type){if(r.variant==variant)return &r;if(!fallback||r.variant==0)fallback=&r;}return fallback;
+}
+unsigned dataWord(const std::vector<unsigned char>&v,unsigned at){return v[at]|unsigned(v[at+1])<<8;}
+unsigned nativeRgba(unsigned c){auto e=[](unsigned n){return (n<<3)|(n>>2);};return 0xff000000u|e(c&31)<<16|e((c>>5)&31)<<8|e((c>>10)&31);}
+}
+extern "C" int Cv4LevelSpritePixel(unsigned type,unsigned variant,unsigned actualAdd,unsigned attr,int size,int x,int y,unsigned*index,unsigned*rgba){
+ if(!active||encounter>=0)return 0;const auto*r=resourceFor(type,variant);if(!r)return 0;
+ attr=(attr-actualAdd+r->add)&65535;
+ if(attr&0x4000)x=size-1-x;if(attr&0x8000)y=size-1-y;
+ unsigned tile=((((attr&255)>>4)+(y>>3))<<4)|(((attr&15)+(x>>3))&15);
+ unsigned address=(((attr&256)?0x7000:0x6000)+tile*16+(y&7))&0x7fff,bit=7-(x&7);
+ uint32_t value=dataWord(r->video,address*2)|uint32_t(dataWord(r->video,((address+8)&0x7fff)*2))<<16;
+ *index=(value>>bit&1)|(value>>(bit+7)&2)|(value>>(bit+14)&4)|(value>>(bit+21)&8);
+ *rgba=*index?nativeRgba(dataWord(r->video,0x10000+2*(128+((attr>>9)&7)*16+*index))):0;return 1;
+}
+extern "C" void Cv4LevelSprites(Ppu*p){
+ if(!active||word(0x32)!=4||resources.empty())return;
+ virtualSprites.clear();spritePixels.clear();std::array<bool,128> claimed{};
+ if(p->hostSprites&&p->hostSpriteCount)virtualSprites.assign(p->hostSprites,p->hostSprites+p->hostSpriteCount);
+ for(const auto&s:virtualSprites)for(unsigned n=0;n<128;++n)if(s.mask[n>>3]&(1u<<(n&7)))claimed[n]=true;
+ if(p->hostObjPixels)for(unsigned n=0;n<128;++n)if(p->hostObjMask[n>>3]&(1u<<(n&7)))claimed[n]=true;
+ if(encounter<0)for(unsigned base=0x580;base<0xec0;base+=64){
+  unsigned type=word(base+16),pose=word(base),variant=word(base+20),add=word(base+0x26),flip=word(base+4),priority=word(base+2);
+  if(!resourceFor(type,variant)||pose<0x8000||spriteRom.size()!=32768)continue;
+  unsigned offset=pose&32767,count=spriteRom[offset];if(!count||count>32||offset+1+count*4>spriteRom.size())continue;
+  int ax=(int16_t)(word(base+10)-word(0x1c)),ay=(int16_t)((word(base+14)-word(0x1e))&word(0x13de));
+  for(unsigned part=0;part<count;++part){
+   unsigned at=offset+1+part*4,raw=spriteRom[at+2]|unsigned(spriteRom[at+3])<<8,size=raw&0x2000?16:8;
+   int rx=(int8_t)spriteRom[at],ry=(int8_t)spriteRom[at+1];
+   int x=ax+((flip&0x4000)?-rx-int(size):rx),y=ay+((flip&0x8000)?-ry-int(size):ry);
+   unsigned attr=(raw|0x2000)^flip;if(priority&0x8000)attr=(attr&0xcfff)|((priority*2&255)<<8);attr=(attr+add)&65535;
+   int found=-1;
+   for(unsigned n=0;n<128;++n){
+    unsigned xx=(p->oam[n*2]&255)|(((p->highOam[n>>2]>>((n&3)*2))&1)<<8);
+    if(xx>255+unsigned(p->extraRightCur))xx-=512;
+    unsigned big=(p->highOam[n>>2]>>((n&3)*2+1))&1;
+    if(int(xx)==x&&(p->oam[n*2]>>8)==(unsigned(y)&255)&&p->oam[n*2+1]==attr&&(big?16:8)==size){
+     if(claimed[n])continue;found=n;break;
+    }
+   }
+   // Native absence may be an intentional blink/invisibility phase. Only
+   // replace emitted parts; do not invent visibility from an old pose field.
+   if(found<0)continue;
+   if(x+int(size)<=-int(p->extraLeftCur)||x>=256+int(p->extraRightCur)||y+int(size)<=0||y>=224)continue;
+   spritePixels.emplace_back();auto&pixels=spritePixels.back();pixels.fill(0);
+   for(unsigned yy=0;yy<size;++yy)for(unsigned xx=0;xx<size;++xx){unsigned index,color;Cv4LevelSpritePixel(type,variant,add,attr,size,xx,yy,&index,&color);pixels[yy*size+xx]=color;}
+   PpuHostSprite host{};host.x=x;host.y=y;host.width=host.height=host.stride=size;host.pixels=pixels.data();host.oamSlot=found<0?127:found;
+   host.priority=SPRITE_PRIO_TO_PRIO((attr>>12)&3,(attr&0x800)==0)<<8;
+   if(found>=0){host.mask[found>>3]|=1u<<(found&7);claimed[found]=true;}virtualSprites.push_back(host);
+  }
+ }
+ // Scene scripts are not ordinary actors. Their measured image is a movable
+ // decoration until a safe controller adapter exists, never an arbitrary RTL.
+ for(const auto&a:rooms[current].actors)if(a.kind==3){const auto*r=resourceFor(a.type,a.variant);if(!r||r->pixels.empty())continue;
+  int x=int(a.x)-cx-int(r->ax),y=int(a.y)-cy-int(r->ay);if(x+int(r->w)<0||x>256||y+int(r->h)<0||y>224)continue;
+  PpuHostSprite host{};host.x=x;host.y=y;host.width=host.stride=r->w;host.height=r->h;host.pixels=r->pixels.data();host.oamSlot=126;host.priority=SPRITE_PRIO_TO_PRIO(a.flags&0x8000?3:1,1)<<8;virtualSprites.push_back(host);
+ }
+ if(!virtualSprites.empty()){p->hostSprites=virtualSprites.data();p->hostSpriteCount=virtualSprites.size();}
+}
+extern "C" void Cv4LevelReset(void){active=false;install=false;mixed=false;rooms.clear();atlas.clear();bosses.clear();resources.clear();spriteRom.clear();virtualSprites.clear();Cv4EnemySetPixelSource(nullptr);encounter=-1;dx=dy=0;}
 extern "C" void Cv4LevelBeforeFrame(void){
  if(!active||word(0x32)!=4)return;
  auto*r=&rooms[current];unsigned x=word(0x54a)-dx,y=word(0x54e)-dy;
@@ -147,7 +239,7 @@ extern "C" void Cv4LevelBeforeFrame(void){
  put(0x70,5);put(0x86,0);if(encounter<0)put(0xb8,0);put(0xae,encounter>=0?1:r->collisionMode);
  put(0x94,streamEnd);put(0x96,streamEnd);put(0xa0,dx);put(0xa2,r->w*8-256+dx);put(0xa4,dy);put(0xa6,r->h*8-224+dy);
  cx=std::clamp(int(x)-128,0,int(r->w*8)-256);cy=std::clamp(int(y)-112,0,int(r->h*8)-224);
- if(encounter>=0){const auto&a=r->actors[encounter];cx=std::max(-dx,std::clamp(int(a.x)-128,0,int(r->w*8)-256));cy=std::max(-dy,std::clamp(int(a.y)-96,0,int(r->h*8)-224));put(0xa0,cx+dx);put(0xa2,cx+dx);put(0xa4,cy+dy);put(0xa6,cy+dy);}
+ if(encounter>=0){const auto&a=r->actors[encounter];cx=std::max(-dx,std::clamp(int(a.x)-128,0,int(r->w*8)-256));cy=std::max(-dy,std::clamp(-dy,0,int(r->h*8)-224));put(0xa0,cx+dx);put(0xa2,cx+dx);put(0xa4,cy+dy);put(0xa6,cy+dy);}
  for(unsigned at:{0x1cu,0x1280u,0x12c0u})put(at,cx+dx);
  for(unsigned at:{0x1eu,0x1298u,0x12d8u})put(at,cy+dy);
  for(int yy=(cy+dy)/8-16;yy<(cy+dy)/8+48;++yy)for(int xx=(cx+dx)/8-16;xx<(cx+dx)/8+48;++xx){
@@ -155,15 +247,35 @@ extern "C" void Cv4LevelBeforeFrame(void){
   unsigned index=((px&256)<<2)|((px>>3)&31)|((py&256)<<3)|((py<<2)&0x3e0);
   for(unsigned layer=0;layer<2;++layer)put((layer?0xa000:0x4000)+index*2,cell(*r,r->collision[layer],(xx*8-dx)/8,(yy*8-dy)/8,1));
  }
- if(encounter<0)for(auto&a:r->actors)if(a.kind!=2&&!a.spawned&&int(a.x)>cx-128&&int(a.x)<cx+384&&int(a.y)>cy-128&&int(a.y)<cy+352){
+ if(encounter<0)for(auto&a:r->actors)if(a.kind==1&&a.slot){
+  unsigned offset=word(a.slot+0x30);if(offset<256)a.persistence=word(0x1500+offset);
+  if(word(a.slot+0x10)!=a.type)a.slot=0;
+ }
+ if(encounter<0)for(auto&a:r->actors)if(a.kind<2&&a.slot&&word(a.slot+0x10)!=a.type)a.slot=0;
+ if(encounter<0)for(auto&a:r->actors)if(a.kind<2&&a.slot&&word(a.slot+0x10)==a.type){
+  int xx=word(a.slot+10),yy=word(a.slot+14);
+  // Park before the retail offscreen destructor can consume the placement.
+  if(xx<cx-16||xx>cx+272||yy<cy-48||yy>cy+272){
+   std::copy_n(g_ram+a.slot,64,a.saved.begin());std::fill_n(g_ram+a.slot,64,0);a.x=xx;a.y=yy;a.slot=0;a.spawned=false;a.parked=true;
+  }
+ }
+ std::vector<Actor*> nearby;
+ if(encounter<0)for(auto&a:r->actors)if(a.kind<2&&!a.spawned&&int(a.x)>cx-16&&int(a.x)<cx+272&&int(a.y)>cy-48&&int(a.y)<cy+272)nearby.push_back(&a);
+ std::stable_sort(nearby.begin(),nearby.end(),[&](const Actor*a,const Actor*b){return std::abs(int(a->x)-int(x))<std::abs(int(b->x)-int(x));});
+ for(auto*actor:nearby){auto&a=*actor;
   for(unsigned slot=0x580;slot<0xec0;slot+=0x40)if(!word(slot+0x10)){
-   std::fill(g_ram+slot,g_ram+slot+0x40,0);put(slot+0x10,a.type);put(slot+0x14,a.variant);put(slot+0xa,a.x);put(slot+0xe,a.y);
-   put(slot+2,a.flags&0x8000?0x8018:0);put(slot+6,a.hp);put(slot+0x28,a.hw);put(slot+0x2a,a.hh);put(slot+0x2e,a.trait);put(slot+0x26,a.add);put(slot+0x30,unsigned(&a-r->actors.data())*2);a.spawned=true;a.slot=slot;break;
+   for(auto&previous:r->actors)if(&previous!=&a&&previous.slot==slot)previous.slot=0;
+   if(a.parked){std::copy(a.saved.begin(),a.saved.end(),g_ram+slot);a.parked=false;}
+   else {std::fill(g_ram+slot,g_ram+slot+0x40,0);put(slot+0x10,a.type);put(slot+0x14,a.variant);put(slot+0xa,a.x);put(slot+0xe,a.y);
+    put(slot+2,a.flags&0x8000?0x8018:0);put(slot+6,a.hp);put(slot+0x28,a.hw);put(slot+0x2a,a.hh);put(slot+0x2e,a.trait);put(slot+0x26,a.add);}
+   unsigned offset=(slot-0x580)/0x40*2;put(slot+0x30,offset);if(a.kind==1)put(0x1500+offset,a.persistence);
+   a.spawned=true;a.slot=slot;break;
   }
  }
 }
 extern "C" void Cv4LevelBeforeDraw(Ppu*p){
  if(!active||word(0x32)!=4)return;auto&r=rooms[current];
+ gameplaySubscreen=p->screenEnabled[1];
  if(install){
   unsigned size=r.video.size()-512;memcpy(p->vram,r.video.data(),size);memcpy(p->cgram,r.video.data()+size,512);
   unsigned shadow=word(0x48);if(shadow>=0x2000&&shadow+512<=0x20000)memcpy(g_ram+shadow,r.video.data()+size,512);
@@ -171,10 +283,10 @@ extern "C" void Cv4LevelBeforeDraw(Ppu*p){
  }
  if(encounter>=0&&encounterVideo){const auto&b=bosses[r.actors[encounter].boss];unsigned start=b.type==0x81?0:0xc000,colors=b.type==0x81?0:256;memcpy((unsigned char*)p->vram+start,b.video.data()+start,0x10000-start);memcpy((unsigned char*)p->cgram+colors,b.video.data()+0x10000+colors,512-colors);unsigned shadow=word(0x48);if(shadow>=0x2000&&shadow+512<=0x20000)memcpy(g_ram+shadow+colors,b.video.data()+0x10000+colors,512-colors);if(b.type==0x81){for(unsigned i=0;i<8;++i)p->m7matrix[i]=(int16_t)b.m7[i];p->m7sel=(uint8_t)b.m7[8];}encounterVideo=false;}
  cx=std::clamp(int(word(0x54a))-dx-128,0,int(r.w*8)-256);cy=std::clamp(int(word(0x54e))-dy-112,0,int(r.h*8)-224);
- if(encounter>=0){const auto&a=r.actors[encounter];cx=std::max(-dx,std::clamp(int(a.x)-128,0,int(r.w*8)-256));cy=std::max(-dy,std::clamp(int(a.y)-96,0,int(r.h*8)-224));}
+ if(encounter>=0){const auto&a=r.actors[encounter];cx=std::max(-dx,std::clamp(int(a.x)-128,0,int(r.w*8)-256));cy=std::max(-dy,std::clamp(-dy,0,int(r.h*8)-224));}
  for(unsigned at:{0x1cu,0x1280u,0x12c0u})put(at,cx+dx);
  for(unsigned at:{0x1eu,0x1298u,0x12d8u})put(at,cy+dy);
- if(encounter>=0&&r.actors[encounter].type==0x81){p->bgmode=7;p->screenEnabled[0]=0x11;++p->vramWriteCount;return;}
+ if(encounter>=0&&r.actors[encounter].type==0x81){std::copy_n(p->cgram,128,mode7Colors.begin());memcpy(p->vram+0x5000,r.video.data()+0xa000,0x1000);p->bgmode=7;p->screenEnabled[0]=0x11;++p->vramWriteCount;return;}
  p->bgmode=(uint8_t)r.mode;p->bgXsc[0]=0x41;p->bgXsc[1]=0x49;
  p->bgTileAdr=(p->bgTileAdr&0xff00)|(mixed?0x22:(r.base[0]>>12)|((r.base[1]>>12)<<4));
  if(mixed)std::fill(p->vram+0x2000,p->vram+0x2010,0);
@@ -195,8 +307,18 @@ extern "C" void Cv4LevelBeforeDraw(Ppu*p){
  * source palette changes can never recolour another section's artwork. */
 extern "C" void Cv4LevelTrack(Ppu*p){if(active&&mixed&&word(0x32)==4)p->hdTracking=true;}
 extern "C" void Cv4LevelBeforeLine(Ppu*p,int line){
- if(!active||encounter<0||word(0x32)!=4||line<32)return;
- if(rooms[current].actors[encounter].type==0x81){p->bgmode=7;p->screenEnabled[0]|=0x11;return;}
+ if(!active||word(0x32)!=4)return;
+ bool mode7=encounter>=0&&rooms[current].actors[encounter].type==0x81;
+ if(mode7&&line<32){const auto&video=rooms[current].video;for(unsigned n=0;n<128;++n)p->cgram[n]=dataWord(video,0x10000+n*2);}
+ if(line<32){
+  p->bgmode=9;p->bgTileAdr=(p->bgTileAdr&255)|0x5500;p->bgXsc[2]=0x59;p->hScroll[2]=0;p->vScroll[2]=1023;
+  p->screenEnabled[0]=0x14;p->screenEnabled[1]=0;p->windowsel=0;return;
+ }
+ // Boss IRQ/HDMA may change its body, never the project's layer visibility.
+ p->screenEnabled[0]=0x17;p->windowsel=0;
+ if(line==32)p->screenEnabled[1]=gameplaySubscreen;
+ if(mode7){if(line==32)std::copy(mode7Colors.begin(),mode7Colors.end(),p->cgram);p->cgram[0]=(unsigned short)dataWord(rooms[current].video,0x10000);p->bgmode=7;return;}
+ p->cgram[0]=(unsigned short)dataWord(rooms[current].video,0x10000);
  if(mixed){p->bgmode=(uint8_t)rooms[current].mode;p->bgTileAdr=(p->bgTileAdr&0xff00)|0x22;p->bgXsc[0]=0x41;p->bgXsc[1]=0x49;for(unsigned i=0;i<2;++i){p->hScroll[i]=cx;p->vScroll[i]=(cy-1)&1023;}}
 }
 extern "C" void Cv4LevelRenderLine(Ppu*p,int line){
@@ -204,15 +326,19 @@ extern "C" void Cv4LevelRenderLine(Ppu*p,int line){
  std::array<PpuLayerSample,kPpuBufWidth> samples[2];
  if(!PpuGetLayerScanline(p,line,0,samples[0].data(),samples[0].size())||!PpuGetLayerScanline(p,line,1,samples[1].data(),samples[1].size()))return;
  const auto&r=rooms[current];auto*row=(uint32_t*)(p->renderBuffer+(line-1)*p->renderPitch);
+ bool mode7=encounter>=0&&r.actors[encounter].type==0x81;
  for(int x=-int(p->extraLeftCur);x<256+int(p->extraRightCur);++x){
   unsigned i=x+kPpuExtraLeftRight;unsigned depth[2]={p->bgBuffers[0].data[i],p->bgBuffers[1].data[i]};
   unsigned colors[2]={PpuPixelColor(p,(uint16_t)depth[0],i),PpuPixelColor(p,(uint16_t)depth[1],i)};bool changed=false;
+  if(mode7)for(unsigned sub=0;sub<2;++sub)if(((depth[sub]>>8)&15)==0&&(samples[0][i].pixel&255)){
+   depth[sub]=SPRITE_PRIO_TO_PRIO(r.actors[encounter].flags&0x8000?3:1,1)<<8;changed=true;
+  }
   int px=x+cx,py=line-1+cy;
   if(px>=0&&py>=0&&px<int(r.w*8)&&py<int(r.h*8))for(unsigned layer=0;layer<2;++layer){
    unsigned value=r.maps[layer][(py/8)*r.w+px/8],color=atlas[value&0x7fffffff][(py%8)*8+px%8];
    if(!(color&0x8000))continue;
    unsigned z=(value&0x80000000?(layer?0xb100:0xc000):(layer?0x7100:0x8000))|1;
-   for(unsigned sub=0;sub<2;++sub)if((samples[layer][i].screens&(1u<<sub))&&z>depth[sub]){depth[sub]=z;colors[sub]=color&0x7fff;changed=true;}
+   for(unsigned sub=0;sub<2;++sub)if(((mode7&&sub==0)||(samples[layer][i].screens&(1u<<sub)))&&z>depth[sub]){depth[sub]=z;colors[sub]=color&0x7fff;changed=true;}
   }
   if(!changed)continue;
   unsigned flags=p->hdColorFlags[i],layer=(depth[0]>>8)&15;

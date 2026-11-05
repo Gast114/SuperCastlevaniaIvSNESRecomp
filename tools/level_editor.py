@@ -11,7 +11,7 @@ from types import SimpleNamespace
 import tkinter as tk
 from tkinter import ttk,filedialog,messagebox
 from PIL import Image,ImageDraw,ImageTk
-from level_project import Project,paint,room
+from level_project import Project,paint,room,MAX_ACTORS
 from level_tiles import EMPTY,bind,resolve,sources,SOURCE_COUNT,source_name
 from level_assets import Assets,ensure_room,ensure_source,collision_value
 from level_parts import CATEGORIES,builtin_parts,repeat_part,capture_part,validate_part,pick_connected_part
@@ -178,7 +178,7 @@ class Editor:
     def place_actor(self,row,x,y):
         if not self.ensure_editable():return
         r=self.current();x=max(0,min(r['width']*8-1,int(x)));y=max(0,min(r['height']*8-1,int(y)))
-        if len(r['actors'])>=128:self.status.set('In diesem Raum sind bereits 128 Figuren. Bitte zuerst eine Figur entfernen.');return
+        if len(r['actors'])>=MAX_ACTORS:self.status.set(f'In diesem Raum sind bereits {MAX_ACTORS} Figuren. Bitte zuerst eine Figur entfernen.');return
         actor=dict(id='E-'+uuid.uuid4().hex[:8],type=row['type'],variant=row.get('variant',0),x=x,y=y,flags=(row.get('flags',0)&0x7fff)|(0x8000 if self.layer.get()=='front' else 0))
         for key in ('kind','boss_start','boss_end','stats','native_family'):
             if key in row:actor[key]=copy.deepcopy(row[key])
@@ -289,6 +289,7 @@ class Editor:
                     if self.studio.visible:self.play_pending=False;value[1].close();continue
                     self.sprites.cache.clear();self.filter_monsters();self.filter_objects();self.schedule()
                     self.play_pending=False;self.playtest=value[1];self.playtest.session.lua.command('resume');self.status.set('Spieltest läuft in einem separaten Fenster'+(' ohne Ton (kein Audiogerät)' if self.playtest.audio_unavailable else '')+'. Mit „Test beenden“ schließen.')
+                    if getattr(self.playtest,'notes',''):self.status.set(self.status.get()+' '+self.playtest.notes)
                 elif value[0]=='studio_workspace':self.studio.ready(value[1])
                 elif value[0]=='studio_error':self.studio.failed(value[1])
         except queue.Empty:pass
@@ -362,7 +363,7 @@ class Editor:
             for x in range((x0//4)*4,x0+nx+1,4):self.canvas.create_line(x*8*z,y0*8*z,x*8*z,(y0+ny)*8*z,fill='#394658')
             for y in range((y0//4)*4,y0+ny+1,4):self.canvas.create_line(x0*8*z,y*8*z,(x0+nx)*8*z,y*8*z,fill='#394658')
         for a in r['actors']:
-            x,y=a['x']*z,a['y']*z;selected=self.selected_object==('actor',a['id']);sprite=self.sprites.sprite(a)
+            ax,ay=self.actor_position(a);x,y=ax*z,ay*z;selected=self.selected_object==('actor',a['id']);sprite=self.sprites.sprite(a)
             missing=sprite is None and (self.show_object_names.get() or any(d['type']==a['type'] for d in self.definitions))
             if selected or missing:
                 bounds=self.actor_bounds(a);self.canvas.create_rectangle(*(v*z for v in bounds),outline='#f5db83' if selected else '#e8ae64',width=2)
@@ -370,8 +371,9 @@ class Editor:
                 self.canvas.create_text(x,self.actor_bounds(a)[1]*z-4,text=self.actor_label(a),fill='#eff4ed',anchor='s',font=('Segoe UI',max(10,round(10*self.ui))),tags=('actor-label-'+a['id'],))
             if selected and is_platform(a):self.canvas.create_line(*(v*z for v in platform_path(a)),fill='#75e4d6',dash=(5,3),arrow='last',width=2)
             if selected and a['type']>=128:
-                entry=next((e for e in self.catalog if e['type']==a['type']),a);ox=entry.get('x',128)-a['x'];oy=entry.get('y',96)-a['y']
-                left=max(-ox,max(0,min(r['width']*8-256,a['x']-128)));top=max(-oy,max(0,min(r['height']*8-224,a['y']-96)))
+                from level_bosses import arena_floor
+                entry=next((e for e in self.catalog if e['type']==a['type']),a);ox=entry.get('x',128)-a['x'];oy=192-arena_floor(r,a)
+                left=max(-ox,max(0,min(r['width']*8-256,a['x']-128)));top=max(-oy,max(0,min(r['height']*8-224,-oy)))
                 self.canvas.create_rectangle(left*z,top*z,(left+256)*z,(top+224)*z,outline='#c5a0fc',dash=(6,4),width=2)
                 self.canvas.create_text(left*z,top*z,text='Boss-Begegnung',fill='#d5baff',anchor='nw')
         for d in r['doors']:
@@ -395,7 +397,7 @@ class Editor:
                     sprite=self.sprites.sprite(actor)
                     if sprite:
                         picture,anchor=sprite
-                        px,py=actor['x']-anchor[0]-x0*8,actor['y']-anchor[1]-y0*8
+                        ax,ay=self.actor_position(actor);px,py=ax-anchor[0]-x0*8,ay-anchor[1]-y0*8
                         if px<image.width and py<image.height and px+picture.width>0 and py+picture.height>0:image.alpha_composite(picture,(px,py))
         return image
     def palette_changed(self):
@@ -502,7 +504,7 @@ class Editor:
                 if key!=getattr(self,'cursor_key',None):
                     ghost=picture.copy();ghost.putalpha(ghost.getchannel('A').point(lambda a:a*3//5));ghost=ghost.resize((max(1,round(ghost.width*z)),max(1,round(ghost.height*z))),Image.Resampling.NEAREST)
                     self.cursor_photo=ImageTk.PhotoImage(ghost);self.cursor_key=key
-                self.canvas.create_image((actor['x']-anchor[0])*z,(actor['y']-anchor[1])*z,image=self.cursor_photo,anchor='nw',tags='brush-cursor')
+                ax,ay=self.actor_position(actor);self.canvas.create_image((ax-anchor[0])*z,(ay-anchor[1])*z,image=self.cursor_photo,anchor='nw',tags='brush-cursor')
             self.canvas.create_rectangle(*(v*z for v in bounds),outline='#72e7d3',width=2,dash=(4,2),tags='brush-cursor')
             if is_platform(actor):self.canvas.create_line(*(v*z for v in platform_path(actor)),fill='#72e7d3',dash=(4,2),arrow='last',tags='brush-cursor')
             return
@@ -568,11 +570,17 @@ class Editor:
     def actor_code(self,actor):return ('M-' if any(d['type']==actor['type'] for d in self.definitions) else 'O-')+f'{actor["type"]:04X}'
     def actor_label(self,actor):
         code=self.actor_code(actor);name=actor.get('name') or getattr(self,'library_names',{}).get(code,'');return code+(' · '+name if name else '')
+    def actor_position(self,actor):
+        if actor['type']>=128:
+            from level_bosses import arena_floor
+            entry=next((e for e in self.catalog if e['type']==actor['type']),actor)
+            return actor['x'],arena_floor(self.current(),actor)+entry.get('y',96)-192
+        return actor['x'],actor['y']
     def actor_bounds(self,actor):
         sprite=self.sprites.sprite(actor)
         if sprite:
-            image,anchor=sprite;box=image.getbbox()
-            return (actor['x']-anchor[0]+box[0],actor['y']-anchor[1]+box[1],actor['x']-anchor[0]+box[2],actor['y']-anchor[1]+box[3])
+            image,anchor=sprite;box=image.getbbox();x,y=self.actor_position(actor)
+            return (x-anchor[0]+box[0],y-anchor[1]+box[1],x-anchor[0]+box[2],y-anchor[1]+box[3])
         return (actor['x']-12,actor['y']-16,actor['x']+12,actor['y']+16)
     def pixel_coords(self,e):return int(self.canvas.canvasx(e.x)//self.zoom.get()),int(self.canvas.canvasy(e.y)//self.zoom.get())
     def coords(self,e):
@@ -714,9 +722,9 @@ class Editor:
         if item['type']>=128:
             for label,var,choices in [('Bossstart',self.boss_start,('direct','sequence')),('Nach dem Sieg',self.boss_end,('continue','exit'))]:
                 row=ttk.Frame(box);row.pack(fill='x');ttk.Label(row,text=label).pack(side='left');ttk.Combobox(row,textvariable=var,values=choices,state='readonly',width=18).pack(side='right')
-            ttk.Label(box,text='direct: vorbereiteter Kampf · sequence: native Einleitung\ncontinue: Raum weiter erkunden · exit: erster Raumausgang nach dem Sieg\nEin Bosskampf ist eine einzelne Begegnung mit fester Kamera. Andere Gegner pausieren währenddessen.',wraplength=round(610*self.ui)).pack(anchor='w',pady=6)
+            ttk.Label(box,text='direct: vorbereiteter Kampf · sequence: native Einleitung\ncontinue: Raum weiter erkunden · exit: erster Raumausgang nach dem Sieg\nDer Kampfboden folgt dem Boden unter dem Platzierungspunkt. Ein Bosskampf ist eine einzelne Begegnung mit fester Kamera; andere Gegner pausieren.',wraplength=round(610*self.ui)).pack(anchor='w',pady=6)
         entry=next((e for e in self.catalog if e['type']==item['type']),item)
-        notes='Kerzen verwenden die native Objekt-KI; Variante steuert den Inhalt (Original-Byte, dezimal).' if item['type']==14 else 'Originales Szenenobjekt: Variante und Position sind bearbeitbar. Solche Controller können Kamera, Kulisse oder Levelablauf steuern; ihre freie Kombination ist noch nicht vollständig geprüft.' if item.get('kind')=='event' else ai_notes(entry)
+        notes='Kerzen verwenden die native Objekt-KI; Variante steuert den Inhalt (Original-Byte, dezimal).' if item['type']==14 else 'Szenenobjekt als Kulisse: Die gemessene Originalgrafik wird an dieser Position dargestellt. Sein Original-Levelskript läuft im freien Leveltest nicht mit, da es fremde Kameras, Grafiken oder Levelwechsel auslösen kann. Interaktive Abläufe benötigen einen eigenen geprüften Adapter.' if item.get('kind')=='event' else ai_notes(entry)
         if item['type']>=128:notes='Die originale Boss-KI läuft in einer einzelnen Begegnung gegen den spielbaren Simon. Körper, Geschosse und Hilfsteile bleiben zusammen. Native Angriffsphasen und feste Bewegungsgrenzen gelten weiterhin. Eigene Werte ändern den Startwert; eine neue KI oder vollständige Original-Levelsequenz entsteht dadurch nicht automatisch.'
         notes=notes.replace('„Natürlich“ zeigt den echten Ablauf.','F5 zeigt den echten Ablauf im eigenen Raum.')
         ttk.Label(box,text=notes,wraplength=round(610*self.ui),justify='left').pack(fill='x',pady=10)

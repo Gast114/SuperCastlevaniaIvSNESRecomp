@@ -8,6 +8,7 @@ from level_tiles import EMPTY,valid
 
 LAYERS=('front','back')
 MAX_CELLS=262144
+MAX_ACTORS=4096
 
 
 def room(name='Neuer Raum',width=128,height=32,tileset=0):
@@ -42,7 +43,7 @@ def validate(data):
                 if len(a)!=w*h or not all(check(v) for v in a):raise ValueError('Ungültige Karten- oder Kollisionsdaten.')
         for xy in [r['spawn']]+[[a['x'],a['y']] for a in r['actors']]:
             if len(xy)!=2 or any(type(v) is not int for v in xy) or not 0<=xy[0]<w*8 or not 0<=xy[1]<h*8:raise ValueError('Startpunkt/Gegner liegt außerhalb des Raums.')
-        if len(r['actors'])>128 or len(r['doors'])>64:raise ValueError('Zu viele Gegner oder Ausgänge in einem Raum.')
+        if len(r['actors'])>MAX_ACTORS or len(r['doors'])>64:raise ValueError('Zu viele Gegner oder Ausgänge in einem Raum.')
         for a in r['actors']:
             from level_actor_values import validate_values
             validate_values(a)

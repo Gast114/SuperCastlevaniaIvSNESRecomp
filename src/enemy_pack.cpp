@@ -36,6 +36,8 @@ bool workshop=false;
 std::string observation="{\"actors\":[]}";
 std::array<Cv4EnemyHdFrame,MaxActors> frames{};
 std::array<PpuHostSprite,MaxActors> hosts{};unsigned frameCount=0;uint64_t revision=1;
+Cv4EnemyPixelSource pixelSource=nullptr;
+int virtualPixel(unsigned type,unsigned variant,unsigned add,unsigned attr,int size,int x,int y,unsigned*index,unsigned*color){return pixelSource?pixelSource(type,variant,add,attr,size,x,y,index,color):0;}
 uint16_t word(const uint8_t*r,unsigned a){return r[a]|uint16_t(r[a+1])<<8;}
 uint32_t rgba(uint16_t c){auto e=[](unsigned v){return (v<<3)|(v>>2);};return 0xff000000u|e(c&31)<<16|e(c>>5&31)<<8|e(c>>10&31);}
 int ox(const Ppu*p,int slot){int x=(p->oam[slot*2]&255)|(((p->highOam[slot>>2]>>((slot&3)*2))&1)<<8);return x>=256+(int)p->extraRightCur?x-512:x;}
@@ -135,7 +137,7 @@ bool readActor(Ppu*p,const uint8_t*r,unsigned base,const std::set<int>&claimed,C
  bool clipped=std::any_of(parts.begin(),parts.end(),[](const Part&p){return p.slot==128;});
  std::sort(parts.begin(),parts.end(),[clipped](const Part&a,const Part&b){return clipped?a.index>b.index:a.slot>b.slot;});
  for(const auto&a:parts)for(int y=0;y<a.size;++y)for(int x=0;x<a.size;++x){int dx=a.x+x-xbase,dy=a.y+y-ybase;if(flip&0x4000)dx=-dx-1;if(flip&0x8000)dy=-dy-1;dx+=c.anchor;dy+=c.anchor;if(dx<0||dy<0||dx>=c.size||dy>=c.size)return false;
-  unsigned v=texel(p,a,x,y);if(v){indices[dy*c.size+dx]=(uint8_t)v;c.pixels[dy*c.size+dx]=rgba(p->cgram[128+((a.attr>>9)&7)*16+v]);if(a.x+x>=0&&a.x+x<256&&a.y+y>=0&&a.y+y<224)visible=true;}}
+  unsigned v,color;if(!virtualPixel(c.type,word(r,base+20),add,a.attr,a.size,x,y,&v,&color)){v=texel(p,a,x,y);color=rgba(p->cgram[128+((a.attr>>9)&7)*16+v]);}if(v){indices[dy*c.size+dx]=(uint8_t)v;c.pixels[dy*c.size+dx]=color;if(a.x+x>=0&&a.x+x<256&&a.y+y>=0&&a.y+y<224)visible=true;}}
  if(!visible)return false;uint64_t h=14695981039346656037ull;for(auto v:indices){h^=v;h*=1099511628211ull;}c.id=key(c.type,c.pose,h);return true;
 }
 bool readBossOam(Ppu*p,const uint8_t*r,unsigned base,const std::set<int>&claimed,Capture&c,std::vector<Part>&parts,int&x,int&y,unsigned&flip) {
@@ -165,6 +167,7 @@ bool readBossOam(Ppu*p,const uint8_t*r,unsigned base,const std::set<int>&claimed
 }
 }
 extern "C" void Cv4EnemyInit(const uint8_t*r,unsigned n){rom=r;romSize=n;havePrevious=false;}
+extern "C" void Cv4EnemySetPixelSource(Cv4EnemyPixelSource source){pixelSource=source;}
 extern "C" void Cv4EnemyBegin(Ppu*p,const uint8_t*r){
  frameCount=0;p->hostSprites=nullptr;p->hostSpriteCount=0;
  try{if(!initialized)initialize();++ticks;
@@ -186,7 +189,7 @@ extern "C" void Cv4EnemyBegin(Ppu*p,const uint8_t*r){
       Capture piece;piece.size=c.size;piece.anchor=c.anchor;piece.pixels.assign(c.pixels.size(),0);piece.type=c.type;piece.pose=c.pose;piece.id=pieceID;
       for(int py=0;py<part.size;++py)for(int px=0;px<part.size;++px) {
        int dx=part.x+px-x,dy=part.y+py-y;if(flip&0x4000)dx=-dx-1;if(flip&0x8000)dy=-dy-1;dx+=c.anchor;dy+=c.anchor;
-       unsigned v=texel(p,part,px,py);if(v&&dx>=0&&dy>=0&&dx<c.size&&dy<c.size)piece.pixels[dy*c.size+dx]=rgba(p->cgram[128+((part.attr>>9)&7)*16+v]);
+       unsigned v,color;if(!virtualPixel(c.type,word(r,base+20),word(r,base+0x26),part.attr,part.size,px,py,&v,&color)){v=texel(p,part,px,py);color=rgba(p->cgram[128+((part.attr>>9)&7)*16+v]);}if(v&&dx>=0&&dy>=0&&dx<c.size&&dy<c.size)piece.pixels[dy*c.size+dx]=color;
       }writer.submit(std::move(piece));
      }
      if(pc)observed<<',';pc=true;observed<<"{\"id\":"<<character_json::quote(pieceID)<<",\"index\":"<<part.index<<",\"oam\":"<<part.slot<<",\"priority\":"<<((part.attr>>12)&3)<<",\"math\":"<<((part.attr>>11)&1)<<"}";
