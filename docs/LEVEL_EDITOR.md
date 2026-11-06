@@ -62,6 +62,9 @@ lässt sich so auch bei vertikalen und Mode7-Einträgen testen, deren vollständ
 2D-Kartenansicht und Kartenimport noch fehlen. **Test beenden** schließt die
 Instanz. Nach einer Änderung
 F5 erneut drücken. Das Spielfenster muss den Eingabefokus haben, um zu spielen.
+Die Vorbereitung läuft verdeckt. Das Fenster erscheint erst, wenn der gewählte
+Abschnitt beziehungsweise die eigene Karte fertig gezeichnet ist. Während der
+Vorbereitung steht der Status weiterhin auf dem Start des Spieltests.
 Die Originalsteuerung des privaten Spieltests gilt. Native Speicherstände und
 Rewind gehören noch nicht zum Projektformat; nach Tod oder versehentlichem
 Verlassen des Tests mit F5 neu starten.

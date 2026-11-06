@@ -288,7 +288,7 @@ class Editor:
                 elif value[0]=='play':
                     if self.studio.visible:self.play_pending=False;value[1].close();continue
                     self.sprites.cache.clear();self.filter_monsters();self.filter_objects();self.schedule()
-                    self.play_pending=False;self.playtest=value[1];self.playtest.session.lua.command('resume');self.status.set('Spieltest läuft in einem separaten Fenster'+(' ohne Ton (kein Audiogerät)' if self.playtest.audio_unavailable else '')+'. Mit „Test beenden“ schließen.')
+                    self.play_pending=False;self.playtest=value[1];self.playtest.show();self.playtest.session.lua.command('resume');self.status.set('Spieltest läuft in einem separaten Fenster'+(' ohne Ton (kein Audiogerät)' if self.playtest.audio_unavailable else '')+'. Mit „Test beenden“ schließen.')
                     if getattr(self.playtest,'notes',''):self.status.set(self.status.get()+' '+self.playtest.notes)
                 elif value[0]=='studio_workspace':self.studio.ready(value[1])
                 elif value[0]=='studio_error':self.studio.failed(value[1])

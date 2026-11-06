@@ -69,8 +69,8 @@ size_t Cv4CapturePpuJson(char *out, size_t capacity)
 {
     if (!g_ppu || !capacity)
         return 0;
-    size_t n = (size_t)snprintf(out, capacity, "{\"bgmode\":%u,\"layers\":[",
-                                (unsigned)g_ppu->bgmode);
+    size_t n = (size_t)snprintf(out, capacity, "{\"bgmode\":%u,\"render_flags\":%u,\"tracking\":%d,\"host_sprites\":%zu,\"layers\":[",
+                                (unsigned)g_ppu->bgmode,(unsigned)g_ppu->renderFlags,(int)g_ppu->hdTracking,g_ppu->hostSpriteCount);
     for (int i = 0; i < 4 && n < capacity; i++)
         n += (size_t)snprintf(out + n, capacity - n,
             "%s{\"map\":%u,\"tiles\":%u,\"wide\":%d,\"tall\":%d,\"big\":%d,\"h\":%u,\"v\":%u}",

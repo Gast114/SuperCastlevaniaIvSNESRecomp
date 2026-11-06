@@ -35,6 +35,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "scene.h"
+#include "level_editor.h"
 #include <SDL3/SDL.h>
 
 extern "C" unsigned char g_ram[0x20000];
@@ -47,7 +48,7 @@ bool g_open;
 bool g_focus_note;
 unsigned g_pumps;
 fs::path g_dir;
-std::string g_created, g_scene, g_ppu_json, g_hd_json;
+std::string g_created, g_scene, g_ppu_json, g_hd_json, g_level_json;
 bool g_hd_image;
 unsigned g_frame;
 char g_note[4096];
@@ -104,6 +105,7 @@ void Save() {
        << "  \"widescreen\": " << (Cv4CaptureWidescreenOn()) << ",\n"
        << "  \"state\": " << GameStateJson() << ",\n"
        << "  \"hd\": " << g_hd_json << ",\n"
+       << "  \"editor_level\": " << g_level_json << ",\n"
        << "  \"ppu\": " << (g_ppu_json.empty() ? "null" : g_ppu_json) << "\n}\n";
   json.close();
   std::ofstream md(g_dir / "note.md", std::ios::binary);
@@ -176,6 +178,7 @@ extern "C" int Cv4DebugMarkerOpen(void) {
   }
   char ppu[1024];
   g_ppu_json = Cv4CapturePpuJson(ppu, sizeof(ppu)) ? ppu : "";
+  Cv4LevelStatus(ppu,sizeof(ppu));g_level_json=ppu;
   if (!ok)
     std::fprintf(stderr, "[debug marker] some captures failed in %s\n", g_dir.string().c_str());
   g_note[0] = 0;

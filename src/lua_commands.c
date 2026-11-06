@@ -28,6 +28,7 @@
 #include "level_editor.h"
 #include "cpu_state.h"
 #include "snes/ppu.h"
+#include <SDL3/SDL.h>
 
 extern Ppu *g_ppu;
 extern unsigned char g_ram[0x20000];
@@ -45,6 +46,19 @@ static int Cv4LuaSlot(const char *args, int *slot)
 static int Cv4LuaCommand(const char *name, const char *args, char *result, size_t capacity)
 {
     int slot;
+    if(!strcmp(name,"window")) {
+        if(strcmp(args,"hide")&&strcmp(args,"show")&&strcmp(args,"status")) {
+            snprintf(result,capacity,"window: hide|show|status");return 0;
+        }
+        int count=0,visible=0;SDL_Window **windows=SDL_GetWindows(&count);
+        for(int i=0;i<count;++i) {
+            if(!strcmp(args,"hide"))SDL_HideWindow(windows[i]);
+            else if(!strcmp(args,"show"))SDL_ShowWindow(windows[i]);
+            if(!(SDL_GetWindowFlags(windows[i])&SDL_WINDOW_HIDDEN))++visible;
+        }
+        SDL_free(windows);
+        snprintf(result,capacity,"{\"windows\":%d,\"visible\":%d}",count,visible);return 1;
+    }
     if(!strcmp(name,"level_project"))return Cv4LevelLoad(args,result,capacity);
     if(!strcmp(name,"level_room")){snprintf(result,capacity,"%u",Cv4LevelRoom());return 1;}
     if(!strcmp(name,"level_status")){Cv4LevelStatus(result,capacity);return 1;}

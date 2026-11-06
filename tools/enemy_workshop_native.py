@@ -85,7 +85,7 @@ class NativeSession:
                     'x':160,'y':176,'flags':0x8000,'record':None,'provisional':True}
         return [dict(v,**catalog_metadata(v)) for _,v in sorted(entries.items())]
 
-    def start(self,fixture=None):
+    def start(self,fixture=None,defer_show=False):
         with socket.socket() as sock:
             sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
         self.log=(self.folder/'game.log').open('w')
@@ -99,6 +99,7 @@ class NativeSession:
                     if self.proc.poll() is not None:raise RuntimeError('Native Laufzeit beendet; siehe game.log')
                     time.sleep(.05)
             if self.lua is None:raise TimeoutError('Native Werkstatt-Laufzeit antwortet nicht')
+            if defer_show:self.command('window','hide')
             self.command('enemy','workshop on')
             self.command('hd','off')
             if fixture:self.command('loadfile',Path(fixture).resolve())

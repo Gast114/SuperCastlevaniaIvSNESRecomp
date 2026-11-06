@@ -89,20 +89,27 @@ class Playtest:
             config['General']['DisableFrameDelay']='0';config['Graphics']['WindowScale']=str(max(2,min(8,window_scale)));config['Sound']['EnableAudio']='1'
         with (s.folder/'config.ini').open('w') as f:config.write(f)
         try:
-            try:s.start()
+            try:s.start(defer_show=True)
             except (OSError,RuntimeError):
                 log=(s.folder/'game.log').read_text(encoding='utf-8',errors='replace')
                 if fast or 'audio device open FAILED' not in log:raise
                 config['Sound']['EnableAudio']='0';self.audio_unavailable=True
                 with (s.folder/'config.ini').open('w') as f:config.write(f)
-                s.start()
+                s.start(defer_show=True)
             s.command('enemy','workshop off');s.command('enemy','capture off')
             s.command('enemy_resources',monsters)
             # Virtual families own their own textures/palettes; guest child lookups
             # may keep the original fixed effect offset without allocating OBJ VRAM.
             s.lua.eval('for a=0x13a0,0x13b5 do mainmemory.write_u8(a,255) end')
             s.command('level_project',level)
+            # Finish actor initialization and draw the project while hidden.
+            # Otherwise the user can play the bootstrap level before F5 is ready.
+            from enemy_workshop_native import play
+            play.advance(s.lua,2)
         except BaseException:self.close();raise
+
+    def show(self):
+        if self.session:self.session.command('window','show')
 
     def close(self):
         if self.session:self.session.close();self.session=None
@@ -120,13 +127,13 @@ class OriginalPlaytest:
             config['General']['DisableFrameDelay']='0';config['Graphics']['WindowScale']=str(max(2,min(8,window_scale)));config['Sound']['EnableAudio']='1'
         with (session.folder/'config.ini').open('w') as f:config.write(f)
         try:
-            try:session.start()
+            try:session.start(defer_show=True)
             except (OSError,RuntimeError):
                 log=(session.folder/'game.log').read_text(encoding='utf-8',errors='replace')
                 if fast or 'audio device open FAILED' not in log:raise
                 config['Sound']['EnableAudio']='0';self.audio_unavailable=True
                 with (session.folder/'config.ini').open('w') as f:config.write(f)
-                session.start()
+                session.start(defer_show=True)
             session.command('enemy','workshop off');session.command('enemy','capture off')
             if number:
                 session.write({0x86:number,0x70:3})
@@ -138,3 +145,6 @@ class OriginalPlaytest:
         except BaseException:self.close();raise
     def close(self):
         if self.session:self.session.close();self.session=None
+
+    def show(self):
+        if self.session:self.session.command('window','show')

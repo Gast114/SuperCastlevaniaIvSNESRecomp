@@ -23,6 +23,7 @@ struct Boss {unsigned type,x,y,slot,body;std::vector<unsigned char> states[2],vi
 struct Resource {unsigned type,variant,add,pose,w,h,ax,ay;std::vector<unsigned char> video;std::vector<uint32_t> pixels;};
 std::vector<Resource> resources;std::vector<unsigned char> spriteRom;
 std::vector<PpuHostSprite> virtualSprites;std::deque<std::array<uint32_t,256>> spritePixels;
+std::array<unsigned char,0x1400> previousSpriteState{};bool havePreviousSpriteState=false;
 std::vector<Boss> bosses;int encounter=-1,dx=0,dy=0;unsigned encounterAge=0,deadAge=0;bool encounterVideo=false;
 std::array<unsigned char,0x940> suspended;
 std::array<unsigned char,0x2b0> suspendedExtras;
@@ -36,6 +37,7 @@ std::vector<Room> rooms;unsigned current=0;bool active=false,install=false;unsig
 std::vector<std::array<unsigned short,64>> atlas;bool mixed=false;
 unsigned streamEnd=0;
 bool damageHookInstalled=false;
+unsigned sampledLines=0,failedLines=0,requestedFlags=0,failedFlags=0;bool faultRecorded=false;
 unsigned word(unsigned at){return g_ram[at]|unsigned(g_ram[at+1])<<8;}
 void put(unsigned at,unsigned value){g_ram[at]=value;g_ram[at+1]=value>>8;}
 unsigned bossFloor(const Room&r,const Actor&a){
@@ -50,6 +52,7 @@ void contactDamage(CpuState*cpu,uint32_t){
 }
 template<class T> unsigned cell(const Room&r,const std::vector<T>&map,int x,int y,unsigned outside){return x>=0&&y>=0&&x<int(r.w)&&y<int(r.h)?map[y*r.w+x]:outside;}
 void enter(unsigned index,unsigned x,unsigned y,unsigned plane){
+ havePreviousSpriteState=false;
  if(encounter>=0){put(0xef0,suspendedBossEffect);std::copy(suspendedPersistence.begin(),suspendedPersistence.end(),g_ram+0x1500);std::copy(suspendedRaster.begin(),suspendedRaster.end(),g_ram+0x100);unsigned cursor=0;for(auto span:{std::pair<unsigned,unsigned>{0x1200,0x80},{0x13c0,0x30},{0x1e00,0x200}}){memcpy(g_ram+span.first,suspendedExtras.data()+cursor,span.second);cursor+=span.second;}}
  current=index;auto&r=rooms[current];install=true;cooldown=30;encounter=-1;dx=dy=0;
  std::fill(g_ram+0x580,g_ram+0xec0,0);std::fill(g_ram+0x1200,g_ram+0x1280,0);
@@ -59,6 +62,7 @@ void enter(unsigned index,unsigned x,unsigned y,unsigned plane){
  put(0x13f4,16);put(0xbc,90);put(0xb8,0);put(0x94,streamEnd);put(0x96,streamEnd);
 }
 void beginEncounter(unsigned index){
+ havePreviousSpriteState=false;
  auto&r=rooms[current];auto&a=r.actors[index];const auto&b=bosses[a.boss];
  std::copy(g_ram+0x580,g_ram+0xec0,suspended.begin());
  std::copy(g_ram+0x100,g_ram+0x200,suspendedRaster.begin());memcpy(g_ram+0x100,b.raster.data(),256);
@@ -74,6 +78,7 @@ void beginEncounter(unsigned index){
  if(a.options&4)put(b.slot+6,a.hp);if(a.options&8)put(b.slot+0x28,a.hw);if(a.options&16)put(b.slot+0x2a,a.hh);
 }
 void finishEncounter(){
+ havePreviousSpriteState=false;
  auto&r=rooms[current];auto&a=r.actors[encounter];bool exit=a.options&2;
  put(0x54a,std::clamp(int(word(0x54a))-dx,0,int(r.w*8)-1));put(0x54e,std::clamp(int(word(0x54e))-dy,0,int(r.h*8)-1));
  std::copy(suspended.begin(),suspended.end(),g_ram+0x580);
@@ -148,14 +153,14 @@ extern "C" int Cv4LevelLoad(const char *path,char *result,size_t capacity){
   }
   if(at!=data.size())throw std::runtime_error("Unexpected independent actor data");
   if(!damageHookInstalled){damageHookInstalled=interp_bridge_add_pre_opcode_hook(0x00dd12,contactDamage);if(!damageHookInstalled)throw std::runtime_error("Cannot install custom actor hook");}
-  rooms=std::move(next);bosses=std::move(nextBosses);resources=std::move(nextResources);spriteRom=std::move(nextSpriteRom);atlas=std::move(nextAtlas);mixed=newMixed;streamEnd=stop;active=true;Cv4EnemySetPixelSource(Cv4LevelSpritePixel);enter(start,rooms[start].sx,rooms[start].sy,0);
+  rooms=std::move(next);bosses=std::move(nextBosses);resources=std::move(nextResources);spriteRom=std::move(nextSpriteRom);atlas=std::move(nextAtlas);mixed=newMixed;streamEnd=stop;active=true;faultRecorded=false;Cv4EnemySetPixelSource(Cv4LevelSpritePixel);enter(start,rooms[start].sx,rooms[start].sy,0);
   snprintf(result,capacity,"%u custom rooms ready",count);return 1;
  }catch(const std::exception&e){snprintf(result,capacity,"%s",e.what());return 0;}
 }
 extern "C" unsigned Cv4LevelRoom(void){return active?current:~0u;}
 extern "C" void Cv4LevelStatus(char*result,size_t capacity){
  unsigned slots=0;for(unsigned at=0x580;at<0xec0;at+=64)if(word(at+16))++slots;
- snprintf(result,capacity,"{\"active\":%s,\"room\":%u,\"camera_x\":%d,\"camera_y\":%d,\"placements\":%zu,\"resource_contexts\":%zu,\"active_native_slots\":%u,\"native_slot_limit\":37,\"boss_encounter\":%d}",active?"true":"false",current,cx,cy,active?rooms[current].actors.size():0,resources.size(),slots,encounter);
+ snprintf(result,capacity,"{\"active\":%s,\"room\":%u,\"camera_x\":%d,\"camera_y\":%d,\"placements\":%zu,\"resource_contexts\":%zu,\"active_native_slots\":%u,\"native_slot_limit\":37,\"boss_encounter\":%d,\"sampled_lines\":%u,\"failed_lines\":%u,\"requested_render_flags\":%u,\"failed_render_flags\":%u}",active?"true":"false",current,cx,cy,active?rooms[current].actors.size():0,resources.size(),slots,encounter,sampledLines,failedLines,requestedFlags,failedFlags);
 }
 namespace {
 const Resource *resourceFor(unsigned type,unsigned variant){
@@ -163,6 +168,44 @@ const Resource *resourceFor(unsigned type,unsigned variant){
 }
 unsigned dataWord(const std::vector<unsigned char>&v,unsigned at){return v[at]|unsigned(v[at+1])<<8;}
 unsigned nativeRgba(unsigned c){auto e=[](unsigned n){return (n<<3)|(n>>2);};return 0xff000000u|e(c&31)<<16|e((c>>5)&31)<<8|e((c>>10)&31);}
+struct SpritePart {int x,y,size,slot=-1;unsigned attr;};
+bool emittedActor(Ppu*p,const unsigned char*ram,unsigned base,const std::array<bool,128>&claimed,std::vector<SpritePart>&parts,unsigned&type,unsigned&variant,unsigned&add){
+ auto read=[&](unsigned at){return unsigned(ram[at])|unsigned(ram[at+1])<<8;};
+ type=read(base+16);variant=read(base+20);add=read(base+38);unsigned pose=read(base),flip=read(base+4),priority=read(base+2);
+ if(!resourceFor(type,variant)||pose<0x8000||spriteRom.size()!=32768)return false;
+ unsigned offset=pose&32767,count=spriteRom[offset];if(!count||count>32||offset+1+count*4>spriteRom.size())return false;
+ int ax=(int16_t)(read(base+10)-read(0x1c)),ay=(int16_t)((read(base+14)-read(0x1e))&read(0x13de));
+ std::vector<SpritePart> expected;
+ for(unsigned i=0;i<count;++i){
+  unsigned at=offset+1+i*4,raw=spriteRom[at+2]|unsigned(spriteRom[at+3])<<8;int size=raw&0x2000?16:8;
+  int rx=(int8_t)spriteRom[at],ry=(int8_t)spriteRom[at+1];unsigned attr=(raw|0x2000)^flip;
+  if(priority&0x8000)attr=(attr&0xcfff)|((priority*2&255)<<8);
+  expected.push_back({ax+((flip&0x4000)?-rx-size:rx),ay+((flip&0x8000)?-ry-size:ry),size,-1,(attr+add)&65535});
+ }
+ auto ox=[&](unsigned n){int x=(p->oam[n*2]&255)|(((p->highOam[n>>2]>>((n&3)*2))&1)<<8);return x>255+int(p->extraRightCur)?x-512:x;};
+ auto os=[&](unsigned n){return p->highOam[n>>2]&(2u<<((n&3)*2))?16:8;};
+ std::vector<std::pair<int,int>> shifts{{0,0}};
+ // Some retail AI emits OAM, then moves itself. Recover only an exact,
+ // complete emitted metasprite, never a guessed pose or invented visibility.
+ const auto&first=expected.front();
+ for(unsigned n=0;n<128;++n)if(!claimed[n]&&p->oam[n*2+1]==first.attr&&os(n)==first.size){
+  int sx=ox(n)-first.x,sy=int(p->oam[n*2]>>8)-(first.y&255);if(sy>128)sy-=256;if(sy<-128)sy+=256;
+  if(std::abs(sx)<=16&&std::abs(sy)<=16&&std::find(shifts.begin(),shifts.end(),std::pair<int,int>{sx,sy})==shifts.end())shifts.push_back({sx,sy});
+ }
+ int best=100000;bool ambiguous=false;
+ for(auto shift:shifts){
+  auto trial=expected;auto used=claimed;bool valid=true;unsigned emitted=0;
+  for(auto&part:trial){
+   part.x+=shift.first;part.y+=shift.second;
+   for(unsigned n=0;n<128;++n)if(!used[n]&&ox(n)==part.x&&(p->oam[n*2]>>8)==(unsigned(part.y)&255)&&p->oam[n*2+1]==part.attr&&os(n)==part.size){part.slot=n;used[n]=true;++emitted;break;}
+   if(part.slot<0&&part.x+part.size>-int(p->extraLeftCur)&&part.x<256+int(p->extraRightCur)&&part.y+part.size>0&&part.y<224){valid=false;break;}
+  }
+  if(!valid||!emitted)continue;int score=shift.first*shift.first+shift.second*shift.second;
+  if(score<best){best=score;parts=std::move(trial);ambiguous=false;}else if(score==best)ambiguous=true;
+  if(!score)return true;
+ }
+ return best<100000&&!ambiguous;
+}
 }
 extern "C" int Cv4LevelSpritePixel(unsigned type,unsigned variant,unsigned actualAdd,unsigned attr,int size,int x,int y,unsigned*index,unsigned*rgba){
  if(!active||encounter>=0)return 0;const auto*r=resourceFor(type,variant);if(!r)return 0;
@@ -181,27 +224,10 @@ extern "C" void Cv4LevelSprites(Ppu*p){
  for(const auto&s:virtualSprites)for(unsigned n=0;n<128;++n)if(s.mask[n>>3]&(1u<<(n&7)))claimed[n]=true;
  if(p->hostObjPixels)for(unsigned n=0;n<128;++n)if(p->hostObjMask[n>>3]&(1u<<(n&7)))claimed[n]=true;
  if(encounter<0)for(unsigned base=0x580;base<0xec0;base+=64){
-  unsigned type=word(base+16),pose=word(base),variant=word(base+20),add=word(base+0x26),flip=word(base+4),priority=word(base+2);
-  if(!resourceFor(type,variant)||pose<0x8000||spriteRom.size()!=32768)continue;
-  unsigned offset=pose&32767,count=spriteRom[offset];if(!count||count>32||offset+1+count*4>spriteRom.size())continue;
-  int ax=(int16_t)(word(base+10)-word(0x1c)),ay=(int16_t)((word(base+14)-word(0x1e))&word(0x13de));
-  for(unsigned part=0;part<count;++part){
-   unsigned at=offset+1+part*4,raw=spriteRom[at+2]|unsigned(spriteRom[at+3])<<8,size=raw&0x2000?16:8;
-   int rx=(int8_t)spriteRom[at],ry=(int8_t)spriteRom[at+1];
-   int x=ax+((flip&0x4000)?-rx-int(size):rx),y=ay+((flip&0x8000)?-ry-int(size):ry);
-   unsigned attr=(raw|0x2000)^flip;if(priority&0x8000)attr=(attr&0xcfff)|((priority*2&255)<<8);attr=(attr+add)&65535;
-   int found=-1;
-   for(unsigned n=0;n<128;++n){
-    unsigned xx=(p->oam[n*2]&255)|(((p->highOam[n>>2]>>((n&3)*2))&1)<<8);
-    if(xx>255+unsigned(p->extraRightCur))xx-=512;
-    unsigned big=(p->highOam[n>>2]>>((n&3)*2+1))&1;
-    if(int(xx)==x&&(p->oam[n*2]>>8)==(unsigned(y)&255)&&p->oam[n*2+1]==attr&&(big?16:8)==size){
-     if(claimed[n])continue;found=n;break;
-    }
-   }
-   // Native absence may be an intentional blink/invisibility phase. Only
-   // replace emitted parts; do not invent visibility from an old pose field.
-   if(found<0)continue;
+  unsigned type=0,variant=0,add=0;std::vector<SpritePart> parts;
+  if(!emittedActor(p,g_ram,base,claimed,parts,type,variant,add)&&(!havePreviousSpriteState||!emittedActor(p,previousSpriteState.data(),base,claimed,parts,type,variant,add)))continue;
+  for(const auto&part:parts){
+   int found=part.slot,x=part.x,y=part.y;unsigned size=part.size,attr=part.attr;if(found<0)continue;
    if(x+int(size)<=-int(p->extraLeftCur)||x>=256+int(p->extraRightCur)||y+int(size)<=0||y>=224)continue;
    spritePixels.emplace_back();auto&pixels=spritePixels.back();pixels.fill(0);
    for(unsigned yy=0;yy<size;++yy)for(unsigned xx=0;xx<size;++xx){unsigned index,color;Cv4LevelSpritePixel(type,variant,add,attr,size,xx,yy,&index,&color);pixels[yy*size+xx]=color;}
@@ -210,6 +236,7 @@ extern "C" void Cv4LevelSprites(Ppu*p){
    if(found>=0){host.mask[found>>3]|=1u<<(found&7);claimed[found]=true;}virtualSprites.push_back(host);
   }
  }
+ std::copy_n(g_ram,previousSpriteState.size(),previousSpriteState.begin());havePreviousSpriteState=encounter<0;
  // Scene scripts are not ordinary actors. Their measured image is a movable
  // decoration until a safe controller adapter exists, never an arbitrary RTL.
  for(const auto&a:rooms[current].actors)if(a.kind==3){const auto*r=resourceFor(a.type,a.variant);if(!r||r->pixels.empty())continue;
@@ -275,6 +302,10 @@ extern "C" void Cv4LevelBeforeFrame(void){
 }
 extern "C" void Cv4LevelBeforeDraw(Ppu*p){
  if(!active||word(0x32)!=4)return;auto&r=rooms[current];
+ // The reference renderer cannot provide host RGB sprite ownership or BG
+ // samples. A custom project must never silently turn into raw VRAM tiles.
+ requestedFlags=p->renderFlags;p->renderFlags|=kPpuRenderFlags_NewRenderer;
+ sampledLines=failedLines=0;
  gameplaySubscreen=p->screenEnabled[1];
  if(install){
   unsigned size=r.video.size()-512;memcpy(p->vram,r.video.data(),size);memcpy(p->cgram,r.video.data()+size,512);
@@ -315,32 +346,45 @@ extern "C" void Cv4LevelBeforeLine(Ppu*p,int line){
   p->screenEnabled[0]=0x14;p->screenEnabled[1]=0;p->windowsel=0;return;
  }
  // Boss IRQ/HDMA may change its body, never the project's layer visibility.
- p->screenEnabled[0]=0x17;p->windowsel=0;
+ p->screenEnabled[0]=0x13;p->windowsel=0;
  if(line==32)p->screenEnabled[1]=gameplaySubscreen;
  if(mode7){if(line==32)std::copy(mode7Colors.begin(),mode7Colors.end(),p->cgram);p->cgram[0]=(unsigned short)dataWord(rooms[current].video,0x10000);p->bgmode=7;return;}
  p->cgram[0]=(unsigned short)dataWord(rooms[current].video,0x10000);
  if(mixed){p->bgmode=(uint8_t)rooms[current].mode;p->bgTileAdr=(p->bgTileAdr&0xff00)|0x22;p->bgXsc[0]=0x41;p->bgXsc[1]=0x49;for(unsigned i=0;i<2;++i){p->hScroll[i]=cx;p->vScroll[i]=(cy-1)&1023;}}
 }
 extern "C" void Cv4LevelRenderLine(Ppu*p,int line){
- if(!active||!mixed||word(0x32)!=4||line<1||line>224||PPU_forcedBlank(p)||!p->renderBuffer)return;
- std::array<PpuLayerSample,kPpuBufWidth> samples[2];
- if(!PpuGetLayerScanline(p,line,0,samples[0].data(),samples[0].size())||!PpuGetLayerScanline(p,line,1,samples[1].data(),samples[1].size()))return;
+ if(!active||!mixed||word(0x32)!=4||line<33||line>224||PPU_forcedBlank(p)||!p->renderBuffer)return;
  const auto&r=rooms[current];auto*row=(uint32_t*)(p->renderBuffer+(line-1)*p->renderPitch);
  bool mode7=encounter>=0&&r.actors[encounter].type==0x81;
+ std::array<PpuLayerSample,kPpuBufWidth> body{};
+ bool bodyAvailable=!mode7||PpuGetLayerScanline(p,line,0,body.data(),body.size());
+ if(!bodyAvailable){
+  ++failedLines;failedFlags=p->renderFlags;
+  if(!faultRecorded){
+   std::ofstream f("level_render_fault.json");f<<"{\"line\":"<<line<<",\"flags\":"<<p->renderFlags<<",\"tracking\":"<<p->hdTracking<<",\"mode\":"<<unsigned(p->bgmode)<<",\"setini\":"<<unsigned(p->setini)<<",\"color_control\":"<<unsigned(p->cgwsel)<<",\"line_enhancer\":"<<(p->widescreenLineEnhancer?1:0)<<",\"camera\":["<<cx<<","<<cy<<"]}\n";faultRecorded=true;
+  }
+ }else ++sampledLines;
  for(int x=-int(p->extraLeftCur);x<256+int(p->extraRightCur);++x){
-  unsigned i=x+kPpuExtraLeftRight;unsigned depth[2]={p->bgBuffers[0].data[i],p->bgBuffers[1].data[i]};
-  unsigned colors[2]={PpuPixelColor(p,(uint16_t)depth[0],i),PpuPixelColor(p,(uint16_t)depth[1],i)};bool changed=false;
-  if(mode7)for(unsigned sub=0;sub<2;++sub)if(((depth[sub]>>8)&15)==0&&(samples[0][i].pixel&255)){
-   depth[sub]=SPRITE_PRIO_TO_PRIO(r.actors[encounter].flags&0x8000?3:1,1)<<8;changed=true;
+  unsigned i=x+kPpuExtraLeftRight;
+  // Only native OBJ belongs in the custom playfield. The guest BG buffers
+  // can contain arbitrary CHR/HUD fragments after another actor's DMA; they
+  // must never occlude the immutable project atlas, even in transparent air.
+  unsigned depth[2]={0x500,0x500},colors[2]={p->cgram[0],p->cgram[0]};
+  for(unsigned sub=0;sub<2;++sub){
+   unsigned obj=p->objBuffer.data[i];
+   if(IS_SCREEN_ENABLED(p,sub,4)&&(obj&255)){depth[sub]=obj;colors[sub]=PpuPixelColor(p,(uint16_t)obj,i);}
+   if(mode7&&bodyAvailable&&(body[i].screens&(1u<<sub))&&(body[i].pixel&255)){
+    unsigned z=SPRITE_PRIO_TO_PRIO(r.actors[encounter].flags&0x8000?3:2,1)<<8;
+    if(z>depth[sub]){depth[sub]=z;colors[sub]=p->cgram[body[i].pixel&255];}
+   }
   }
   int px=x+cx,py=line-1+cy;
   if(px>=0&&py>=0&&px<int(r.w*8)&&py<int(r.h*8))for(unsigned layer=0;layer<2;++layer){
    unsigned value=r.maps[layer][(py/8)*r.w+px/8],color=atlas[value&0x7fffffff][(py%8)*8+px%8];
    if(!(color&0x8000))continue;
    unsigned z=(value&0x80000000?(layer?0xb100:0xc000):(layer?0x7100:0x8000))|1;
-   for(unsigned sub=0;sub<2;++sub)if(((mode7&&sub==0)||(samples[layer][i].screens&(1u<<sub)))&&z>depth[sub]){depth[sub]=z;colors[sub]=color&0x7fff;changed=true;}
+   for(unsigned sub=0;sub<2;++sub)if(IS_SCREEN_ENABLED(p,sub,layer)&&z>depth[sub]){depth[sub]=z;colors[sub]=color&0x7fff;}
   }
-  if(!changed)continue;
   unsigned flags=p->hdColorFlags[i],layer=(depth[0]>>8)&15;
   bool math=(flags&2)&&(PPU_mathEnabled(p)&(1u<<layer)),half=math&&PPU_halfColor(p);
   unsigned other=p->fixedColor;
