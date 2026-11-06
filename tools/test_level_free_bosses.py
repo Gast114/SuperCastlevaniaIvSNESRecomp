@@ -77,6 +77,14 @@ def check():
             passed('A free boss deals the configured seven HP of contact damage, and the real native whip removes boss HP')
         finally:g.close()
 
+        p=project([actor(137,150,160),actor(128,235,152)])
+        g=Playtest(p.data,folder/'shared-player-damage',fast=True)
+        try:
+            s=g.session;s.write({0xbc:0,0x13f4:16,0x54a:150,0x54e:165});play.advance(s.lua,4)
+            assert s.read(0x13f4)==9,s.read(0x13f4)
+            passed('A later boss context cannot restore health lost to the first boss; shared player invulnerability prevents duplicate damage')
+        finally:g.close()
+
         # A fresh one-HP boss dies to a real whip without ending the room or
         # removing the other ordinary actors from the shared native scene.
         p=project([actor(137,150,160,1),actor(18,235,165,777)])
@@ -104,6 +112,7 @@ def check():
                     states.add((a['state'],a['timer'],a['x'],a['y']));visible=max(visible,a['drawn'])
                     if t==129:assert 300<a['body_pixels']<256*224,a
                 assert len(states)>1 and visible>0,(t,states,visible)
+                if t==129:assert a['body_renders']>1 and a['body_cache_hits']>0,a
                 s.command('screenshot',folder/f'{t:02x}.png');picture=Image.open(folder/f'{t:02x}.png').convert('RGB')
                 # These far-left floor pixels are outside every placed body.
                 matches=possible=0

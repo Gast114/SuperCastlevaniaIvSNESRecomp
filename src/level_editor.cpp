@@ -6,6 +6,9 @@ extern "C" {
 #include "snes/interp_bridge.h"
 #include "cpu_state.h"
 #include "common_rtl.h"
+#include "snes/snes.h"
+#include "snes/dsp.h"
+#include "audio_trace.h"
 }
 #include <algorithm>
 #include <array>
@@ -19,6 +22,7 @@ extern "C" {
 extern "C" unsigned char g_ram[0x20000];
 extern "C" CpuState g_cpu;
 extern "C" Ppu *g_ppu;
+extern "C" Snes *g_snes;
 namespace {
 struct Actor {unsigned type,variant,x,y,flags,hw,hh,hp,trait,add;unsigned damage=65535,kind=0,boss=0,options=0;bool spawned=false,parked=false,valuesReady=false;unsigned slot=0,persistence=0;std::array<unsigned char,64> saved{};};
 struct Door {unsigned x,y,w,h,target,tx,ty,trigger,plane;};
@@ -29,8 +33,38 @@ std::vector<Resource> resources;std::vector<unsigned char> spriteRom;
 std::vector<PpuHostSprite> virtualSprites;std::deque<std::array<uint32_t,256>> spritePixels;
 std::array<unsigned char,0x1400> previousSpriteState{};bool havePreviousSpriteState=false;
 std::vector<Boss> bosses;int encounter=-1,dx=0,dy=0;unsigned encounterAge=0,deadAge=0;bool encounterVideo=false;
-struct FreeBoss {unsigned actor=0,hp=0,age=0,deathAge=0,drawn=0;int dx=0,dy=0,bodyX=0,bodyY=0;bool dead=false,error=false;std::vector<unsigned char> ram,video;std::vector<uint32_t> body;};
-std::vector<FreeBoss> freeBosses;std::vector<unsigned char> sandboxSnapshot;int freeEvaluating=-1;
+struct FreeBoss {unsigned actor=0,hp=0,age=0,deathAge=0,drawn=0,bodyRenders=0,bodyCacheHits=0;int dx=0,dy=0,bodyX=0,bodyY=0;bool dead=false,error=false;std::vector<unsigned char> ram,video,bodySource;std::array<unsigned short,12> bodyMatrix{};std::vector<uint32_t> body;};
+std::vector<FreeBoss> freeBosses;int freeEvaluating=-1;
+// A boss context switch is NOT a savestate load. The generic rollback loader
+// also re-primes audio delivery and stops mod audio; doing that every field
+// halved real-time FPS with sound enabled. Keep guest/execution isolation, but
+// leave the live audio consumer, presentation history and load hooks alone.
+struct BossFrameState:SaveLoadInfo {
+ std::vector<unsigned char> bytes;size_t cursor=0,used=0;unsigned version=0;bool loading=false,valid=true;
+ DspOutputRing liveRing;
+ BossFrameState(){func=transfer;peek=nullptr;}
+ static void transfer(SaveLoadInfo*sli,void*data,size_t size){
+  auto&s=*static_cast<BossFrameState*>(sli);
+  size_t limit=s.loading?s.used:s.bytes.size();
+  if(s.cursor>limit||size>limit-s.cursor){s.valid=false;return;}
+  if(s.loading)memcpy(data,s.bytes.data()+s.cursor,size);else memcpy(s.bytes.data()+s.cursor,data,size);s.cursor+=size;
+ }
+ bool capture(){
+  bytes.resize(RtlRollbackSnapshotBound());cursor=0;loading=false;valid=true;
+  RtlApuLock();version=snes_saveload_get_version();snes_saveload(g_snes,this);RtlSaveExecutionState(this);RtlApuUnlock();used=cursor;return valid;
+ }
+ void enter(){
+  // No consumer may hear samples produced by a speculative boss context.
+  // The native interpreter's nested APU locks use the recursive SDL mutex.
+  RtlApuLock();dsp_output_ring_save(g_snes->apu->dsp,&liveRing);
+ }
+ bool restore(){
+  cursor=0;loading=true;valid=true;
+  unsigned previous=snes_saveload_get_version();snes_saveload_set_version(version);snes_saveload(g_snes,this);
+  bool ok=valid&&RtlLoadExecutionState(this);if(ok)RtlApplyExecutionState();
+  dsp_output_ring_restore(g_snes->apu->dsp,&liveRing);snes_saveload_set_version(previous);RtlApuUnlock();return ok&&valid&&cursor==used;
+ }
+} bossFrameState;
 std::array<unsigned char,0x940> suspended;
 std::array<unsigned char,0x2b0> suspendedExtras;
 std::array<unsigned char,256> suspendedRaster;
@@ -177,8 +211,9 @@ extern "C" unsigned Cv4LevelRoom(void){return active?current:~0u;}
 extern "C" void Cv4LevelStatus(char*result,size_t capacity){
  unsigned slots=0;for(unsigned at=0x580;at<0xec0;at+=64)if(word(at+16))++slots;
  snprintf(result,capacity,"{\"active\":%s,\"room\":%u,\"camera_x\":%d,\"camera_y\":%d,\"placements\":%zu,\"resource_contexts\":%zu,\"active_native_slots\":%u,\"native_slot_limit\":37,\"boss_encounter\":%d,\"sampled_lines\":%u,\"failed_lines\":%u,\"requested_render_flags\":%u,\"failed_render_flags\":%u}",active?"true":"false",current,cx,cy,active?rooms[current].actors.size():0,resources.size(),slots,encounter,sampledLines,failedLines,requestedFlags,failedFlags);
- std::ostringstream extra;extra<<",\"free_bosses\":"<<freeBosses.size()<<",\"free_actors\":[";bool comma=false;
- for(const auto&f:freeBosses){if(comma)extra<<',';comma=true;const auto&a=rooms[current].actors[f.actor];const auto&b=bosses[a.boss];auto fw=[&](unsigned at){return unsigned(f.ram[at])|unsigned(f.ram[at+1])<<8;};extra<<"{\"type\":"<<a.type<<",\"hp\":"<<f.hp<<",\"state\":"<<fw(b.slot+18)<<",\"body_pixels\":"<<std::count_if(f.body.begin(),f.body.end(),[](unsigned c){return c>>24;})<<",\"timer\":"<<fw(b.slot+0x22)<<",\"drawn\":"<<f.drawn<<",\"age\":"<<f.age<<",\"x\":"<<int((int16_t)(fw(b.slot+10)-f.dx))<<",\"y\":"<<int((int16_t)(fw(b.slot+14)-f.dy))<<",\"dead\":"<<f.dead<<",\"error\":"<<f.error<<"}";}
+ AudioTraceStats audio{};audio_trace_get_stats(&audio);
+ std::ostringstream extra;extra<<",\"audio_underflows\":"<<audio.output_underflows<<",\"audio_priming\":"<<audio.output_priming<<",\"audio_consumed\":"<<audio.consumed<<",\"free_bosses\":"<<freeBosses.size()<<",\"free_actors\":[";bool comma=false;
+ for(const auto&f:freeBosses){if(comma)extra<<',';comma=true;const auto&a=rooms[current].actors[f.actor];const auto&b=bosses[a.boss];auto fw=[&](unsigned at){return unsigned(f.ram[at])|unsigned(f.ram[at+1])<<8;};extra<<"{\"type\":"<<a.type<<",\"hp\":"<<f.hp<<",\"state\":"<<fw(b.slot+18)<<",\"body_pixels\":"<<std::count_if(f.body.begin(),f.body.end(),[](unsigned c){return c>>24;})<<",\"body_renders\":"<<f.bodyRenders<<",\"body_cache_hits\":"<<f.bodyCacheHits<<",\"timer\":"<<fw(b.slot+0x22)<<",\"drawn\":"<<f.drawn<<",\"age\":"<<f.age<<",\"x\":"<<int((int16_t)(fw(b.slot+10)-f.dx))<<",\"y\":"<<int((int16_t)(fw(b.slot+14)-f.dy))<<",\"dead\":"<<f.dead<<",\"error\":"<<f.error<<"}";}
  extra<<"]}";auto text=extra.str();size_t length=strlen(result);if(length&&length+text.size()<capacity)memcpy(result+length-1,text.c_str(),text.size()+1);
 }
 namespace {
@@ -202,11 +237,13 @@ void tickFreeBosses(){
   if(a.options&4)fp(b.slot+6,a.hp);if(a.options&8)fp(b.slot+0x28,a.hw);if(a.options&16)fp(b.slot+0x2a,a.hh);
   if(b.type==0x8d)fp(0xef0,0x200);f.hp=fw(b.slot+6);a.spawned=true;freeBosses.push_back(std::move(f));
  }
- if(freeBosses.empty())return;
- sandboxSnapshot.resize(RtlRollbackSnapshotBound());size_t size=RtlRollbackSaveToMemory(sandboxSnapshot.data(),sandboxSnapshot.size());if(!size)return;
+ if(std::none_of(freeBosses.begin(),freeBosses.end(),[&](const FreeBoss&f){return !f.dead&&!f.error&&std::abs(int(r.actors[f.actor].x)-cx-128)<=512;}))return;
+ if(!bossFrameState.capture())return;
  std::array<unsigned char,0x380> player;std::copy_n(g_ram+0x200,player.size(),player.begin());unsigned hp=word(0x13f4),invulnerability=word(0xbc),frame=word(0x78),weapon=word(0x8e),whip=word(0x92);
+ std::array<unsigned char,64> latestHurt{};bool damaged=false;
  for(unsigned index=0;index<freeBosses.size();++index){auto&f=freeBosses[index];auto&a=r.actors[f.actor];const auto&b=bosses[a.boss];
   if(f.dead||f.error||std::abs(int(a.x)-cx-128)>512)continue;
+  bossFrameState.enter();
   memcpy(g_ram,f.ram.data(),f.ram.size());memcpy(g_ram+0x200,player.data(),player.size());
   for(unsigned base=0x200;base<=0x540;base+=64){put(base+10,word(base+10)+f.dx);put(base+14,word(base+14)+f.dy);}
   put(0x13f4,hp);put(0xbc,invulnerability);put(0x78,frame);put(0x8e,weapon);put(0x92,whip);put(0x70,5);put(0x86,0);put(0x94,streamEnd);put(0x96,streamEnd);
@@ -236,18 +273,31 @@ void tickFreeBosses(){
    // here would execute the shared room's IRQ/HDMA and could substitute its
    // widescreen VRAM shadow for the boss's private texture/map.
    g_ppu->renderVram=nullptr;g_ppu->hdTracking=true;g_ppu->windowsel=0;
-   g_ppu->renderFlags|=kPpuRenderFlags_NewRenderer;f.body.assign(256*224,0);
-   std::array<PpuLayerSample,kPpuBufWidth> samples{};
-   for(unsigned line=1;line<=224;++line)if(PpuGetLayerScanline(g_ppu,line,0,samples.data(),samples.size()))
-    for(unsigned x=0;x<256;++x){const auto&pixel=samples[x+kPpuExtraLeftRight];unsigned color=pixel.pixel&255;if(color&&(pixel.screens&1))f.body[(line-1)*256+x]=nativeRgba(g_ppu->cgram[color]);}
+   g_ppu->renderFlags|=kPpuRenderFlags_NewRenderer;
+   std::array<unsigned short,12> matrix{};for(unsigned n=0;n<8;++n)matrix[n]=g_ppu->m7matrix[n];matrix[8]=g_ppu->m7sel;matrix[9]=g_ppu->setini;matrix[10]=g_ppu->cgwsel;matrix[11]=g_ppu->mosaic;
+   // Reuse only an exactly identical texture, palette and transformation.
+   // Static native phases otherwise resample all 57,344 pixels every field.
+   bool same=!g_ppu->widescreenLineEnhancer&&f.bodySource.size()==0x10200&&matrix==f.bodyMatrix&&
+       !memcmp(f.bodySource.data(),g_ppu->vram,0x10000)&&!memcmp(f.bodySource.data()+0x10000,g_ppu->cgram,512);
+   if(!same){
+    ++f.bodyRenders;f.body.assign(256*224,0);std::array<PpuLayerSample,kPpuBufWidth> samples{};
+    for(unsigned line=1;line<=224;++line)if(PpuGetLayerScanline(g_ppu,line,0,samples.data(),samples.size()))
+     for(unsigned x=0;x<256;++x){const auto&pixel=samples[x+kPpuExtraLeftRight];unsigned color=pixel.pixel&255;if(color&&(pixel.screens&1))f.body[(line-1)*256+x]=nativeRgba(g_ppu->cgram[color]);}
+    f.bodySource.resize(0x10200);memcpy(f.bodySource.data(),g_ppu->vram,0x10000);memcpy(f.bodySource.data()+0x10000,g_ppu->cgram,512);f.bodyMatrix=matrix;
+    if(g_ppu->widescreenLineEnhancer)f.bodySource.clear();
+   }else ++f.bodyCacheHits;
    f.bodyX=localCamera-f.dx;f.bodyY=-f.dy;
   }
   active=true;freeEvaluating=-1;f.error=!ok;++f.age;f.hp=std::max(0,int((int16_t)word(b.slot+6)));
   if(!f.hp||word(b.slot+16)!=b.body)++f.deathAge;else f.deathAge=0;f.dead=f.deathAge>180;
   if(!f.error){f.ram.assign(g_ram,g_ram+0x20000);memcpy(f.video.data(),g_ppu->vram,0x10000);if(shadow>=0x2000&&shadow+512<=0x20000)memcpy(f.video.data()+0x10000,g_ram+shadow,512);}
   unsigned remaining=word(0x13f4),hurt=word(0xbc);std::array<unsigned char,64> hurtPlayer;std::copy_n(g_ram+0x540,64,hurtPlayer.begin());
-  if(!RtlRollbackLoadFromMemory(sandboxSnapshot.data(),size)){f.error=true;break;}
-  if(remaining<hp){put(0x13f4,remaining);put(0xbc,hurt);for(unsigned at:{0x80u,0x13c0u,0x13c8u,0x1fa2u})put(at,0);for(unsigned at:{0x546u,0x552u,0x558u,0x55au,0x55cu,0x55eu})put(at,hurtPlayer[at-0x540]|unsigned(hurtPlayer[at-0x540+1])<<8);hp=remaining;invulnerability=hurt;}
+  if(!bossFrameState.restore()){f.error=true;break;}
+  if(remaining<hp){hp=remaining;invulnerability=hurt;latestHurt=hurtPlayer;damaged=true;}
+  // Every restore returns to the frame's initial state. Keep damage already
+  // dealt by earlier contexts, even if a later boss cannot hurt Simon again.
+  put(0x13f4,hp);put(0xbc,invulnerability);
+  if(damaged){for(unsigned at:{0x80u,0x13c0u,0x13c8u,0x1fa2u})put(at,0);for(unsigned at:{0x546u,0x552u,0x558u,0x55au,0x55cu,0x55eu})put(at,latestHurt[at-0x540]|unsigned(latestHurt[at-0x540+1])<<8);}
  }
 }
 struct SpritePart {int x,y,size,slot=-1;unsigned attr;};

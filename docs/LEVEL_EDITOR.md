@@ -274,6 +274,10 @@ funktionieren weiterhin. Der Mode7-Körper wird mit seiner nativen Transformatio
 und Transparenz separat dargestellt. Die originale Boss-KI behält ihre
 Angriffsmuster und teilweise feste Bewegungsgrenzen; sie wird dadurch nicht
 zu einer beliebig programmierbaren KI. Fern liegende Instanzen pausieren.
+Der Wechsel zwischen Bossinstanzen erhält die laufende Audioausgabe. Der frühere
+Einbruch auf etwa 30 FPS bei eingeschaltetem Ton wurde behoben; interne
+Bossberechnungen lösen keinen erneuten Audioanlauf oder Speicherstand-Ladeablauf
+mehr aus. Die Rechenkosten zusätzlicher gleichzeitig aktiver Bosse bleiben bestehen.
 
 Beim ersten Spieltest wird sein eigener
 nativer Körper samt Hilfsteilen, Original-KI, Grafik- und Rasterkontext vorbereitet
@@ -398,6 +402,17 @@ Alle 14 Bossgruppen laufen jeweils 180 Felder mit Zustandsänderungen, sichtbare
 Teilen und unveränderter gemeinsamer Bodenfläche. Beim Mode7-Boss wird zusätzlich
 der transparente native Körper geprüft. Das ersetzt keinen vollständigen
 Durchlauf sämtlicher Phasen aller Bosskämpfe.
+
+`tools/test_level_boss_performance.py` prüft freie Bosse bei normalem Spieltempo
+mit aktivierter Audioausgabe, fortlaufender Simulation sowie Laufen und Peitsche.
+Es werden ein bzw. drei Bosse einschließlich Mode7 mit gewöhnlichen Gegnern
+geprüft. Audio-Neuanläufe, Unterläufe und verbrauchte PCM-Samples werden gemessen.
+`--marker <Debugordner>` verwendet zusätzlich das zugehörige Levelpaket und den
+Debug-Speicherstand in einer privaten Kopie. Der eigene native Bosszustand wird
+nach der Projektladung neu vorbereitet; die Markerdateien werden nicht verändert.
+`--audio-driver dummy` prüft die echte Callback-/Pufferlogik über SDL ohne
+physisches Audiogerät. Dies ist kein Hörtest. Ein ausgeschalteter Ton kann diesen
+Test nicht ersetzen, weil er den früheren Fehler verdeckt hätte.
 
 `tools/test_level_studio.py` prüft die gemeinsame Fensterverwaltung, verknüpfte
 Levelwerte, Namen, Variante und Einfügen sowie 1280×900 und mit `--ui4k` die
