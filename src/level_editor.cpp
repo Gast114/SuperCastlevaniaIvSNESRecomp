@@ -5,6 +5,7 @@ extern "C" {
 #include "snes/ppu.h"
 #include "snes/interp_bridge.h"
 #include "cpu_state.h"
+#include "common_rtl.h"
 }
 #include <algorithm>
 #include <array>
@@ -13,10 +14,13 @@ extern "C" {
 #include <deque>
 #include <fstream>
 #include <stdexcept>
+#include <sstream>
 #include <vector>
 extern "C" unsigned char g_ram[0x20000];
+extern "C" CpuState g_cpu;
+extern "C" Ppu *g_ppu;
 namespace {
-struct Actor {unsigned type,variant,x,y,flags,hw,hh,hp,trait,add;unsigned damage=65535,kind=0,boss=0,options=0;bool spawned=false,parked=false;unsigned slot=0,persistence=0;std::array<unsigned char,64> saved{};};
+struct Actor {unsigned type,variant,x,y,flags,hw,hh,hp,trait,add;unsigned damage=65535,kind=0,boss=0,options=0;bool spawned=false,parked=false,valuesReady=false;unsigned slot=0,persistence=0;std::array<unsigned char,64> saved{};};
 struct Door {unsigned x,y,w,h,target,tx,ty,trigger,plane;};
 struct Room {unsigned w,h,tileset,sx,sy,base[2],mode,collisionMode;std::vector<unsigned char> video;std::vector<uint32_t> maps[2];std::vector<unsigned short> collision[2];std::vector<Actor> actors;std::vector<Door> doors;};
 struct Boss {unsigned type,x,y,slot,body;std::vector<unsigned char> states[2],video,raster;std::array<unsigned short,9> m7{};};
@@ -25,6 +29,8 @@ std::vector<Resource> resources;std::vector<unsigned char> spriteRom;
 std::vector<PpuHostSprite> virtualSprites;std::deque<std::array<uint32_t,256>> spritePixels;
 std::array<unsigned char,0x1400> previousSpriteState{};bool havePreviousSpriteState=false;
 std::vector<Boss> bosses;int encounter=-1,dx=0,dy=0;unsigned encounterAge=0,deadAge=0;bool encounterVideo=false;
+struct FreeBoss {unsigned actor=0,hp=0,age=0,deathAge=0,drawn=0;int dx=0,dy=0,bodyX=0,bodyY=0;bool dead=false,error=false;std::vector<unsigned char> ram,video;std::vector<uint32_t> body;};
+std::vector<FreeBoss> freeBosses;std::vector<unsigned char> sandboxSnapshot;int freeEvaluating=-1;
 std::array<unsigned char,0x940> suspended;
 std::array<unsigned char,0x2b0> suspendedExtras;
 std::array<unsigned char,256> suspendedRaster;
@@ -47,17 +53,26 @@ unsigned bossFloor(const Room&r,const Actor&a){
  return std::clamp(a.y+96,64u,r.h*8-8);
 }
 void contactDamage(CpuState*cpu,uint32_t){
+ if(freeEvaluating>=0){const auto&a=rooms[current].actors[freeBosses[freeEvaluating].actor];if(a.damage!=65535)cpu->A=(uint16_t)a.damage;return;}
  if(!active||current>=rooms.size())return;
  if(encounter>=0){const auto&a=rooms[current].actors[encounter];if(a.damage!=65535){cpu->A=(uint16_t)a.damage;return;}}
  for(const auto&a:rooms[current].actors)if(a.slot==cpu->X&&word(a.slot+0x10)==a.type&&a.damage!=65535){cpu->A=(uint16_t)a.damage;break;}
 }
+void actorValuesAfterAi(CpuState*,uint32_t){
+ if(!active||encounter>=0||current>=rooms.size())return;unsigned slot=word(0xfc);
+ for(auto&a:rooms[current].actors)if(a.kind<2&&a.slot==slot&&word(slot+16)==a.type){
+  if((a.options&4)&&!a.valuesReady&&(word(slot)>=0x8000||word(slot+18))){put(slot+6,a.hp);a.valuesReady=true;}
+  if(a.options&8)put(slot+0x28,a.hw);if(a.options&16)put(slot+0x2a,a.hh);break;
+ }
+}
 template<class T> unsigned cell(const Room&r,const std::vector<T>&map,int x,int y,unsigned outside){return x>=0&&y>=0&&x<int(r.w)&&y<int(r.h)?map[y*r.w+x]:outside;}
 void enter(unsigned index,unsigned x,unsigned y,unsigned plane){
+ freeBosses.clear();
  havePreviousSpriteState=false;
  if(encounter>=0){put(0xef0,suspendedBossEffect);std::copy(suspendedPersistence.begin(),suspendedPersistence.end(),g_ram+0x1500);std::copy(suspendedRaster.begin(),suspendedRaster.end(),g_ram+0x100);unsigned cursor=0;for(auto span:{std::pair<unsigned,unsigned>{0x1200,0x80},{0x13c0,0x30},{0x1e00,0x200}}){memcpy(g_ram+span.first,suspendedExtras.data()+cursor,span.second);cursor+=span.second;}}
  current=index;auto&r=rooms[current];install=true;cooldown=30;encounter=-1;dx=dy=0;
  std::fill(g_ram+0x580,g_ram+0xec0,0);std::fill(g_ram+0x1200,g_ram+0x1280,0);
- for(auto&a:r.actors){a.spawned=false;a.parked=false;a.slot=0;a.persistence=0;}
+ for(auto&a:r.actors){a.spawned=false;a.parked=false;a.valuesReady=false;a.slot=0;a.persistence=0;}
  put(0x54a,x);put(0x54e,y);put(0x552,0);put(0x542,plane?0:0x8018);
  for(unsigned at=0x558;at<=0x55e;at+=2)put(at,0);
  put(0x13f4,16);put(0xbc,90);put(0xb8,0);put(0x94,streamEnd);put(0x96,streamEnd);
@@ -133,7 +148,7 @@ extern "C" int Cv4LevelLoad(const char *path,char *result,size_t capacity){
    for(int layer=0;layer<2;++layer)for(unsigned i=0;i<r.w*r.h;++i)r.collision[layer].push_back((unsigned short)read());
    for(unsigned i=0;i<actors;++i){Actor a;a.type=read();a.variant=read();a.x=read();a.y=read();a.flags=read();a.hw=read();a.hh=read();a.hp=read();a.trait=read();a.add=read();
     if(extended){a.damage=read();a.kind=read();a.boss=read();a.options=read();if((a.damage>255&&a.damage!=65535)||a.kind>3)throw std::runtime_error("Invalid custom actor values");}
-    if(!a.type||a.type>0x8d||a.variant>255||a.x>=r.w*8||a.y>=r.h*8||a.add>0x1ff||a.hw>255||a.hh>255||a.hp>32767||a.options>31||(a.type>=128&&(a.kind!=2||a.boss>=nextBosses.size()||nextBosses[a.boss].type!=a.type)))throw std::runtime_error("Invalid custom monster");r.actors.push_back(a);}
+    if(!a.type||a.type>0x8d||a.variant>255||a.x>=r.w*8||a.y>=r.h*8||a.add>0x1ff||a.hw>255||a.hh>255||a.hp>32767||a.options>63||(a.type>=128&&(a.kind!=2||a.boss>=nextBosses.size()||nextBosses[a.boss].type!=a.type)))throw std::runtime_error("Invalid custom monster");r.actors.push_back(a);}
    for(unsigned i=0;i<doors;++i){Door d;d.x=read();d.y=read();d.w=read();d.h=read();d.target=read();d.tx=read();d.ty=read();d.trigger=read();d.plane=read();
     if(d.target>=count||d.w<8||d.w>256||d.h<8||d.h>256||d.x>=r.w*8||d.y>=r.h*8||d.trigger>1||d.plane>1)throw std::runtime_error("Invalid custom exit");r.doors.push_back(d);}
    next.push_back(std::move(r));
@@ -153,7 +168,7 @@ extern "C" int Cv4LevelLoad(const char *path,char *result,size_t capacity){
    }
   }
   if(at!=data.size())throw std::runtime_error("Unexpected independent actor data");
-  if(!damageHookInstalled){damageHookInstalled=interp_bridge_add_pre_opcode_hook(0x00dd12,contactDamage);if(!damageHookInstalled)throw std::runtime_error("Cannot install custom actor hook");}
+  if(!damageHookInstalled){damageHookInstalled=interp_bridge_add_pre_opcode_hook(0x00dd12,contactDamage)&&interp_bridge_add_pre_opcode_hook(0x00de30,contactDamage)&&interp_bridge_add_pre_opcode_hook(0x00c8e8,actorValuesAfterAi);if(!damageHookInstalled)throw std::runtime_error("Cannot install custom actor hook");}
   rooms=std::move(next);bosses=std::move(nextBosses);resources=std::move(nextResources);spriteRom=std::move(nextSpriteRom);atlas=std::move(nextAtlas);mixed=newMixed;streamEnd=stop;active=true;faultRecorded=false;Cv4EnemySetPixelSource(Cv4LevelSpritePixel);enter(start,rooms[start].sx,rooms[start].sy,0);
   snprintf(result,capacity,"%u custom rooms ready",count);return 1;
  }catch(const std::exception&e){snprintf(result,capacity,"%s",e.what());return 0;}
@@ -162,6 +177,9 @@ extern "C" unsigned Cv4LevelRoom(void){return active?current:~0u;}
 extern "C" void Cv4LevelStatus(char*result,size_t capacity){
  unsigned slots=0;for(unsigned at=0x580;at<0xec0;at+=64)if(word(at+16))++slots;
  snprintf(result,capacity,"{\"active\":%s,\"room\":%u,\"camera_x\":%d,\"camera_y\":%d,\"placements\":%zu,\"resource_contexts\":%zu,\"active_native_slots\":%u,\"native_slot_limit\":37,\"boss_encounter\":%d,\"sampled_lines\":%u,\"failed_lines\":%u,\"requested_render_flags\":%u,\"failed_render_flags\":%u}",active?"true":"false",current,cx,cy,active?rooms[current].actors.size():0,resources.size(),slots,encounter,sampledLines,failedLines,requestedFlags,failedFlags);
+ std::ostringstream extra;extra<<",\"free_bosses\":"<<freeBosses.size()<<",\"free_actors\":[";bool comma=false;
+ for(const auto&f:freeBosses){if(comma)extra<<',';comma=true;const auto&a=rooms[current].actors[f.actor];const auto&b=bosses[a.boss];auto fw=[&](unsigned at){return unsigned(f.ram[at])|unsigned(f.ram[at+1])<<8;};extra<<"{\"type\":"<<a.type<<",\"hp\":"<<f.hp<<",\"state\":"<<fw(b.slot+18)<<",\"body_pixels\":"<<std::count_if(f.body.begin(),f.body.end(),[](unsigned c){return c>>24;})<<",\"timer\":"<<fw(b.slot+0x22)<<",\"drawn\":"<<f.drawn<<",\"age\":"<<f.age<<",\"x\":"<<int((int16_t)(fw(b.slot+10)-f.dx))<<",\"y\":"<<int((int16_t)(fw(b.slot+14)-f.dy))<<",\"dead\":"<<f.dead<<",\"error\":"<<f.error<<"}";}
+ extra<<"]}";auto text=extra.str();size_t length=strlen(result);if(length&&length+text.size()<capacity)memcpy(result+length-1,text.c_str(),text.size()+1);
 }
 namespace {
 const Resource *resourceFor(unsigned type,unsigned variant){
@@ -169,6 +187,69 @@ const Resource *resourceFor(unsigned type,unsigned variant){
 }
 unsigned dataWord(const std::vector<unsigned char>&v,unsigned at){return v[at]|unsigned(v[at+1])<<8;}
 unsigned nativeRgba(unsigned c){auto e=[](unsigned n){return (n<<3)|(n>>2);};return 0xff000000u|e(c&31)<<16|e((c>>5)&31)<<8|e((c>>10)&31);}
+// Retail boss handlers use scene-wide flags and shared child slots. Give each
+// free placement its own native context, then restore the real scene before
+// rendering it. Only genuine player damage/hurt results cross that boundary.
+void tickFreeBosses(){
+ auto&r=rooms[current];if(encounter>=0)return;
+ for(unsigned i=0;i<r.actors.size();++i){auto&a=r.actors[i];
+  if(a.kind!=2||!(a.options&32)||a.spawned||std::abs(int(a.x)-cx-128)>288)continue;
+  const auto&b=bosses[a.boss];const auto&state=b.states[1];FreeBoss f;f.actor=i;f.ram.assign(g_ram,g_ram+0x20000);f.video=b.video;
+  unsigned cursor=2;for(auto span:{std::pair<unsigned,unsigned>{0x580,0x940},{0x1200,0x80},{0x13c0,0x30},{0x1e00,0x200}}){memcpy(f.ram.data()+span.first,state.data()+cursor,span.second);cursor+=span.second;}
+  memcpy(f.ram.data()+0x100,b.raster.data(),256);f.ram[0xb8]=state[0];f.ram[0xb9]=state[1];
+  auto fw=[&](unsigned at){return unsigned(f.ram[at])|unsigned(f.ram[at+1])<<8;};auto fp=[&](unsigned at,unsigned v){f.ram[at]=v;f.ram[at+1]=v>>8;};
+  f.dx=int(fw(b.slot+10))-int(a.x);f.dy=int(fw(b.slot+14))-int(a.y);
+  if(a.options&4)fp(b.slot+6,a.hp);if(a.options&8)fp(b.slot+0x28,a.hw);if(a.options&16)fp(b.slot+0x2a,a.hh);
+  if(b.type==0x8d)fp(0xef0,0x200);f.hp=fw(b.slot+6);a.spawned=true;freeBosses.push_back(std::move(f));
+ }
+ if(freeBosses.empty())return;
+ sandboxSnapshot.resize(RtlRollbackSnapshotBound());size_t size=RtlRollbackSaveToMemory(sandboxSnapshot.data(),sandboxSnapshot.size());if(!size)return;
+ std::array<unsigned char,0x380> player;std::copy_n(g_ram+0x200,player.size(),player.begin());unsigned hp=word(0x13f4),invulnerability=word(0xbc),frame=word(0x78),weapon=word(0x8e),whip=word(0x92);
+ for(unsigned index=0;index<freeBosses.size();++index){auto&f=freeBosses[index];auto&a=r.actors[f.actor];const auto&b=bosses[a.boss];
+  if(f.dead||f.error||std::abs(int(a.x)-cx-128)>512)continue;
+  memcpy(g_ram,f.ram.data(),f.ram.size());memcpy(g_ram+0x200,player.data(),player.size());
+  for(unsigned base=0x200;base<=0x540;base+=64){put(base+10,word(base+10)+f.dx);put(base+14,word(base+14)+f.dy);}
+  put(0x13f4,hp);put(0xbc,invulnerability);put(0x78,frame);put(0x8e,weapon);put(0x92,whip);put(0x70,5);put(0x86,0);put(0x94,streamEnd);put(0x96,streamEnd);
+  int localCamera=std::max(0,int(b.x)-128);
+  put(0xa0,localCamera);put(0xa2,localCamera);put(0xa4,0);put(0xa6,0);put(0xae,r.collisionMode);
+  for(unsigned at:{0x18u,0x1cu,0x1280u,0x12c0u})put(at,localCamera);
+  for(unsigned at:{0x1au,0x1eu,0x1298u,0x12d8u})put(at,0);
+  unsigned nativeX=word(0x54a),nativeY=word(0x54e);
+  for(int yy=int(nativeY)/8-32;yy<int(nativeY)/8+32;++yy)for(int xx=int(nativeX)/8-32;xx<int(nativeX)/8+32;++xx){
+   unsigned px=unsigned(xx*8)&511,py=unsigned(yy*8)&511,cellIndex=((px&256)<<2)|((px>>3)&31)|((py&256)<<3)|((py<<2)&0x3e0);
+   for(unsigned layer=0;layer<2;++layer)put((layer?0xa000:0x4000)+cellIndex*2,cell(r,r.collision[layer],(xx*8-f.dx)/8,(yy*8-f.dy)/8,1));
+  }
+  memcpy(g_ppu->vram,f.video.data(),0x10000);memcpy(g_ppu->cgram,f.video.data()+0x10000,512);unsigned shadow=word(0x48);if(shadow>=0x2000&&shadow+512<=0x20000)memcpy(g_ram+shadow,f.video.data()+0x10000,512);
+  // Both native entry points return with RTL. Each gets a fresh three-byte
+  // synthetic return frame below $2000; reusing the post-RTL stack would put
+  // the next JSR/RTS in the hardware-register window.
+  g_cpu.emulation=0;g_cpu.P=0;cpu_p_to_mirrors(&g_cpu);g_cpu.D=0;g_cpu.DB=1;g_cpu.PB=0;g_cpu.S=0x1ffc;g_cpu.host_return_valid=0;put(0x1ffd,0);g_ram[0x1fff]=0;
+  freeEvaluating=index;active=false;
+  interp_bridge_set_master_deadline(0);
+  bool ok=interp_bridge_run(&g_cpu,0x00c814)!=0; // Native actor/group AI.
+  // Native phase initializers must not undo this instance's current HP.
+  if(a.options&4)put(b.slot+6,f.hp);if(a.options&8)put(b.slot+0x28,a.hw);if(a.options&16)put(b.slot+0x2a,a.hh);
+  if(ok){g_cpu.D=0;g_cpu.DB=1;g_cpu.P=0;g_cpu.S=0x1ffc;g_cpu.host_return_valid=0;put(0x1ffd,0);g_ram[0x1fff]=0;cpu_p_to_mirrors(&g_cpu);ok=interp_bridge_run(&g_cpu,0x00da4f)!=0;}
+  if(ok&&b.type==0x81){
+   for(unsigned n=0;n<6;++n)g_ppu->m7matrix[n]=(int16_t)word(0x1e9e + n*2);g_ppu->m7matrix[6]=localCamera;g_ppu->m7matrix[7]=(word(0x1298)-1)&8191;g_ppu->m7sel=b.m7[8];g_ppu->bgmode=7;g_ppu->screenEnabled[0]=1;g_ppu->screenEnabled[1]=0;g_ppu->inidisp=15;
+   // Sample only this context's Mode7 body. Rendering a whole guest field
+   // here would execute the shared room's IRQ/HDMA and could substitute its
+   // widescreen VRAM shadow for the boss's private texture/map.
+   g_ppu->renderVram=nullptr;g_ppu->hdTracking=true;g_ppu->windowsel=0;
+   g_ppu->renderFlags|=kPpuRenderFlags_NewRenderer;f.body.assign(256*224,0);
+   std::array<PpuLayerSample,kPpuBufWidth> samples{};
+   for(unsigned line=1;line<=224;++line)if(PpuGetLayerScanline(g_ppu,line,0,samples.data(),samples.size()))
+    for(unsigned x=0;x<256;++x){const auto&pixel=samples[x+kPpuExtraLeftRight];unsigned color=pixel.pixel&255;if(color&&(pixel.screens&1))f.body[(line-1)*256+x]=nativeRgba(g_ppu->cgram[color]);}
+   f.bodyX=localCamera-f.dx;f.bodyY=-f.dy;
+  }
+  active=true;freeEvaluating=-1;f.error=!ok;++f.age;f.hp=std::max(0,int((int16_t)word(b.slot+6)));
+  if(!f.hp||word(b.slot+16)!=b.body)++f.deathAge;else f.deathAge=0;f.dead=f.deathAge>180;
+  if(!f.error){f.ram.assign(g_ram,g_ram+0x20000);memcpy(f.video.data(),g_ppu->vram,0x10000);if(shadow>=0x2000&&shadow+512<=0x20000)memcpy(f.video.data()+0x10000,g_ram+shadow,512);}
+  unsigned remaining=word(0x13f4),hurt=word(0xbc);std::array<unsigned char,64> hurtPlayer;std::copy_n(g_ram+0x540,64,hurtPlayer.begin());
+  if(!RtlRollbackLoadFromMemory(sandboxSnapshot.data(),size)){f.error=true;break;}
+  if(remaining<hp){put(0x13f4,remaining);put(0xbc,hurt);for(unsigned at:{0x80u,0x13c0u,0x13c8u,0x1fa2u})put(at,0);for(unsigned at:{0x546u,0x552u,0x558u,0x55au,0x55cu,0x55eu})put(at,hurtPlayer[at-0x540]|unsigned(hurtPlayer[at-0x540+1])<<8);hp=remaining;invulnerability=hurt;}
+ }
+}
 struct SpritePart {int x,y,size,slot=-1;unsigned attr;};
 bool emittedActor(Ppu*p,const unsigned char*ram,unsigned base,const std::array<bool,128>&claimed,std::vector<SpritePart>&parts,unsigned&type,unsigned&variant,unsigned&add){
  auto read=[&](unsigned at){return unsigned(ram[at])|unsigned(ram[at+1])<<8;};
@@ -219,7 +300,7 @@ extern "C" int Cv4LevelSpritePixel(unsigned type,unsigned variant,unsigned actua
  *rgba=*index?nativeRgba(dataWord(r->video,0x10000+2*(128+((attr>>9)&7)*16+*index))):0;return 1;
 }
 extern "C" void Cv4LevelSprites(Ppu*p){
- if(!active||word(0x32)!=4||resources.empty())return;
+ if(!active||word(0x32)!=4||(resources.empty()&&freeBosses.empty()))return;
  virtualSprites.clear();spritePixels.clear();std::array<bool,128> claimed{};
  if(p->hostSprites&&p->hostSpriteCount)virtualSprites.assign(p->hostSprites,p->hostSprites+p->hostSpriteCount);
  for(const auto&s:virtualSprites)for(unsigned n=0;n<128;++n)if(s.mask[n>>3]&(1u<<(n&7)))claimed[n]=true;
@@ -238,6 +319,20 @@ extern "C" void Cv4LevelSprites(Ppu*p){
   }
  }
  std::copy_n(g_ram,previousSpriteState.size(),previousSpriteState.begin());havePreviousSpriteState=encounter<0;
+ for(auto&f:freeBosses){f.drawn=0;if(encounter>=0||f.dead||f.error)continue;
+  const auto&a=rooms[current].actors[f.actor];auto fw=[&](unsigned at){return unsigned(f.ram[at])|unsigned(f.ram[at+1])<<8;};
+  if(!f.body.empty()){PpuHostSprite host{};host.x=f.bodyX-cx;host.y=f.bodyY-cy;host.width=host.stride=256;host.height=224;host.pixels=f.body.data();host.oamSlot=100;host.priority=SPRITE_PRIO_TO_PRIO(a.flags&0x8000?3:2,1)<<8;virtualSprites.push_back(host);f.drawn+=std::any_of(f.body.begin(),f.body.end(),[](unsigned c){return c>>24;});}
+  for(unsigned base=0x580;base<0xec0;base+=64){unsigned pose=fw(base),type=fw(base+16),flip=fw(base+4),priority=fw(base+2),add=fw(base+38);
+   if(!type||pose<0x8000||spriteRom.size()!=32768)continue;unsigned at=pose&32767,count=spriteRom[at];if(!count||count>32||at+1+count*4>spriteRom.size())continue;
+   for(unsigned part=0;part<count;++part){unsigned o=at+1+part*4,raw=spriteRom[o+2]|unsigned(spriteRom[o+3])<<8,size=raw&0x2000?16:8;int rx=(int8_t)spriteRom[o],ry=(int8_t)spriteRom[o+1];
+    int x=int((int16_t)(fw(base+10)-f.dx-cx))+((flip&0x4000)?-rx-int(size):rx),y=int((int16_t)(fw(base+14)-f.dy-cy))+((flip&0x8000)?-ry-int(size):ry);
+    if(x+int(size)<=0||x>=256||y+int(size)<=32||y>=224)continue;unsigned attr=(raw|0x2000)^flip;if(priority&0x8000)attr=(attr&0xcfff)|((priority*2&255)<<8);attr=(attr+add)&65535;
+    spritePixels.emplace_back();auto&pixels=spritePixels.back();pixels.fill(0);
+    for(unsigned yy=0;yy<size;++yy)for(unsigned xx=0;xx<size;++xx){int tx=attr&0x4000?size-1-xx:xx,ty=attr&0x8000?size-1-yy:yy;unsigned tile=((((attr&255)>>4)+(ty>>3))<<4)|(((attr&15)+(tx>>3))&15);unsigned address=(((attr&256)?0x7000:0x6000)+tile*16+(ty&7))&32767,bit=7-(tx&7);uint32_t v=dataWord(f.video,address*2)|uint32_t(dataWord(f.video,((address+8)&32767)*2))<<16;unsigned texel=(v>>bit&1)|(v>>(bit+7)&2)|(v>>(bit+14)&4)|(v>>(bit+21)&8);if(texel)pixels[yy*size+xx]=nativeRgba(dataWord(f.video,0x10000+2*(128+((attr>>9)&7)*16+texel)));}
+    PpuHostSprite host{};host.x=x;host.y=y;host.width=host.height=host.stride=size;host.pixels=pixels.data();host.oamSlot=100;host.priority=SPRITE_PRIO_TO_PRIO(a.flags&0x8000?3:2,1)<<8;virtualSprites.push_back(host);++f.drawn;
+   }
+  }
+ }
  // Scene scripts are not ordinary actors. Their measured image is a movable
  // decoration until a safe controller adapter exists, never an arbitrary RTL.
  for(const auto&a:rooms[current].actors)if(a.kind==3){const auto*r=resourceFor(a.type,a.variant);if(!r||r->pixels.empty())continue;
@@ -246,7 +341,7 @@ extern "C" void Cv4LevelSprites(Ppu*p){
  }
  if(!virtualSprites.empty()){p->hostSprites=virtualSprites.data();p->hostSpriteCount=virtualSprites.size();}
 }
-extern "C" void Cv4LevelReset(void){active=false;install=false;mixed=false;rooms.clear();atlas.clear();bosses.clear();resources.clear();spriteRom.clear();virtualSprites.clear();Cv4EnemySetPixelSource(nullptr);encounter=-1;dx=dy=0;}
+extern "C" void Cv4LevelReset(void){active=false;install=false;mixed=false;freeBosses.clear();freeEvaluating=-1;rooms.clear();atlas.clear();bosses.clear();resources.clear();spriteRom.clear();virtualSprites.clear();Cv4EnemySetPixelSource(nullptr);encounter=-1;dx=dy=0;}
 extern "C" void Cv4LevelBeforeFrame(void){
  if(!active||word(0x32)!=4)return;
  auto*r=&rooms[current];unsigned x=word(0x54a)-dx,y=word(0x54e)-dy;
@@ -263,7 +358,7 @@ extern "C" void Cv4LevelBeforeFrame(void){
  else if(encounter<0)for(const auto&d:r->doors)if(x>=d.x&&x<d.x+d.w&&y>=d.y&&y<d.y+d.h&&(d.trigger||word(0x28)&0x0800)){
   enter(d.target,d.tx,d.ty,d.plane);r=&rooms[current];x=d.tx;y=d.ty;break;
  }
- if(encounter<0)for(unsigned i=0;i<r->actors.size();++i){const auto&a=r->actors[i];if(a.kind==2&&!a.spawned&&std::abs(int(a.x)-int(x))<144&&std::abs(int(a.y)-int(y))<192){beginEncounter(i);break;}}
+ if(encounter<0)for(unsigned i=0;i<r->actors.size();++i){const auto&a=r->actors[i];if(a.kind==2&&!(a.options&32)&&!a.spawned&&std::abs(int(a.x)-int(x))<144&&std::abs(int(a.y)-int(y))<192){beginEncounter(i);break;}}
  put(0x70,5);put(0x86,0);if(encounter<0)put(0xb8,0);put(0xae,encounter>=0?1:r->collisionMode);
  // A horizontal SNES map has 32 storage rows but only 28 visible rows.
  // Scrolling its spare bottom rows into view shifts Simon upward and exposes
@@ -297,12 +392,13 @@ extern "C" void Cv4LevelBeforeFrame(void){
   for(unsigned slot=0x580;slot<0xec0;slot+=0x40)if(!word(slot+0x10)){
    for(auto&previous:r->actors)if(&previous!=&a&&previous.slot==slot)previous.slot=0;
    if(a.parked){std::copy(a.saved.begin(),a.saved.end(),g_ram+slot);a.parked=false;}
-   else {std::fill(g_ram+slot,g_ram+slot+0x40,0);put(slot+0x10,a.type);put(slot+0x14,a.variant);put(slot+0xa,a.x);put(slot+0xe,a.y);
+   else {a.valuesReady=false;std::fill(g_ram+slot,g_ram+slot+0x40,0);put(slot+0x10,a.type);put(slot+0x14,a.variant);put(slot+0xa,a.x);put(slot+0xe,a.y);
     put(slot+2,a.flags&0x8000?0x8018:0);put(slot+6,a.hp);put(slot+0x28,a.hw);put(slot+0x2a,a.hh);put(slot+0x2e,a.trait);put(slot+0x26,a.add);}
    unsigned offset=(slot-0x580)/0x40*2;put(slot+0x30,offset);if(a.kind==1)put(0x1500+offset,a.persistence);
    a.spawned=true;a.slot=slot;break;
   }
  }
+ tickFreeBosses();
 }
 extern "C" void Cv4LevelBeforeDraw(Ppu*p){
  if(!active||word(0x32)!=4)return;auto&r=rooms[current];

@@ -7,6 +7,7 @@ import json
 import hashlib
 from pathlib import Path
 import struct
+from functools import lru_cache
 from enemy_workshop_native import NativeSession,ROOT
 from enemy_catalog_profiles import spawn_boss
 from enemy_catalog_profiles import boss_profiles
@@ -14,6 +15,15 @@ from enemy_catalog_profiles import boss_profiles
 REVISION=5
 RANGES=((0x580,0x940),(0x1200,0x80),(0x13c0,0x30),(0x1e00,0x200))
 STATE_BYTES=sum(size for _,size in RANGES)
+
+@lru_cache(maxsize=14)
+def free_origin(t):
+    path=ROOT/f'artwork-local/level-editor/bosses/{t:02x}-r{REVISION}.bin'
+    if not path.is_file():return 0,0
+    data=path.read_bytes();_,x,y,slot,_=struct.unpack_from('<5H',data)
+    at=10+STATE_BYTES+2+2+slot-0x580
+    px,py=struct.unpack_from('<H',data,at+10)[0],struct.unpack_from('<H',data,at+14)[0]
+    return px-x,py-y
 
 def arena_floor(room,actor):
     layer='front' if actor.get('flags',0)&0x8000 else 'back';column=min(room['width']-1,actor['x']//8)
@@ -117,4 +127,5 @@ def prepare_bosses(types,rom=None,build=None):
             preview_from_template(payload,cache);path.write_bytes(payload);result[t]=payload
     finally:
         if session:session.close()
+    free_origin.cache_clear()
     return result

@@ -12,6 +12,7 @@ def validate_values(actor):
     if not isinstance(actor.get('name',''),str) or len(actor.get('name',''))>100:raise ValueError('Name: höchstens 100 Zeichen.')
     if actor.get('boss_start','direct') not in ('direct','sequence'):raise ValueError('Ungültiger Bossstart.')
     if actor.get('boss_end','continue') not in ('continue','exit'):raise ValueError('Ungültiges Bossende.')
+    if actor.get('boss_mode','encounter') not in ('free','encounter'):raise ValueError('Ungültiger Bossmodus.')
 
 def values_for(rom,actor,room,quest=0):
     t=actor['type'];entry=dict(actor,boss=t>=128)

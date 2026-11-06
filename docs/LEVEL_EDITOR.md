@@ -18,7 +18,7 @@ Posen, Einzelteile, PNG-Austausch und Export. `Gegner_Werkstatt_starten.cmd`
 und Redesigns werden weiterverwendet; ein eigenes Levelprojekt bleibt beim
 Wechsel geöffnet.
 
-Eine Figur auf der Karte auswählen und links **Animationen & HD…** drücken:
+Eine Figur auf der Karte auswählen und rechts unter **Auswahl → Animationen & HD…** drücken:
 Die Werkstatt öffnet genau diesen Monster-Code und seine Variante. Über
 **Werte der Level-Figur…** lassen sich Gesundheit, Schaden, Trefferfläche und
 Bossverhalten dieser Platzierung ändern. Bei Originalen wird dazu eine eigene
@@ -150,7 +150,7 @@ oder einen gemeinsamen Kachelbestand beschränkt diese gemischten Karten nicht.
 Die Kollision wird unabhängig gespeichert; beim Zeichnen lässt sie sich aus
 der Quelle übernehmen oder anschließend selbst ändern.
 
-Bereiche mit **Auswahl → Strg+C/V** auch zwischen Räumen oder Ebenen kopieren.
+Bereiche mit **Gelände → Gelände markieren / kopieren → Strg+C/V** auch zwischen Räumen oder Ebenen kopieren.
 Ihre Herkunft bleibt dabei erhalten, ebenso beim Spiegeln, Speichern und Laden.
 Auch ältere Projektdateien bleiben lesbar. **Alle Grafikquellen vorbereiten**
 legt den vollständigen lokalen Vorrat einmalig an; spätere Zugriffe nutzen ihn.
@@ -168,9 +168,10 @@ geskriptete Abläufe werden damit nicht automatisch zu platzierbaren Objekten.
   mit einer der acht Originalpaletten dargestellt werden.
 - **Zeichnen** setzt den Pinsel; **Fläche** füllt ein aufgezogenes Rechteck.
   **H/V** spiegelt den Pinsel, wenn die Karte den Tastaturfokus hat.
-- **Auswahl** zieht einen Bereich auf. **Strg+C**, **Strg+V** und anschließend
+- **Gelände markieren / kopieren** zieht einen Bereich auf. **Strg+C**, **Strg+V** und anschließend
   Linksklick kopieren ihn. **Entf** löscht die Auswahl oder das gewählte Objekt.
-- Rechtsklick nimmt eine Kachel auf. Mittlere Maustaste verschiebt die Ansicht.
+- Rechtsklick auf eine Figur öffnet Löschen, Duplizieren und Werte. Auf freiem
+  Gelände nimmt er eine Kachel auf. Mittlere Maustaste verschiebt die Ansicht.
   Mausrad scrollt, Umschalt+Mausrad horizontal, Strg+Mausrad zoomt.
 - **Strg+Z / Strg+Y** macht Bearbeitungen rückgängig bzw. stellt sie wieder her.
   **Strg+S** speichert das Projekt.
@@ -195,24 +196,28 @@ Rechts **Gegner** öffnen, ein Bild auswählen und **＋ Hinzufügen** drücken.
 Figur erscheint in der sichtbaren Kartenmitte und ist direkt zum Ziehen ausgewählt.
 Alternativ ein Bild aus der Bibliothek in die Karte ziehen. **Mit Maus platzieren**
 zeigt eine Vorschau am Mauszeiger; mit einem Klick setzen. Danach ist wieder
-**Auswählen & ziehen** aktiv. Umschalt beim Setzen erlaubt mehrere Platzierungen,
+**Objekte bewegen** aktiv. Umschalt beim Setzen erlaubt mehrere Platzierungen,
 Esc beendet den Platzierungsmodus. Unter **Objekte** funktioniert es genauso,
 beispielsweise für Kerzen oder bewegliche Plattformen.
 
-Koordinaten, Variante und Spielebene stehen links an der ausgewählten Figur.
+Koordinaten, Variante und Spielebene stehen rechts im Reiter **Auswahl**.
 Es werden nur die jeweils passenden Eigenschaften angezeigt; Ausgangsfelder
-erscheinen erst bei einem Ausgang. **Werte / KI / Boss…** oder ein Doppelklick
-auf die Figur öffnet die ausführlichen Werte.
+erscheinen erst bei einem Ausgang. Gesundheit, Kontaktschaden und Trefferfläche
+lassen sich dort direkt ändern; **Werte speichern** übernimmt die Änderung.
+**Werte vergleichen…** öffnet die ausführliche Vergleichstabelle.
 Monster werden in der Karte mit einer vorhandenen nativen Pose gezeigt; ihre
 echte KI und Animation laufen im Spieltest. Die Codes entsprechen der Monsterwerkstatt.
 Geschosse und belegte Hilfsteile bleiben bei ihrem Monster.
 
-Figuren direkt mit der linken Maustaste anklicken und ziehen. Ein Wechsel aus
-einem Platzierungsmodus ist dafür nicht nötig. Der Greifpunkt bleibt erhalten;
+Figuren direkt mit der linken Maustaste anklicken und ziehen. Das funktioniert
+auch bei aktivem Geländepinsel. **Alt** erlaubt Zeichnen unter einer Figur;
+das ausdrückliche Werkzeug **Gelände markieren / kopieren** wählt Gelände.
+Ein Doppelklick auf eine Figur öffnet keinen Dialog. **Entf** löscht sie sofort,
+**Strg+Z** stellt sie wieder her. Der Greifpunkt bleibt erhalten;
 kleine und nicht am Raster ausgerichtete Figuren lassen sich pixelgenau greifen. Die Pfeiltasten verschieben ein ausgewähltes
 Objekt um einen Pixel, Umschalt + Pfeiltaste um acht. Strg+C / Strg+V kopiert die
 Figur einschließlich Name und eigener Werte; anschließend in die Karte klicken.
-Auch **Duplizieren** links kopiert eine ausgewählte Figur samt eigenen Werten.
+Auch **Duplizieren** unter Auswahl kopiert eine ausgewählte Figur samt eigenen Werten.
 
 Ein Raum kann bis zu **4096 Figuren** enthalten. Ihre Grafiken und Paletten
 liegen beim eigenen Spieltest getrennt von der Levelgrafik; verschiedene
@@ -225,13 +230,18 @@ Sind alle Plätze belegt, warten weitere Platzierungen auf einen freien Platz.
 Damit sind viele Figuren im Raum möglich, aber keine unbegrenzt große
 gleichzeitig aktive Gruppe. Native OAM-Sichtbarkeits- und Blinkregeln bleiben erhalten.
 
-**Werte / KI / Boss…** öffnet den Detaildialog. Normal und New Game+
+**Werte vergleichen…** öffnet den Detaildialog. Normal und New Game+
 stehen separat neben dem wirksamen Normalwert. Eigene Gesundheit, Kontaktschaden
 und halbe Trefferbreite/-höhe gelten pro platziertem Exemplar im F5-Spieltest und
 werden im Projekt gespeichert. Ein leeres Feld übernimmt den Originalwert;
 **Originalwerte wiederherstellen** leert die Überschreibungen. Bei Bossen stammt
 die normale Gesundheit aus der vorbereiteten nativen Initialisierung. Noch nicht
 gemessene New-Game+-Bosswerte werden ausdrücklich als Initialisierung angezeigt.
+Die Bibliothek zeigt Gesundheit und Schaden für Normal und New Game+ bereits
+beim Auswählen. Der Reiter Auswahl zeigt die wirksamen Werte dieses Exemplars;
+eigene HP werden nach der nativen Initialisierung gesetzt und nach Treffern
+nicht wieder aufgefüllt. Allgemeine KI-Hinweistexte wurden entfernt. Ein
+Entscheidungsgraph oder eine editierbare Verhaltenslogik ist noch nicht vorhanden.
 
 Kerzen erscheinen unter **Objekte / O-000E** und werden beim Originalimport
 übernommen. Ihre Variante ist das ursprüngliche Inhaltsbyte (dezimal). Die native
@@ -239,18 +249,35 @@ Flamme und das Zerstören/Erzeugen des Inhalts übernimmt die Spielengine.
 Szenencontroller sind ebenfalls auswählbar. Im freien Spieltest erscheinen ihre
 bereits aufgenommenen Bilder als **Kulisse**. Ihre Levelskripte werden dabei
 nicht als gewöhnliche Gegner gestartet: Solche Skripte könnten fremde Kamera-,
-Grafik- oder Levelwechsel auslösen. Der Startstatus und der Werte-/KI-Dialog
+Grafik- oder Levelwechsel auslösen. Der Startstatus
 weisen darauf hin. Ohne vorhandene Grafik bleibt die betreffende Kulisse im
 Spieltest unsichtbar; die Bibliothek kennzeichnet fehlende Aufnahmen. Für
 interaktive Szenenabläufe fehlen noch eigene geprüfte Adapter.
 
-### Boss-Begegnungen
+### Freie Bosse und klassische Begegnungen
 
-M-0080 bis M-008D lassen sich platzieren und verschieben. Ein ausgewählter Boss
-zeigt zusätzlich den Begegnungsbereich. Beim ersten Spieltest wird sein eigener
+M-0080 bis M-008D lassen sich platzieren und verschieben. Neue Platzierungen
+verwenden zunächst **Freier Gegner im Level**. Unter **Auswahl → Boss verwenden
+als** lässt sich der Modus ändern und mit **Bossmodus speichern** übernehmen.
+Bereits gespeicherte Projekte ohne Modusangabe behalten die klassische Begegnung.
+
+Im freien Modus hat jedes Exemplar einen eigenen nativen Zustand mit eigenen
+Hilfsteilen, Grafikdaten und HP. Mehrere gleiche oder verschiedene Bosse können
+zusammen mit normalen Gegnern aktiv sein. Es gibt keine Begegnungskamera,
+Einleitungssequenz oder automatische Levelende-Sequenz; ein besiegter Boss
+beendet nur seinen eigenen Ablauf. Simons echte Angriffe und Kontaktschaden
+funktionieren weiterhin. Der Mode7-Körper wird mit seiner nativen Transformation
+und Transparenz separat dargestellt. Die originale Boss-KI behält ihre
+Angriffsmuster und teilweise feste Bewegungsgrenzen; sie wird dadurch nicht
+zu einer beliebig programmierbaren KI. Fern liegende Instanzen pausieren.
+
+Beim ersten Spieltest wird sein eigener
 nativer Körper samt Hilfsteilen, Original-KI, Grafik- und Rasterkontext vorbereitet
 und lokal zwischengespeichert. Der F5-Test muss dafür keinen ursprünglichen
-Bosslevel starten. Bei mehreren Bossen gibt es jeweils eine aktive Begegnung.
+Bosslevel starten.
+
+**Klassische Bossbegegnung** zeigt zusätzlich den Begegnungsbereich. In diesem
+Modus gibt es jeweils eine aktive Begegnung.
 Andere Gegner und dynamische Objekte pausieren währenddessen und werden anschließend fortgesetzt;
 dadurch bleiben ihre Grafikressourcen von den Bossressourcen getrennt.
 Die Höhe des Kampfbodens folgt dem Boden unter dem Platzierungspunkt. Viele
@@ -264,6 +291,7 @@ Mode7-Körper verwenden getrennte Rasterabschnitte und Farben.
 Im Detaildialog steuert `direct` einen vorbereiteten Kampfstart, `sequence` den
 frühen nativen Bossablauf. Das sind Boss-Einleitungen; vollständige ursprüngliche
 Level-Kamerafahrten und Szenenskripte werden damit nicht automatisch nachgebaut.
+Diese Start-/Endeinstellungen gelten für klassische Begegnungen.
 `continue` führt nach dem Kampf im selben Raum weiter, `exit` benutzt den ersten
 Ausgang des Raums (ohne Ausgang bleibt man im Raum). Ein Tod startet die eigene
 Karte erneut. Mode7-Körper werden nativ gezeichnet und haben eine eigene
@@ -271,7 +299,7 @@ Grafikbehandlung. Originale feste Bewegungsgrenzen und Bossphasen gelten weiterh
 neue KI oder frei definierbare Angriffsabläufe sind damit noch nicht verbunden.
 
 **Start** setzt Simons Startpunkt im gewählten Raum. **Ausgang** setzt einen
-markierten Bereich. Mit **Auswählen & ziehen** anklicken, Zielraum aus der Liste wählen,
+markierten Bereich. Mit **Objekte bewegen** anklicken, Zielraum aus der Liste wählen,
 Ziel X/Y und Zielebene einstellen und **Übernehmen** drücken.
 `up` verlangt die Hoch-Taste im Bereich; `touch` wechselt beim Betreten.
 
@@ -290,11 +318,12 @@ Spezial-/Dekorobjekte erscheint ein Hinweis.
 - Vollständige Levelskripte für Tore, Brückenanimationen und Treppenverbindungen
   sind noch nicht frei kombinierbar. Die Szenenobjekte lassen sich ansehen und
   bearbeiten; eine eigene Platzierung übernimmt nicht automatisch ihren ganzen
-  Original-Levelablauf. Bosskämpfe laufen als einzelne vorbereitete Begegnungen.
+  Original-Levelablauf. Klassische Bosskämpfe laufen als einzelne vorbereitete Begegnungen.
 - Die frühere gemeinsame OBJ-Grafik-/Palettengrenze entfällt im eigenen
   Leveltest. Die native Objekt-KI mit 37 aktiven Plätzen sowie jeweils eine
-  aktive Bossbegegnung bleiben Grenzen dieser Fassung. Es gibt noch keine
-  unabhängig gleichzeitig laufenden Instanzen verschiedener Boss-KIs.
+  aktive klassische Bossbegegnung bleiben Grenzen dieser Fassung. Freie Bosse
+  haben getrennte Kontexte; die Zahl gleichzeitig aktiver Instanzen wird durch
+  Rechenleistung und die jeweiligen nativen Hilfsteilgrenzen beschränkt.
 - Es gibt noch keinen Export als fertige Kampagne/Mod oder als ROM-Patch.
   HD-PNGs werden weiterhin in den bestehenden HD-Werkzeugen bearbeitet; die
   Kartenansicht und dieser Spieltest verwenden Originalgrafiken.
@@ -347,6 +376,16 @@ Fledermäuse, Drag-and-drop aus der Bibliothek, Originalkopie bei der ersten
 Änderung, Schutz bestehender ungespeicherter Projekte und Undo. Layout-Prüfungen
 bei 1280×900 und 4K-Skalierung prüfen die Erreichbarkeit der Schaltflächen ohne
 Bildbetrachter. F5 wird außerdem gegen den aktuell geöffneten Raum geprüft.
+Zusätzlich werden Figurenauswahl bei aktivem Geländepinsel, schnelle Klicks ohne
+Dialog, direkte Werteänderung, sofortiges Löschen und Undo geprüft.
+
+`tools/test_level_free_bosses.py` prüft eigene HP nach der nativen Initialisierung,
+zwei unabhängige Kopien desselben Bosses mit einem normalen Gegner, freie Kamera,
+echten Kontaktschaden und Peitschentreffer sowie Boss-Tod ohne Levelwechsel.
+Alle 14 Bossgruppen laufen jeweils 180 Felder mit Zustandsänderungen, sichtbaren
+Teilen und unveränderter gemeinsamer Bodenfläche. Beim Mode7-Boss wird zusätzlich
+der transparente native Körper geprüft. Das ersetzt keinen vollständigen
+Durchlauf sämtlicher Phasen aller Bosskämpfe.
 
 `tools/test_level_studio.py` prüft die gemeinsame Fensterverwaltung, verknüpfte
 Levelwerte, Namen, Variante und Einfügen sowie 1280×900 und mit `--ui4k` die

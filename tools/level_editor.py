@@ -18,7 +18,7 @@ from level_assets import Assets,ensure_room,ensure_source,collision_value
 from level_parts import CATEGORIES,builtin_parts,repeat_part,capture_part,validate_part,pick_connected_part
 from level_playtest import Playtest,OriginalPlaytest
 from enemy_workshop_native import NativeSession,ROOT
-from monster_model import definitions,ai_notes
+from monster_model import definitions
 from level_actor_values import LIMITS,values_for
 from level_objects import SpriteLibrary,MOVING_PLATFORMS,is_platform,platform_path,validate_platform,scene_objects
 
@@ -38,6 +38,7 @@ class Editor:
         self.show_back=tk.BooleanVar(value=True);self.show_front=tk.BooleanVar(value=True);self.show_collision=tk.BooleanVar(value=False)
         self.show_object_names=tk.BooleanVar(value=True)
         self.actor_stats=tk.StringVar();self.stats_window=None;self.stat_fields={}
+        self.quick_stats={key:tk.StringVar() for key in LIMITS};self.quick_boss_mode=tk.StringVar(value='encounter')
         self.auto_collision=tk.BooleanVar(value=True);self.grid=tk.BooleanVar(value=False);self.collision=tk.IntVar(value=1);self.palette=tk.IntVar(value=2)
         self.status=tk.StringVar(value='Grafiksatz wird vorbereitet …');self.origin_room=tk.IntVar(value=0);self.filter=tk.StringVar()
         self.source_room=tk.IntVar(value=self.current()['tileset']);self.source_layer=tk.StringVar(value='front')
@@ -140,7 +141,7 @@ class Editor:
         if not hasattr(self,'context_hint'):return
         mode=self.tool.get();placing=mode in ('Monster','Objekt')
         self.canvas.configure(cursor='crosshair' if mode!='Auswahl' else 'arrow')
-        self.context_hint.set('In die Karte klicken zum Platzieren · Umschalt: mehrfach setzen · Esc: beenden' if placing else 'Figuren direkt anklicken und ziehen · Doppelklick: Werte / KI · Mittlere Maustaste: Karte verschieben' if mode=='Auswahl' else 'In die Karte klicken oder ziehen · Esc: zurück zum Auswählen')
+        self.context_hint.set('In die Karte klicken zum Platzieren · Umschalt: mehrfach setzen · Esc: beenden' if placing else 'Figur anklicken und ziehen · Entf: löschen · Rechtsklick: Objektaktionen' if mode=='Auswahl' else 'Gelände markieren zum Kopieren oder Löschen' if mode=='Bereich' else 'In die Karte klicken oder ziehen · Alt: unter einer Figur zeichnen · Esc: auswählen')
         self.show_brush_cursor()
     def cancel_placement(self):
         self.library_drag=None;self.placement_once=False;self.tool.set('Auswahl');self.hide_brush_cursor()
@@ -160,6 +161,9 @@ class Editor:
     def library_preview(self,kind,row):
         title=(self.actor_label(row) if kind=='Monster' else row.get('name',self.actor_code(row)))
         self.library_titles[kind].set(title+'\nBereit zum Hinzufügen')
+        normal=values_for(self.rom,row,self.current()['tileset']);ng=values_for(self.rom,row,self.current()['tileset'],1)
+        show=lambda v:'—' if v is None else str(v)
+        self.library_stats[kind].set(f'Normal: HP {show(normal["hp"])} · Schaden {show(normal["contact_damage"])}\nNew Game+: HP {show(ng["hp"])} · Schaden {show(ng["contact_damage"])}')
         canvas=self.library_previews[kind];size=(round(78*self.ui),round(70*self.ui))
         photo=ImageTk.PhotoImage(self.sprites.thumbnail(row,size));self.preview_photos[kind]=photo;canvas.delete('all');canvas.create_image(0,0,image=photo,anchor='nw')
         for button in self.library_actions[kind]:button.configure(state='normal')
@@ -168,7 +172,7 @@ class Editor:
         if not row:return
         if kind=='Monster':self.monster_template=row
         else:self.object_template=copy.deepcopy(row)
-        self.tool.set(kind);self.selected_object=None;self.object_props.pack_forget();self.placement_once=True;self.canvas.focus_set();self.status.set('In der Karte auf die gewünschte Stelle klicken. Esc beendet das Platzieren.')
+        self.tool.set(kind);self.selected_object=None;self.placement_once=True;self.canvas.focus_set();self.status.set('In der Karte auf die gewünschte Stelle klicken. Esc beendet das Platzieren.')
     def add_from_library(self,kind):
         row=self.library_entry(kind)
         if not row:return
@@ -182,15 +186,15 @@ class Editor:
         r=self.current();x=max(0,min(r['width']*8-1,int(x)));y=max(0,min(r['height']*8-1,int(y)))
         if len(r['actors'])>=MAX_ACTORS:self.status.set(f'In diesem Raum sind bereits {MAX_ACTORS} Figuren. Bitte zuerst eine Figur entfernen.');return
         actor=dict(id='E-'+uuid.uuid4().hex[:8],type=row['type'],variant=row.get('variant',0),x=x,y=y,flags=(row.get('flags',0)&0x7fff)|(0x8000 if self.layer.get()=='front' else 0))
-        for key in ('kind','boss_start','boss_end','stats','native_family'):
+        for key in ('kind','boss_start','boss_end','boss_mode','stats','native_family'):
             if key in row:actor[key]=copy.deepcopy(row[key])
         if row.get('_instance'):actor['name']=row.get('name','')
-        if row.get('boss') or actor['type']>=128:actor.setdefault('kind','boss');actor.setdefault('boss_start','direct');actor.setdefault('boss_end','continue')
+        if row.get('boss') or actor['type']>=128:actor.setdefault('kind','boss');actor.setdefault('boss_start','direct');actor.setdefault('boss_end','continue');actor.setdefault('boss_mode','free')
         if is_platform(actor):
             actor['kind']='platform';actor['x']=max(96 if actor['variant']==0 else 16,min(r['width']*8-16,x));actor['y']=max(88 if actor['variant']==1 else 8,min(r['height']*8-8,y))
         validate_platform(actor,r['width']*8,r['height']*8)
         self.project.begin('Figur hinzufügen');r['actors'].append(actor);self.project.commit();self.selected_object=('actor',actor['id']);self.selection=None;self.tool.set('Auswahl');self.object_fields();self.schedule()
-        self.status.set(self.actor_label(actor)+' hinzugefügt · Direkt mit der Maus ziehen oder links die Werte ändern.');return actor
+        self.status.set(self.actor_label(actor)+' hinzugefügt · Direkt mit der Maus ziehen oder Werte rechts unter „Auswahl“ ändern.');return actor
     def duplicate_actor(self):
         actor=self.object()
         if actor and self.selected_object[0]=='actor':self.place_actor(dict(copy.deepcopy(actor),_instance=True),actor['x']+16,actor['y']+8)
@@ -216,6 +220,16 @@ class Editor:
     def inspect_at(self,e):
         hit=self.hit_object(*self.pixel_coords(e))
         if hit:self.selected_object=hit;self.object_fields();self.actor_details();return 'break'
+    def object_menu(self,e):
+        hit=self.hit_object(*self.pixel_coords(e))
+        if not hit:return self.pick(e)
+        self.selected_object=hit;self.selection=None;self.tool.set('Auswahl');self.object_fields();self.schedule()
+        menu=tk.Menu(self.root,tearoff=False)
+        menu.add_command(label='Löschen    Entf',command=self.delete)
+        if hit[0]=='actor':menu.add_command(label='Duplizieren',command=self.duplicate_actor);menu.add_command(label='Werte bearbeiten',command=self.actor_details)
+        try:menu.tk_popup(e.x_root,e.y_root)
+        finally:menu.grab_release()
+        return 'break'
     def palette_canvas(self,title):
         f=ttk.Frame(self.terrain_tabs);self.terrain_tabs.add(f,text=title);c=tk.Canvas(f,bg='#252c38',width=290,height=350,highlightthickness=0)
         bar=ttk.Scrollbar(f,command=c.yview);bar.pack(side='right',fill='y');c.configure(yscrollcommand=bar.set);c.pack(fill='both',expand=True)
@@ -323,7 +337,7 @@ class Editor:
         self.mode_hint.set('Eine Figur ziehen oder hinzufügen erstellt automatisch eine eigene Kopie.' if self.original_view else 'Bearbeitbar · Figuren direkt ziehen · Änderungen mit Speichern sichern')
         if self.original_view:self.edit_button.pack(side='right',padx=(12,0))
         else:self.edit_button.pack_forget()
-        if not self.object():self.object_props.pack_forget()
+        if not self.object():self.actor_stats.set('Keine Figur ausgewählt.')
     def add_room(self,duplicate=False):
         if not self.editable():return
         source=self.current();r=self.project.add_room(source if duplicate else None,tileset=source['tileset'])
@@ -382,7 +396,7 @@ class Editor:
             if selected or self.show_object_names.get() or missing:
                 self.canvas.create_text(x,self.actor_bounds(a)[1]*z-4,text=self.actor_label(a),fill='#eff4ed',anchor='s',font=('Segoe UI',max(10,round(10*self.ui))),tags=('actor-label-'+a['id'],))
             if selected and is_platform(a):self.canvas.create_line(*(v*z for v in platform_path(a)),fill='#75e4d6',dash=(5,3),arrow='last',width=2)
-            if selected and a['type']>=128:
+            if selected and a['type']>=128 and a.get('boss_mode','encounter')=='encounter':
                 from level_bosses import arena_floor
                 entry=next((e for e in self.catalog if e['type']==a['type']),a);ox=entry.get('x',128)-a['x'];oy=192-arena_floor(r,a)
                 left=max(-ox,max(0,min(r['width']*8-256,a['x']-128)));top=max(-oy,max(0,min(r['height']*8-224,-oy)))
@@ -442,8 +456,7 @@ class Editor:
             if part['mask'][i]:image.alpha_composite(self.tile_image(value,0,'front'),(i%width*8,i//width*8))
         return image
     def part_tab_changed(self,e=None):
-        if self.object():self.object_fields()
-        else:self.object_props.pack_forget()
+        self.show_brush_cursor()
     def refresh_parts(self):
         selected=self.parts_gallery.selection();self.parts={p['id']:p for p in builtin_parts(self.assets)+list(MOVING_PLATFORMS)+self.project.data.get('parts',[])}
         self.parts_gallery.delete(*self.parts_gallery.get_children());self.part_photos=[]
@@ -471,16 +484,16 @@ class Editor:
         except (ValueError,tk.TclError):self.status.set('Plattformlänge: 1 bis 32 Steine.');return
         self.brush=part['tiles'][:];self.brush_collision=part['collision'][:];self.brush_width=part['width'];self.brush_mask=part['mask'][:]
         self.tool.set('Bauteil');self.selected_object=None;self.refresh_brush()
-        self.object_props.pack_forget()
+        self.actor_stats.set('Keine Figur ausgewählt.')
         needed={resolve(v,0,'front')[0] for v in self.brush if v!=EMPTY}
         if needed-self.assets.keys():self.load_assets(needed)
         self.status.set(part['name']+' · Ein Klick setzt das ganze Bauteil · H/V spiegeln · Kollision wird mit übernommen, wenn eingeschaltet.')
     def pick_part(self,e):
         try:result=pick_connected_part(self.current(),self.layer.get(),*self.coords(e))
         except ValueError as exc:self.status.set(str(exc));return
-        if result is None:self.status.set('Hier liegt auf der Zielebene keine feste Fläche. Für freie Ausschnitte „Auswahl“ verwenden.');return
+        if result is None:self.status.set('Hier liegt auf der Zielebene keine feste Fläche. Für freie Ausschnitte „Gelände markieren / kopieren“ verwenden.');return
         part,self.selection=result;self.brush=part['tiles'];self.brush_collision=part['collision'];self.brush_width=part['width'];self.brush_mask=part['mask']
-        self.selected_object=None;self.tool.set('Bauteil');self.tabs.select(self.terrain_tab);self.terrain_tabs.select(self.parts_tab);self.object_props.pack_forget();self.refresh_brush();self.schedule()
+        self.selected_object=None;self.tool.set('Bauteil');self.tabs.select(self.terrain_tab);self.terrain_tabs.select(self.parts_tab);self.refresh_brush();self.schedule()
         self.status.set('Zusammenhängende Plattform aufgenommen. Linksklick setzt eine Kopie; „Pinsel merken“ speichert sie im Projekt.')
     def refresh_brush(self):
         if not hasattr(self,'brush_preview') or self.closing:return
@@ -530,7 +543,7 @@ class Editor:
         self.status.set('Bauteil gemerkt. Mit dem Projekt speichern; später per Klick wieder auswählen.');self.schedule()
     def remember_selection(self):
         if self.tool.get()=='Objekt':self.status.set('Spielobjekte direkt in der Karte auswählen; „Merken“ gilt für feste Bauteile.');return
-        if not self.selection:self.status.set('Mit „Auswahl“ erst ein Rechteck um die gewünschte Plattform ziehen.');return
+        if not self.selection:self.status.set('Mit „Gelände markieren / kopieren“ erst ein Rechteck um die gewünschte Plattform ziehen.');return
         try:self.add_part(capture_part(self.current(),self.layer.get(),self.selection,self.part_name.get()))
         except ValueError as exc:messagebox.showerror('Bauteil',str(exc),parent=self.root)
     def remember_brush(self):
@@ -557,6 +570,7 @@ class Editor:
         if selected and self.monsters.exists(selected[0]):self.monsters.selection_set(selected[0])
         else:
             self.monster_template=None;self.library_titles['Monster'].set('1. Bild auswählen');self.library_previews['Monster'].delete('all')
+            self.library_stats['Monster'].set('')
             for button in self.library_actions['Monster']:button.configure(state='disabled')
     def filter_objects(self):
         selected=self.object_picker.selection()
@@ -571,19 +585,20 @@ class Editor:
         if selected and self.object_picker.exists(selected[0]):self.object_picker.selection_set(selected[0])
         else:
             self.library_titles['Objekt'].set('1. Bild auswählen');self.library_previews['Objekt'].delete('all')
+            self.library_stats['Objekt'].set('')
             for button in self.library_actions['Objekt']:button.configure(state='disabled')
     def choose_object(self,e=None):
         selection=self.object_picker.selection()
         if selection:
             self.object_template=copy.deepcopy(self.object_rows[selection[0]]);self.library_preview('Objekt',self.object_template)
     def select_object_template(self,row):
-        self.object_template=copy.deepcopy(row);self.object_template.setdefault('name','');self.tool.set('Objekt');self.selected_object=None;self.object_props.pack_forget();self.refresh_brush()
+        self.object_template=copy.deepcopy(row);self.object_template.setdefault('name','');self.tool.set('Objekt');self.selected_object=None;self.refresh_brush()
         self.status.set((row.get('name') or self.actor_code(row))+' · Linksklick setzt die Figur · Esc beendet das Platzieren.')
     def actor_code(self,actor):return ('M-' if any(d['type']==actor['type'] for d in self.definitions) else 'O-')+f'{actor["type"]:04X}'
     def actor_label(self,actor):
         code=self.actor_code(actor);name=actor.get('name') or getattr(self,'library_names',{}).get(code,'');return code+(' · '+name if name else '')
     def actor_position(self,actor):
-        if actor['type']>=128:
+        if actor['type']>=128 and actor.get('boss_mode','encounter')=='encounter':
             from level_bosses import arena_floor
             entry=next((e for e in self.catalog if e['type']==actor['type']),actor)
             return actor['x'],arena_floor(self.current(),actor)+entry.get('y',96)-192
@@ -612,13 +627,15 @@ class Editor:
         if self.original_view and (self.original_loading or self.original_room is None):return
         wx,wy=self.pixel_coords(e);x,y=wx//8,wy//8;r=self.current();tool=self.tool.get()
         if not 0<=x<r['width'] or not 0<=y<r['height']:return
-        hit=self.hit_object(wx,wy) if tool in ('Auswahl','Monster','Objekt') and not getattr(e,'state',0)&8 else None
+        hit=self.hit_object(wx,wy) if tool!='Bereich' and not getattr(e,'state',0)&8 else None
         self.start=(x,y);self.drag=(x,y);self.pixel_drag=(wx,wy);self.gesture='object' if hit else tool
         if hit:
             self.selected_object=hit;self.selection=None;item=self.object();self.object_drag_offset=(item['x']-wx,item['y']-wy)
             self.tool.set('Auswahl');self.canvas.configure(cursor='fleur');self.object_fields();self.schedule();return
         if tool=='Auswahl':
-            self.selected_object=None;self.object_props.pack_forget();self.selection=(x,y,x,y);self.schedule();return
+            self.selected_object=None;self.selection=None;self.actor_stats.set('Keine Figur ausgewählt.');self.quick_combat.pack_forget();self.quick_boss_box.pack_forget();self.schedule();return
+        if tool=='Bereich':
+            self.selected_object=None;self.selection=(x,y,x,y);self.schedule();return
         if not self.ensure_editable():self.start=None;return
         r=self.current();self.project.begin(tool);self.selected_object=None
         if tool in ('Zeichnen','Bauteil','Kollision'):self.stamp(x,y)
@@ -661,7 +678,7 @@ class Editor:
         elif tool in ('Zeichnen','Kollision'):
             ox,oy=self.drag;n=max(abs(x-ox),abs(y-oy),1)
             for i in range(n+1):self.stamp(round(ox+(x-ox)*i/n),round(oy+(y-oy)*i/n))
-        elif tool in ('Fläche','Auswahl'):
+        elif tool in ('Fläche','Bereich'):
             r=self.current();self.selection=(max(0,min(self.start[0],x)),max(0,min(self.start[1],y)),min(r['width']-1,max(self.start[0],x)),min(r['height']-1,max(self.start[1],y)))
         self.drag=(x,y);self.schedule()
     def release(self,e):
@@ -691,7 +708,7 @@ class Editor:
     def object_fields(self):
         item=self.object()
         if item:
-            self.object_props.pack(side='bottom',fill='x',pady=6,before=self.room_tabs)
+            self.tabs.select(self.selection_tab)
             for k,v in self.props.items():v.set(str(item.get(k,'')))
             moving=self.selected_object[0]=='actor' and is_platform(item)
             actor=self.selected_object[0]=='actor'
@@ -711,7 +728,16 @@ class Editor:
             self.props['plane'].set(('back' if item.get('flags',0)&0x8000==0 else 'front') if self.selected_object[0]=='actor' else ('back' if item.get('target_plane',0) else 'front'))
             if self.selected_object[0]=='actor':
                 val=values_for(self.rom,item,self.current()['tileset']);self.actor_stats.set(f'HP: {val["hp"] if val["hp"] is not None else "Bossinitialisierung"} · Kontaktschaden: {val["contact_damage"]} · Trefferbereich: {val["half_width"]*2} × {val["half_height"]*2}')
-            else:self.actor_stats.set('')
+                normal=values_for(self.rom,dict(item,stats={}),self.current()['tileset']);ng=values_for(self.rom,dict(item,stats={}),self.current()['tileset'],1)
+                show=lambda v:'—' if v is None else str(v)
+                self.quick_original.set(f'Original: HP {show(normal["hp"])} / Schaden {show(normal["contact_damage"])}\nNew Game+: HP {show(ng["hp"])} / Schaden {show(ng["contact_damage"])}')
+                for key,var in self.quick_stats.items():var.set('' if val[key] is None else str(val[key]))
+                self.quick_boss_mode.set(item.get('boss_mode','encounter'))
+                if any(d['type']==item['type'] for d in self.definitions):self.quick_combat.pack(fill='x',pady=8)
+                else:self.quick_combat.pack_forget();self.actor_stats.set('Objekt · Position, Variante und Spielebene bearbeiten.')
+                if item['type']>=128:self.quick_boss_box.pack(fill='x',pady=5)
+                else:self.quick_boss_box.pack_forget()
+            else:self.actor_stats.set('');self.quick_combat.pack_forget();self.quick_boss_box.pack_forget()
             if 'target' in item:
                 target=self.project.get(item['target']);self.props['target'].set(target['id']+' · '+target['name'])
     def actor_details(self):
@@ -719,7 +745,7 @@ class Editor:
         item=self.object()
         if not item or self.selected_object[0]!='actor':return
         if self.stats_window and self.stats_window.winfo_exists():self.stats_window.destroy()
-        window=tk.Toplevel(self.root);self.stats_window=window;window.title(self.actor_label(item)+' · Werte / KI');window.transient(self.root)
+        window=tk.Toplevel(self.root);self.stats_window=window;window.title(self.actor_label(item)+' · Werte');window.transient(self.root)
         box=ttk.Frame(window,padding=16);box.pack(fill='both',expand=True)
         ttk.Label(box,text=self.actor_label(item),font=('Segoe UI',16,'bold')).pack(anchor='w')
         table=ttk.Treeview(box,columns=('label','normal','ng','own'),show='headings',height=4)
@@ -732,14 +758,12 @@ class Editor:
         ttk.Label(box,text='Leeres Feld = Originalwert einschließlich Raum-/New-Game+-Bonus.\nEigene Werte ersetzen den Startwert dieses Exemplars im F5-Spieltest.',wraplength=round(610*self.ui)).pack(anchor='w',pady=8)
         self.boss_start=tk.StringVar(value=item.get('boss_start','direct'));self.boss_end=tk.StringVar(value=item.get('boss_end','continue'))
         if item['type']>=128:
+            ttk.Label(box,text='Bossmodus').pack(anchor='w',pady=(8,0))
+            ttk.Radiobutton(box,text='Freier Gegner im Level',variable=self.quick_boss_mode,value='free').pack(anchor='w')
+            ttk.Radiobutton(box,text='Klassische Bossbegegnung',variable=self.quick_boss_mode,value='encounter').pack(anchor='w')
             for label,var,choices in [('Bossstart',self.boss_start,('direct','sequence')),('Nach dem Sieg',self.boss_end,('continue','exit'))]:
                 row=ttk.Frame(box);row.pack(fill='x');ttk.Label(row,text=label).pack(side='left');ttk.Combobox(row,textvariable=var,values=choices,state='readonly',width=18).pack(side='right')
-            ttk.Label(box,text='direct: vorbereiteter Kampf · sequence: native Einleitung\ncontinue: Raum weiter erkunden · exit: erster Raumausgang nach dem Sieg\nDer Kampfboden folgt dem Boden unter dem Platzierungspunkt. Ein Bosskampf ist eine einzelne Begegnung mit fester Kamera; andere Gegner pausieren.',wraplength=round(610*self.ui)).pack(anchor='w',pady=6)
-        entry=next((e for e in self.catalog if e['type']==item['type']),item)
-        notes='Kerzen verwenden die native Objekt-KI; Variante steuert den Inhalt (Original-Byte, dezimal).' if item['type']==14 else 'Szenenobjekt als Kulisse: Die gemessene Originalgrafik wird an dieser Position dargestellt. Sein Original-Levelskript läuft im freien Leveltest nicht mit, da es fremde Kameras, Grafiken oder Levelwechsel auslösen kann. Interaktive Abläufe benötigen einen eigenen geprüften Adapter.' if item.get('kind')=='event' else ai_notes(entry)
-        if item['type']>=128:notes='Die originale Boss-KI läuft in einer einzelnen Begegnung gegen den spielbaren Simon. Körper, Geschosse und Hilfsteile bleiben zusammen. Native Angriffsphasen und feste Bewegungsgrenzen gelten weiterhin. Eigene Werte ändern den Startwert; eine neue KI oder vollständige Original-Levelsequenz entsteht dadurch nicht automatisch.'
-        notes=notes.replace('„Natürlich“ zeigt den echten Ablauf.','F5 zeigt den echten Ablauf im eigenen Raum.')
-        ttk.Label(box,text=notes,wraplength=round(610*self.ui),justify='left').pack(fill='x',pady=10)
+            ttk.Label(box,text='Freier Gegner: ohne Einleitung oder Kamerasperre, zusammen mit anderen Figuren.\nKlassische Begegnung: eigene Arena; Bossstart und Ausgang gelten für diesen Modus.',wraplength=round(610*self.ui)).pack(anchor='w',pady=6)
         bar=ttk.Frame(box);bar.pack(fill='x');ttk.Button(bar,text='Werte übernehmen',state='disabled' if self.original_view else 'normal',command=lambda:self.apply_actor_stats(item['id'])).pack(side='left')
         ttk.Button(bar,text='Originalwerte wiederherstellen',state='disabled' if self.original_view else 'normal',command=lambda:self.reset_actor_stats(item['id'])).pack(side='left',padx=8)
         ttk.Button(bar,text='Schließen',command=window.destroy).pack(side='right');self.refresh_actor_stats(item)
@@ -755,12 +779,33 @@ class Editor:
         try:
             values={k:int(v.get()) for k,v in self.stat_fields.items() if v.get().strip()}
             candidate=dict(item,stats=values,boss_start=self.boss_start.get(),boss_end=self.boss_end.get())
+            if item['type']>=128:candidate.update(self.boss_mode_values(item,self.quick_boss_mode.get()))
             from level_actor_values import validate_values
             validate_values(candidate);self.project.begin('Monsterwerte');item.update(candidate);self.project.commit();self.refresh_actor_stats(item);self.object_fields();self.schedule()
         except ValueError as exc:messagebox.showerror('Monsterwerte',str(exc),parent=self.stats_window)
     def reset_actor_stats(self,identifier):
         for value in self.stat_fields.values():value.set('')
         self.apply_actor_stats(identifier)
+    def boss_mode_values(self,item,mode):
+        values=dict(boss_mode=mode)
+        if mode=='free' and item.get('boss_mode','encounter')=='encounter':
+            from level_bosses import free_origin
+            dx,dy=free_origin(item['type']);x,y=self.actor_position(item);r=self.current()
+            values.update(x=max(0,min(r['width']*8-1,x+dx)),y=max(0,min(r['height']*8-1,y+dy)))
+        return values
+    def apply_quick_stats(self):
+        selected=self.selected_object
+        if not selected or selected[0]!='actor' or not self.ensure_editable():return
+        self.selected_object=selected;item=self.object()
+        if not item:return
+        try:
+            original=values_for(self.rom,dict(item,stats={}),self.current()['tileset'])
+            values={k:int(var.get()) for k,var in self.quick_stats.items() if var.get().strip() and (k in item.get('stats',{}) or int(var.get())!=original[k])}
+            candidate=dict(item,stats=values)
+            if item['type']>=128:candidate.update(self.boss_mode_values(item,self.quick_boss_mode.get()))
+            from level_actor_values import validate_values
+            validate_values(candidate);self.project.begin('Figurenwerte');item.update(candidate);self.project.commit();self.object_fields();self.schedule();self.status.set(self.actor_label(item)+' · Werte gespeichert; F5 übernimmt sie in den Spieltest.')
+        except ValueError as exc:messagebox.showerror('Figurenwerte',str(exc),parent=self.root)
     def apply_object(self):
         if not self.ensure_editable():return
         item=self.object()
@@ -787,6 +832,7 @@ class Editor:
             for y in range(y1,y2+1):
                 for x in range(x1,x2+1):paint(r,self.layer.get(),x,y,[EMPTY],[0])
         self.project.commit();self.schedule()
+        if not self.selected_object:self.actor_stats.set('Keine Figur ausgewählt.');self.quick_combat.pack_forget();self.quick_boss_box.pack_forget()
     def copy(self):
         if self.selected_object and self.selected_object[0]=='actor':
             self.actor_clipboard=dict(copy.deepcopy(self.object()),_instance=True);self.status.set(self.actor_label(self.actor_clipboard)+' kopiert · Strg+V, dann in die Karte klicken.');return

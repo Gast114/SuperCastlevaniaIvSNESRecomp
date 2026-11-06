@@ -66,7 +66,7 @@ def check(native=True):
             block=next(n for n in range(256) if any(w!=0x800 for w in assets.block(n)))
             app.choose_block(SimpleNamespace(x=(block%8*32+1)*app.ui,y=(block//8*32+1)*app.ui));app.press(event(4,4));app.release(event(4,4));assert app.project.dirty
             app.undo();assert app.project.data==saved
-            app.tool.set('Auswahl');app.press(event(4,4));app.motion(event(7,7));app.release(event(7,7));app.copy();app.paste()
+            app.tool.set('Bereich');app.press(event(4,4));app.motion(event(7,7));app.release(event(7,7));app.copy();app.paste()
             assert app.brush_width==4 and len(app.brush)==16
             app.monsters.selection_set('M-0012');app.tool.set('Monster');app.press(event(14,16));app.release(event(14,16))
             assert app.current()['actors'][-1]['type']==18

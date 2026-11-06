@@ -29,7 +29,7 @@ def check():
         with patch.object(root,'winfo_screenwidth',return_value=1920),patch.object(root,'winfo_screenheight',return_value=1080):app=Editor(root,Project())
         try:
             root.geometry('1280x900');spin(root,lambda:0 in app.assets and 2 in app.assets);root.update()
-            assert len(app.tabs.tabs())==3 and app.tool.get()=='Auswahl'
+            assert len(app.tabs.tabs())==4 and app.tool.get()=='Auswahl'
             def within(widget,container):
                 assert widget.winfo_ismapped(),str(widget)
                 assert widget.winfo_rootx()>=container.winfo_rootx()-2,str(widget)
@@ -42,8 +42,8 @@ def check():
             assert len(app.current()['actors'])==before+1 and app.tool.get()=='Auswahl'
             assert app.object()['type']==17 and app.object()['y']<220
             assert not app.prop_rows['target'][0].winfo_ismapped() and app.prop_rows['variant'][0].winfo_ismapped()
-            within(app.details_button,app.left)
-            passed('1280×900: three clear library tabs, visible add buttons, compact relevant properties and one-click insertion into the visible map')
+            within(app.details_button,app.selection_tab)
+            passed('1280×900: library and selection tabs, visible add buttons, relevant properties and one-click insertion into the visible map')
             r=app.current();bat=dict(id='precise-bat',type=12,variant=0,x=163,y=131,flags=32768);r['actors'].append(bat);app.schedule();root.update()
             def point(actor):
                 x1,y1,x2,y2=app.actor_bounds(actor);wx=int(x1);wy=int((y1+y2)/2);z=app.zoom.get()
@@ -54,12 +54,25 @@ def check():
             assert (bat['x'],bat['y'])==(166,136),(bat['x'],bat['y']);assert canvas.winfo_rootx()==left,'inspector shifted the canvas while dragging'
             app.undo();root.update();assert next(a for a in app.current()['actors'] if a['id']=='precise-bat')['x']==163
             passed('Actual mouse press/motion/release hits a small off-grid bat, drags by 3×5 pixels, keeps the grab offset and canvas position, and supports undo')
+            bat=next(a for a in app.current()['actors'] if a['id']=='precise-bat');terrain=copy.deepcopy(app.current()['layers'])
+            app.tool.set('Bauteil');x,y=point(bat);canvas.event_generate('<ButtonPress-1>',x=x,y=y);root.update()
+            canvas.event_generate('<B1-Motion>',x=x+12,y=y+8,state=0x100);canvas.event_generate('<ButtonRelease-1>',x=x+12,y=y+8);root.update()
+            assert app.object()['id']=='precise-bat' and (app.object()['x'],app.object()['y'])==(169,135)
+            assert app.current()['layers']==terrain and app.stats_window is None
+            for key,value in dict(hp=999,contact_damage=7,half_width=9,half_height=10).items():app.quick_stats[key].set(value)
+            app.apply_quick_stats();assert app.object()['stats']==dict(hp=999,contact_damage=7,half_width=9,half_height=10)
+            assert '999' in app.actor_stats.get() and 'New Game+' in app.quick_original.get()
+            canvas.focus_force();canvas.event_generate('<Delete>');root.update();assert not any(a['id']=='precise-bat' for a in app.current()['actors']) and app.stats_window is None
+            app.undo();root.update();assert any(a['id']=='precise-bat' for a in app.current()['actors'])
+            app.open_palette('Gegner');app.monsters.selection_set('M-000C');root.update();bat_values=app.library_stats['Monster'].get();app.monsters.selection_set('M-000B');root.update()
+            assert app.library_stats['Monster'].get()!=bat_values
+            passed('A sprite takes precedence over terrain tools; fast click/drag opens no modal; direct per-instance stats persist; Delete removes immediately and undo restores; library values change with the selected monster')
             app.monsters.selection_set('M-0012');root.update();app.library_actions['Monster'][1].invoke();root.update();assert app.tool.get()=='Monster'
             canvas.event_generate('<Motion>',x=300,y=170);root.update();assert app.canvas.find_withtag('brush-cursor')
             count=len(app.current()['actors']);canvas.event_generate('<ButtonPress-1>',x=300,y=170);canvas.event_generate('<ButtonRelease-1>',x=300,y=170);root.update()
             assert len(app.current()['actors'])==count+1 and app.tool.get()=='Auswahl'
             passed('Explicit mouse-placement action shows a sprite preview, inserts once and returns to selection automatically')
-            app.monsters.selection_set('M-000C');app.monsters.see('M-000C');root.update();tree=app.monsters;box=tree.bbox('M-000C');assert box
+            app.open_palette('Gegner');app.monsters.selection_set('M-000C');app.monsters.see('M-000C');root.update();tree=app.monsters;box=tree.bbox('M-000C');assert box
             count=len(app.current()['actors']);tx,ty=box[0]+20,box[1]+box[3]//2
             tree.event_generate('<ButtonPress-1>',x=tx,y=ty);root.update()
             dx=canvas.winfo_rootx()+400-tree.winfo_rootx();dy=canvas.winfo_rooty()+260-tree.winfo_rooty()
@@ -84,6 +97,7 @@ def check():
                 audio_unavailable=False
                 def __init__(self,data,*args,**kw):calls.append(copy.deepcopy(data));self.session=SimpleNamespace(lua=SimpleNamespace(command=lambda *args:None))
                 def close(self):self.session=None
+                def show(self):pass
             with patch('level_editor.Playtest',FakePlaytest):
                 app.test();spin(root,lambda:app.playtest is not None);app.stop_test()
             assert calls[0]['start_room']==app.room_id and app.project.data['start_room']==old_id
@@ -101,7 +115,13 @@ def check():
             root.maxsize(5000,3200);root.geometry('2856x1700');spin(root,lambda:0 in app.assets);app.monsters.selection_set('M-0080');root.update()
             assert app.ui==1.7 and root.winfo_width()>=2800,(app.ui,root.winfo_width(),root.winfo_height())
             for button in app.library_actions['Monster']:within(button,app.monster_tab)
-            app.library_actions['Monster'][0].invoke();root.update();within(app.details_button,app.left)
+            app.library_actions['Monster'][0].invoke();root.update();within(app.details_button,app.selection_tab)
+            boss=app.object();assert boss['boss_mode']=='free' and app.quick_boss_mode.get()=='free'
+            app.quick_boss_mode.set('encounter');app.apply_quick_stats();assert boss['boss_mode']=='encounter'
+            before=app.actor_bounds(boss)
+            app.quick_boss_mode.set('free');app.apply_quick_stats();assert boss['boss_mode']=='free'
+            assert app.actor_bounds(boss)==before,(before,app.actor_bounds(boss))
+            passed('New boss placements default to free; switching a classic encounter to free preserves its visible position')
             assert app.canvas.winfo_width()>1000 and app.canvas.winfo_height()>800
             passed('4K scaling: large readable controls, add/inspector actions fully visible and a spacious map at 1.7× UI density')
         finally:app.project.dirty=False;app.close();root.update()

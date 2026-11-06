@@ -95,7 +95,7 @@ def compile_project(data,destination,rom=None,build=None,quest=0):
         for a in r['actors']:
             t=a['type'];word=lambda addr:int.from_bytes(raw[0x8000+(addr&0x7fff):0x8000+(addr&0x7fff)+2],'little')
             value=values_for(raw,a,r['tileset'],quest)
-            options=int(a.get('boss_start','direct')=='sequence')|2*int(a.get('boss_end','continue')=='exit')|4*int('hp' in a.get('stats',{}))|8*int('half_width' in a.get('stats',{}))|16*int('half_height' in a.get('stats',{}))
+            options=int(a.get('boss_start','direct')=='sequence')|2*int(a.get('boss_end','continue')=='exit')|4*int('hp' in a.get('stats',{}))|8*int('half_width' in a.get('stats',{}))|16*int('half_height' in a.get('stats',{}))|32*int(a.get('boss_mode','encounter')=='free')
             out+=struct.pack('<14H',t,a.get('variant',0),a['x'],a['y'],a.get('flags',0),value['half_width'],value['half_height'],value['hp'] or 0,0x26 if t==14 else word(0xad00+t*2),adds.get((t,resource_entry(a)['variant']),0),a.get('stats',{}).get('contact_damage',65535),2 if t>=128 else 1 if t==14 else 3 if a.get('kind')=='event' else 0,boss_indices.get(t,0),options)
         for d in r['doors']:
             target=next(i for i,row in enumerate(data['rooms']) if row['id']==d['target'])

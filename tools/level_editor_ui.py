@@ -26,6 +26,7 @@ def theme(root,scale):
     style.map('TCombobox',fieldbackground=[('readonly','#111b29')],foreground=[('readonly',TEXT)])
     style.configure('TNotebook',background=PANEL,borderwidth=0)
     style.configure('TNotebook.Tab',padding=(12,9),background=PANEL,foreground=MUTED)
+    style.configure('Library.TNotebook.Tab',padding=(6,8))
     style.map('TNotebook.Tab',background=[('selected',CARD)],foreground=[('selected',TEXT)])
     style.configure('Treeview',background=PANEL,fieldbackground=PANEL,foreground=TEXT,borderwidth=0,rowheight=round(32*scale))
     style.map('Treeview',background=[('selected','#354b72')],foreground=[('selected','#ffffff')])
@@ -66,7 +67,7 @@ def build(self):
     area=self.level_page
 
     toolbar=ttk.Frame(area,padding=(12,8,12,10));toolbar.pack(fill='x')
-    ttk.Radiobutton(toolbar,text='↖ Auswählen & ziehen',style='Tool.TRadiobutton',variable=self.tool,value='Auswahl').pack(side='left',padx=3)
+    ttk.Radiobutton(toolbar,text='↖ Objekte bewegen',style='Tool.TRadiobutton',variable=self.tool,value='Auswahl').pack(side='left',padx=3)
     for label,key in [('＋ Gegner','Gegner'),('＋ Objekte','Objekte'),('▦ Gelände','Gelände')]:ttk.Button(toolbar,text=label,command=lambda k=key:self.open_palette(k)).pack(side='left',padx=3)
     for text,value in [('Spielerstart','Start'),('Ausgang','Ausgang')]:ttk.Radiobutton(toolbar,text=text,style='Tool.TRadiobutton',variable=self.tool,value=value).pack(side='left',padx=3)
     view=ttk.Menubutton(toolbar,text='Ansicht ▾');view.pack(side='right',padx=4)
@@ -111,27 +112,35 @@ def build(self):
     sy=ttk.Scrollbar(stage,command=self.canvas.yview);sy.pack(side='right',fill='y');sx=ttk.Scrollbar(stage,orient='horizontal',command=lambda *a:self.scroll('x',*a));sx.pack(side='bottom',fill='x')
     sy.configure(command=lambda *a:self.scroll('y',*a));self.canvas.configure(xscrollcommand=sx.set,yscrollcommand=sy.set);self.canvas.pack(fill='both',expand=True)
     self.canvas.bind('<Configure>',lambda e:self.schedule());self.canvas.bind('<Button-1>',self.press);self.canvas.bind('<B1-Motion>',self.motion);self.canvas.bind('<ButtonRelease-1>',self.release)
-    self.canvas.bind('<Double-Button-1>',self.inspect_at);self.canvas.bind('<Button-3>',self.pick);self.canvas.bind('<Shift-Button-3>',self.pick_part)
+    self.canvas.bind('<Double-Button-1>',self.press);self.canvas.bind('<Button-3>',self.object_menu);self.canvas.bind('<Shift-Button-3>',self.pick_part)
     self.canvas.bind('<MouseWheel>',self.wheel);self.canvas.bind('<Button-2>',lambda e:self.canvas.scan_mark(e.x,e.y));self.canvas.bind('<B2-Motion>',self.pan)
     self.canvas.bind('<Motion>',self.hover_brush);self.canvas.bind('<Leave>',lambda e:self.hide_brush_cursor())
     self.context_hint=tk.StringVar(value='Figuren direkt anklicken und ziehen · Mittlere Maustaste: Karte verschieben')
     ttk.Label(center,textvariable=self.context_hint,style='Muted.TLabel',padding=(12,8),wraplength=round(650*u)).pack(fill='x')
 
     ttk.Label(right,text='Bibliothek',style='Heading.TLabel').pack(anchor='w',pady=(0,8))
-    self.tabs=ttk.Notebook(right);self.tabs.pack(fill='both',expand=True)
+    self.tabs=ttk.Notebook(right,style='Library.TNotebook');self.tabs.pack(fill='both',expand=True)
     self.monster_tab=ttk.Frame(self.tabs,style='Panel.TFrame');self.objects_tab=ttk.Frame(self.tabs,style='Panel.TFrame');self.terrain_tab=ttk.Frame(self.tabs,style='Panel.TFrame')
     for widget,title in [(self.monster_tab,'Gegner'),(self.objects_tab,'Objekte'),(self.terrain_tab,'Gelände')]:self.tabs.add(widget,text=title)
+    self.selection_tab=ttk.Frame(self.tabs,style='Panel.TFrame');self.tabs.add(self.selection_tab,text='Auswahl')
+    self.selection_canvas=tk.Canvas(self.selection_tab,bg=PANEL,highlightthickness=0)
+    sb=ttk.Scrollbar(self.selection_tab,command=self.selection_canvas.yview);sb.pack(side='right',fill='y');self.selection_canvas.configure(yscrollcommand=sb.set);self.selection_canvas.pack(fill='both',expand=True)
+    self.selection_content=ttk.Frame(self.selection_canvas,style='Panel.TFrame',padding=6)
+    window=self.selection_canvas.create_window(0,0,window=self.selection_content,anchor='nw')
+    self.selection_content.bind('<Configure>',lambda e:self.selection_canvas.configure(scrollregion=self.selection_canvas.bbox('all')))
+    self.selection_canvas.bind('<Configure>',lambda e:self.selection_canvas.itemconfigure(window,width=e.width))
     ttk.Label(self.monster_tab,text='Gegner suchen · Code oder Name',style='Muted.TLabel').pack(anchor='w',pady=(8,3))
     self.monster_search=ttk.Entry(self.monster_tab,textvariable=self.filter);self.monster_search.pack(fill='x',pady=(0,6));self.filter.trace_add('write',lambda *a:self.filter_monsters())
     self.monsters=scroll_tree(self.monster_tab,style='Sprites.Treeview',height=4);self.monsters.bind('<<TreeviewSelect>>',self.choose_monster)
     self.object_picker=scroll_tree(self.objects_tab,style='Sprites.Treeview',height=4);self.object_picker.bind('<<TreeviewSelect>>',self.choose_object)
-    self.library_previews={};self.library_titles={};self.library_actions={}
+    self.library_previews={};self.library_titles={};self.library_actions={};self.library_stats={}
     for kind,parent,tree in [('Monster',self.monster_tab,self.monsters),('Objekt',self.objects_tab,self.object_picker)]:
-        actions=ttk.Frame(parent,style='Card.TFrame',padding=10);actions.pack(side='bottom',fill='x',pady=(8,0))
+        actions=ttk.Frame(parent,style='Card.TFrame',padding=10);actions.pack(side='bottom',fill='x',pady=(8,0),before=tree.master)
         title=tk.StringVar(value='1. Bild auswählen');self.library_titles[kind]=title
         row=ttk.Frame(actions,style='Card.TFrame');row.pack(fill='x')
         preview=tk.Canvas(row,width=round(78*u),height=round(70*u),bg=CARD,highlightthickness=0);preview.pack(side='left',padx=(0,8));self.library_previews[kind]=preview
         ttk.Label(row,textvariable=title,style='Card.TLabel',wraplength=round(180*u),font=('Segoe UI',11,'bold')).pack(side='left',fill='x',expand=True)
+        self.library_stats[kind]=tk.StringVar();ttk.Label(actions,textvariable=self.library_stats[kind],style='Card.TLabel',wraplength=round(280*u)).pack(anchor='w',pady=5)
         add=ttk.Button(actions,text='＋ Hinzufügen',style='Accent.TButton',command=lambda k=kind:self.add_from_library(k),state='disabled');add.pack(fill='x',pady=(8,4))
         place=ttk.Button(actions,text='Mit Maus platzieren',command=lambda k=kind:self.arm_library(k),state='disabled');place.pack(fill='x')
         ttk.Label(actions,text='Oder das Bild direkt in die Karte ziehen.',style='Card.TLabel',wraplength=round(280*u)).pack(anchor='w',pady=(6,0))
@@ -141,6 +150,7 @@ def build(self):
         tree.bind('<Double-Button-1>',lambda e,k=kind:self.add_from_library(k));tree.bind('<Return>',lambda e,k=kind:self.add_from_library(k))
 
     terrain=self.terrain_tab
+    ttk.Radiobutton(terrain,text='Gelände markieren / kopieren',variable=self.tool,value='Bereich').pack(fill='x',pady=5)
     source=ttk.LabelFrame(terrain,text='Grafikquelle',padding=8);source.pack(fill='x',pady=6)
     from level_tiles import SOURCE_COUNT,source_name
     self.source_picker=ttk.Combobox(source,textvariable=self.source_choice,values=tuple(f'{n} · {source_name(n)}' for n in range(SOURCE_COUNT)),state='readonly');self.source_picker.pack(fill='x');self.source_picker.bind('<<ComboboxSelected>>',self.source_changed)
@@ -166,7 +176,7 @@ def build(self):
     for title,value in [('Fest',1),('Frei',0)]:ttk.Radiobutton(collision,text=title,variable=self.collision,value=value).pack(side='left')
     ttk.Label(collision,text='Palette').pack(side='left',padx=(10,4));self.palette_box=ttk.Combobox(collision,textvariable=self.palette,values=tuple(range(8)),state='readonly',width=3);self.palette_box.pack(side='left');self.palette_box.bind('<<ComboboxSelected>>',lambda e:self.palette_changed())
 
-    props=ttk.LabelFrame(left,text='Ausgewählte Figur',padding=8);self.object_props=props;self.prop_rows={}
+    props=ttk.LabelFrame(self.selection_content,text='Ausgewählte Figur',padding=8);props.pack(fill='x');self.object_props=props;self.prop_rows={}
     for n,(label,key) in enumerate([('Dein Name','name'),('X','x'),('Y','y'),('Variante','variant'),('Bewegung','motion'),('Zielraum','target'),('Ziel X','target_x'),('Ziel Y','target_y'),('Auslöser','trigger'),('Spielebene','plane')]):
         caption=ttk.Label(props,text=label);caption.grid(row=n,column=0,sticky='w',padx=(0,6))
         if key in ('target','trigger','plane','motion'):
@@ -179,9 +189,20 @@ def build(self):
     props.columnconfigure(1,weight=1)
     ttk.Button(props,text='Übernehmen',command=self.apply_object).grid(row=10,column=0,columnspan=2,sticky='ew',pady=4)
     ttk.Label(props,textvariable=self.actor_stats,wraplength=round(240*u),style='Muted.TLabel').grid(row=11,column=0,columnspan=2,sticky='w')
-    self.details_button=ttk.Button(props,text='Werte / KI / Boss…',command=self.actor_details);self.details_button.grid(row=12,column=0,columnspan=2,sticky='ew',pady=5)
+    self.details_button=ttk.Button(props,text='Werte vergleichen…',command=self.actor_details);self.details_button.grid(row=12,column=0,columnspan=2,sticky='ew',pady=5)
     self.animation_button=ttk.Button(props,text='Animationen & HD…',command=self.open_monster_workshop);self.animation_button.grid(row=14,column=0,columnspan=2,sticky='ew',pady=4)
     self.duplicate_button=ttk.Button(props,text='Duplizieren',command=self.duplicate_actor);self.duplicate_button.grid(row=13,column=0,sticky='ew');ttk.Button(props,text='Löschen',command=self.delete).grid(row=13,column=1,sticky='ew')
+    self.quick_combat=ttk.LabelFrame(self.selection_content,text='Werte dieser Figur',padding=8)
+    for n,(key,label) in enumerate([('hp','Gesundheit'),('contact_damage','Kontaktschaden'),('half_width','Halbe Trefferbreite'),('half_height','Halbe Trefferhöhe')]):
+        ttk.Label(self.quick_combat,text=label).grid(row=n,column=0,sticky='w',pady=3)
+        ttk.Entry(self.quick_combat,textvariable=self.quick_stats[key],width=8).grid(row=n,column=1,sticky='ew',padx=4)
+    self.quick_combat.columnconfigure(1,weight=1)
+    self.quick_original=tk.StringVar();ttk.Label(self.quick_combat,textvariable=self.quick_original,style='Muted.TLabel').grid(row=4,column=0,columnspan=2,sticky='w',pady=6)
+    ttk.Button(self.quick_combat,text='Werte speichern',style='Accent.TButton',command=self.apply_quick_stats).grid(row=5,column=0,columnspan=2,sticky='ew')
+    self.quick_boss_box=ttk.LabelFrame(self.selection_content,text='Boss verwenden als',padding=8)
+    ttk.Radiobutton(self.quick_boss_box,text='Freier Gegner im Level',variable=self.quick_boss_mode,value='free').pack(anchor='w')
+    ttk.Radiobutton(self.quick_boss_box,text='Klassische Bossbegegnung',variable=self.quick_boss_mode,value='encounter').pack(anchor='w')
+    ttk.Button(self.quick_boss_box,text='Bossmodus speichern',command=self.apply_quick_stats).pack(fill='x',pady=5)
     self.tabs.bind('<<NotebookTabChanged>>',self.part_tab_changed);self.terrain_tabs.bind('<<NotebookTabChanged>>',self.part_tab_changed)
     ttk.Label(area,textvariable=self.status,style='Sub.TLabel',padding=(16,10),wraplength=round(1450*u)).pack(fill='x')
     for key,fn in [('<Control-s>',self.save),('<Control-o>',self.open),('<Control-n>',self.new),('<Control-z>',self.undo),('<Control-y>',self.redo),('<F5>',self.test),('<Escape>',self.cancel_placement)]:root.bind(key,lambda e,f=fn:f())

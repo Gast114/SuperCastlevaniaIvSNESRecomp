@@ -65,7 +65,9 @@ class SpriteLibrary:
             self.profiles={(p['type'],p.get('variant',0)):p for p in json.loads(path.read_text(encoding='utf-8')).get('profiles',[]) if not p.get('preview_only')}
     def sprite(self,actor):
         entry=resource_entry(actor);key=(entry['type'],entry['variant'])
-        if key in self.cache:return self.cache[key]
+        # A first F5 can prepare a boss group after its fallback preview was
+        # already requested. Do not retain that fallback over the new group.
+        if actor['type']<128 and key in self.cache:return self.cache[key]
         profile=self.profiles.get(key,{})
         if actor['type']==14:return self.candle(actor)
         if actor['type']==0x81:
@@ -73,12 +75,18 @@ class SpriteLibrary:
             if path.is_file():
                 with Image.open(path) as source:picture=source.convert('RGBA')
                 anchor=json.loads(path.with_suffix('.json').read_text())['anchor']
+                if actor.get('boss_mode')=='free':
+                    from level_bosses import free_origin
+                    dx,dy=free_origin(actor['type']);anchor=[anchor[0]+dx,anchor[1]+dy]
                 if picture.getbbox():return (picture,tuple(anchor))
         if actor['type']>=128:
             path=self.folder.parent/f'level-editor/bosses/{actor["type"]:02x}-group.png'
             if path.is_file():
                 with Image.open(path) as source:picture=source.convert('RGBA')
                 anchor=json.loads(path.with_suffix('.json').read_text())['anchor']
+                if actor.get('boss_mode')=='free':
+                    from level_bosses import free_origin
+                    dx,dy=free_origin(actor['type']);anchor=[anchor[0]+dx,anchor[1]+dy]
                 if picture.getbbox():return (picture,tuple(anchor))
         body=profile.get('main_type',actor['type'])
         preferred=[profile.get('context',{}).get('current_id'),*profile.get('main_frame_ids',[]),*profile.get('frame_ids',[])]
