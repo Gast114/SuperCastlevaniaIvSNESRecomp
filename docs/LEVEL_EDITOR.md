@@ -9,6 +9,9 @@ Beim Ausbau sind bestehende Levels umbauen und neue Levels erstellen gleich wich
 `Level_Editor_starten.cmd` doppelklicken. Beim ersten Start werden Originaldaten
 aus deiner eigenen USA-ROM vorbereitet. Danach werden sie wiederverwendet.
 Die vorhandene Python-Umgebung der HD-Werkzeuge wird verwendet.
+Das Fenster startet kleiner und am oberen Rand mit Abstand auf dem Monitor
+unter dem Mauszeiger. Seine Startmaße berücksichtigen die nutzbare Arbeitsfläche
+und die Taskleiste; Größe und Position bleiben anschließend frei veränderbar.
 
 Level-Editor und Monster-Werkstatt befinden sich jetzt in **einem Fenster**:
 **Level & Räume** enthält Karte, Bibliothek und Platzierungen;
@@ -212,6 +215,7 @@ Geschosse und belegte Hilfsteile bleiben bei ihrem Monster.
 Figuren direkt mit der linken Maustaste anklicken und ziehen. Das funktioniert
 auch bei aktivem Geländepinsel. **Alt** erlaubt Zeichnen unter einer Figur;
 das ausdrückliche Werkzeug **Gelände markieren / kopieren** wählt Gelände.
+Num Lock und Feststelltaste beeinflussen die Figurenauswahl nicht.
 Ein Doppelklick auf eine Figur öffnet keinen Dialog. **Entf** löscht sie sofort,
 **Strg+Z** stellt sie wieder her. Der Greifpunkt bleibt erhalten;
 kleine und nicht am Raster ausgerichtete Figuren lassen sich pixelgenau greifen. Die Pfeiltasten verschieben ein ausgewähltes
@@ -378,6 +382,14 @@ bei 1280×900 und 4K-Skalierung prüfen die Erreichbarkeit der Schaltflächen oh
 Bildbetrachter. F5 wird außerdem gegen den aktuell geöffneten Raum geprüft.
 Zusätzlich werden Figurenauswahl bei aktivem Geländepinsel, schnelle Klicks ohne
 Dialog, direkte Werteänderung, sofortiges Löschen und Undo geprüft.
+
+`tools/test_level_editor_input.py` prüft zusätzlich den frischen Standardstart
+im Originalkatalog, Hinzufügen über Button-Press/Release und sofortiges Entf
+ohne zusätzlichen Fokus-Klick. Mausauswahl und Ziehen werden mit Num Lock aus/an
+und Feststelltaste geprüft, ebenso der eigene Alt-Modifikator unter Windows.
+Die äußeren nativen Fenstergrenzen einschließlich Titelleiste müssen innerhalb
+der Monitor-Arbeitsfläche bleiben. Kleine, 4K- und versetzte Monitorflächen
+werden zusätzlich bei der Größenberechnung geprüft. Kein Bildbetrachter nötig.
 
 `tools/test_level_free_bosses.py` prüft eigene HP nach der nativen Initialisierung,
 zwei unabhängige Kopien desselben Bosses mit einem normalen Gegner, freie Kamera,

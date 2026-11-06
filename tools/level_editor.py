@@ -46,8 +46,9 @@ class Editor:
         self.name=tk.StringVar();self.width=tk.IntVar();self.height=tk.IntVar();self.collision_mode=tk.StringVar();self.props={k:tk.StringVar() for k in ('x','y','variant','target_x','target_y','target','trigger','plane','motion','name')}
         self.ui=max(1.,min(1.7,root.winfo_screenwidth()/1920));root.tk.call('tk','scaling',96/72*self.ui)
         self.monster_template=None;self.library_drag=None;self.preview_photos={};self.pixel_drag=None;self.placement_once=False
-        root.title('Castlevania IV · Level-Editor');root.geometry(f'{min(round(1680*self.ui),root.winfo_screenwidth()-80)}x{min(round(1020*self.ui),root.winfo_screenheight()-100)}')
-        root.minsize(min(round(1120*self.ui),root.winfo_screenwidth()-80),min(round(760*self.ui),root.winfo_screenheight()-100))
+        root.title('Castlevania IV · Level-Editor')
+        from level_window import configure
+        configure(root,self.ui)
         from level_editor_ui import build
         build(self)
         raw=NativeSession.__new__(NativeSession);raw.bytes=(ROOT/'Super Castlevania IV (USA).sfc').read_bytes();catalog=raw.read_catalog()
@@ -194,6 +195,7 @@ class Editor:
             actor['kind']='platform';actor['x']=max(96 if actor['variant']==0 else 16,min(r['width']*8-16,x));actor['y']=max(88 if actor['variant']==1 else 8,min(r['height']*8-8,y))
         validate_platform(actor,r['width']*8,r['height']*8)
         self.project.begin('Figur hinzufügen');r['actors'].append(actor);self.project.commit();self.selected_object=('actor',actor['id']);self.selection=None;self.tool.set('Auswahl');self.object_fields();self.schedule()
+        self.canvas.focus_set()
         self.status.set(self.actor_label(actor)+' hinzugefügt · Direkt mit der Maus ziehen oder Werte rechts unter „Auswahl“ ändern.');return actor
     def duplicate_actor(self):
         actor=self.object()
@@ -627,7 +629,10 @@ class Editor:
         if self.original_view and (self.original_loading or self.original_room is None):return
         wx,wy=self.pixel_coords(e);x,y=wx//8,wy//8;r=self.current();tool=self.tool.get()
         if not 0<=x<r['width'] or not 0<=y<r['height']:return
-        hit=self.hit_object(wx,wy) if tool!='Bereich' and not getattr(e,'state',0)&8 else None
+        # Tk/win32 reports Num Lock as Mod1 (0x8); Alt is 0x20000 there.
+        # Treating Mod1 as Alt made every normal click miss actors on Windows.
+        alt_mask=0x20000 if self.root.tk.call('tk','windowingsystem')=='win32' else 8
+        hit=self.hit_object(wx,wy) if tool!='Bereich' and not getattr(e,'state',0)&alt_mask else None
         self.start=(x,y);self.drag=(x,y);self.pixel_drag=(wx,wy);self.gesture='object' if hit else tool
         if hit:
             self.selected_object=hit;self.selection=None;item=self.object();self.object_drag_offset=(item['x']-wx,item['y']-wy)
