@@ -62,9 +62,15 @@ lässt sich so auch bei vertikalen und Mode7-Einträgen testen, deren vollständ
 2D-Kartenansicht und Kartenimport noch fehlen. **Test beenden** schließt die
 Instanz. Nach einer Änderung
 F5 erneut drücken. Das Spielfenster muss den Eingabefokus haben, um zu spielen.
-Die Vorbereitung läuft verdeckt. Das Fenster erscheint erst, wenn der gewählte
-Abschnitt beziehungsweise die eigene Karte fertig gezeichnet ist. Während der
-Vorbereitung steht der Status weiterhin auf dem Start des Spieltests.
+Während der Vorbereitung zeigt der Editor ein Ladefenster mit Fortschrittsanzeige
+und **Abbrechen**. Das Spielfenster erscheint mit dem fertig geladenen Abschnitt.
+Ein geprüfter Ausgangsspeicherstand aus den vorbereiteten Editor-Daten verkürzt
+den Start; ist er nicht verwendbar, wird das Spiel vollständig neu gestartet.
+Ein abgebrochener Start öffnet später kein zusätzliches Spielfenster. Fehler werden
+angezeigt und unter dem genannten Testordner als `startup-error.log` gespeichert.
+Horizontale Räume bis 256 Pixel Höhe behalten die ursprüngliche Kamerahöhe,
+damit unten kein ungenutzter Kartenrand eingeblendet wird. Höhere eigene Räume
+scrollen weiterhin vertikal.
 Die Originalsteuerung des privaten Spieltests gilt. Native Speicherstände und
 Rewind gehören noch nicht zum Projektformat; nach Tod oder versehentlichem
 Verlassen des Tests mit F5 neu starten.

@@ -40,6 +40,7 @@ bool damageHookInstalled=false;
 unsigned sampledLines=0,failedLines=0,requestedFlags=0,failedFlags=0;bool faultRecorded=false;
 unsigned word(unsigned at){return g_ram[at]|unsigned(g_ram[at+1])<<8;}
 void put(unsigned at,unsigned value){g_ram[at]=value;g_ram[at+1]=value>>8;}
+int verticalCameraLimit(const Room&r){return r.h<=32?0:int(r.h*8)-224;}
 unsigned bossFloor(const Room&r,const Actor&a){
  unsigned layer=a.flags&0x8000?0:1,column=std::min(r.w-1,a.x/8);
  for(unsigned y=a.y/8;y<r.h;++y){unsigned v=r.collision[layer][y*r.w+column];if(v&&v!=65535)return y*8;}
@@ -264,9 +265,12 @@ extern "C" void Cv4LevelBeforeFrame(void){
  }
  if(encounter<0)for(unsigned i=0;i<r->actors.size();++i){const auto&a=r->actors[i];if(a.kind==2&&!a.spawned&&std::abs(int(a.x)-int(x))<144&&std::abs(int(a.y)-int(y))<192){beginEncounter(i);break;}}
  put(0x70,5);put(0x86,0);if(encounter<0)put(0xb8,0);put(0xae,encounter>=0?1:r->collisionMode);
- put(0x94,streamEnd);put(0x96,streamEnd);put(0xa0,dx);put(0xa2,r->w*8-256+dx);put(0xa4,dy);put(0xa6,r->h*8-224+dy);
- cx=std::clamp(int(x)-128,0,int(r->w*8)-256);cy=std::clamp(int(y)-112,0,int(r->h*8)-224);
- if(encounter>=0){const auto&a=r->actors[encounter];cx=std::max(-dx,std::clamp(int(a.x)-128,0,int(r->w*8)-256));cy=std::max(-dy,std::clamp(-dy,0,int(r->h*8)-224));put(0xa0,cx+dx);put(0xa2,cx+dx);put(0xa4,cy+dy);put(0xa6,cy+dy);}
+ // A horizontal SNES map has 32 storage rows but only 28 visible rows.
+ // Scrolling its spare bottom rows into view shifts Simon upward and exposes
+ // a blank band. Keep both the native camera bounds and compositor aligned.
+ put(0x94,streamEnd);put(0x96,streamEnd);put(0xa0,dx);put(0xa2,r->w*8-256+dx);put(0xa4,dy);put(0xa6,verticalCameraLimit(*r)+dy);
+ cx=std::clamp(int(x)-128,0,int(r->w*8)-256);cy=std::clamp(int(y)-112,0,verticalCameraLimit(*r));
+ if(encounter>=0){const auto&a=r->actors[encounter];cx=std::max(-dx,std::clamp(int(a.x)-128,0,int(r->w*8)-256));cy=std::max(-dy,std::clamp(-dy,0,verticalCameraLimit(*r)));put(0xa0,cx+dx);put(0xa2,cx+dx);put(0xa4,cy+dy);put(0xa6,cy+dy);}
  for(unsigned at:{0x1cu,0x1280u,0x12c0u})put(at,cx+dx);
  for(unsigned at:{0x1eu,0x1298u,0x12d8u})put(at,cy+dy);
  for(int yy=(cy+dy)/8-16;yy<(cy+dy)/8+48;++yy)for(int xx=(cx+dx)/8-16;xx<(cx+dx)/8+48;++xx){
@@ -313,8 +317,8 @@ extern "C" void Cv4LevelBeforeDraw(Ppu*p){
   install=false;
  }
  if(encounter>=0&&encounterVideo){const auto&b=bosses[r.actors[encounter].boss];unsigned start=b.type==0x81?0:0xc000,colors=b.type==0x81?0:256;memcpy((unsigned char*)p->vram+start,b.video.data()+start,0x10000-start);memcpy((unsigned char*)p->cgram+colors,b.video.data()+0x10000+colors,512-colors);unsigned shadow=word(0x48);if(shadow>=0x2000&&shadow+512<=0x20000)memcpy(g_ram+shadow+colors,b.video.data()+0x10000+colors,512-colors);if(b.type==0x81){for(unsigned i=0;i<8;++i)p->m7matrix[i]=(int16_t)b.m7[i];p->m7sel=(uint8_t)b.m7[8];}encounterVideo=false;}
- cx=std::clamp(int(word(0x54a))-dx-128,0,int(r.w*8)-256);cy=std::clamp(int(word(0x54e))-dy-112,0,int(r.h*8)-224);
- if(encounter>=0){const auto&a=r.actors[encounter];cx=std::max(-dx,std::clamp(int(a.x)-128,0,int(r.w*8)-256));cy=std::max(-dy,std::clamp(-dy,0,int(r.h*8)-224));}
+ cx=std::clamp(int(word(0x54a))-dx-128,0,int(r.w*8)-256);cy=std::clamp(int(word(0x54e))-dy-112,0,verticalCameraLimit(r));
+ if(encounter>=0){const auto&a=r.actors[encounter];cx=std::max(-dx,std::clamp(int(a.x)-128,0,int(r.w*8)-256));cy=std::max(-dy,std::clamp(-dy,0,verticalCameraLimit(r)));}
  for(unsigned at:{0x1cu,0x1280u,0x12c0u})put(at,cx+dx);
  for(unsigned at:{0x1eu,0x1298u,0x12d8u})put(at,cy+dy);
  if(encounter>=0&&r.actors[encounter].type==0x81){std::copy_n(p->cgram,128,mode7Colors.begin());memcpy(p->vram+0x5000,r.video.data()+0xa000,0x1000);p->bgmode=7;p->screenEnabled[0]=0x11;++p->vramWriteCount;return;}

@@ -1,6 +1,7 @@
 """Compile editor projects and run them in a private native game instance."""
 import configparser
 import hashlib
+import json
 from pathlib import Path
 import struct
 from enemy_workshop_native import NativeSession,ROOT
@@ -10,6 +11,35 @@ from level_project import validate
 from level_graphics import compile_graphics
 from level_objects import resource_entry
 from level_actor_values import values_for
+
+
+def start_playtest_session(session):
+    """Reuse only the editor's prepared retail starting state, never user slots.
+
+    Replaying the intro at normal audio speed used to leave the hidden game
+    window absent for nearly half a minute on every F5. A cached source capture
+    is still validated by the runtime and checked before any section is loaded.
+    """
+    base=ROOT/'artwork-local/level-editor/rooms/00'
+    fixture=base/'capture/saves/save0.sav'
+    try:
+        meta=json.loads((base/'room.json').read_text(encoding='utf-8'))
+        valid=meta.get('version')==1 and meta.get('rom_sha256')==ROM_SHA256 and meta.get('room')==0 and fixture.is_file()
+    except (OSError,ValueError):valid=False
+    if valid:
+        try:
+            session.start(fixture=fixture,defer_show=True)
+            if (session.read(0x32),session.read(0x70),session.read(0x86))==(4,5,0):
+                session.prepared_start=True
+                return
+        except (OSError,RuntimeError):
+            # Let the existing audio fallback handle device loss immediately;
+            # trying the same unavailable device through a cold boot cannot help.
+            log=session.folder/'game.log'
+            if log.is_file() and 'audio device open FAILED' in log.read_text(encoding='utf-8',errors='replace'):raise
+        session.close()
+    session.start(defer_show=True)
+    session.prepared_start=False
 
 
 def monster_plan(raw,placements,index):
@@ -89,13 +119,13 @@ class Playtest:
             config['General']['DisableFrameDelay']='0';config['Graphics']['WindowScale']=str(max(2,min(8,window_scale)));config['Sound']['EnableAudio']='1'
         with (s.folder/'config.ini').open('w') as f:config.write(f)
         try:
-            try:s.start(defer_show=True)
+            try:start_playtest_session(s)
             except (OSError,RuntimeError):
                 log=(s.folder/'game.log').read_text(encoding='utf-8',errors='replace')
                 if fast or 'audio device open FAILED' not in log:raise
                 config['Sound']['EnableAudio']='0';self.audio_unavailable=True
                 with (s.folder/'config.ini').open('w') as f:config.write(f)
-                s.start(defer_show=True)
+                start_playtest_session(s)
             s.command('enemy','workshop off');s.command('enemy','capture off')
             s.command('enemy_resources',monsters)
             # Virtual families own their own textures/palettes; guest child lookups
@@ -127,13 +157,13 @@ class OriginalPlaytest:
             config['General']['DisableFrameDelay']='0';config['Graphics']['WindowScale']=str(max(2,min(8,window_scale)));config['Sound']['EnableAudio']='1'
         with (session.folder/'config.ini').open('w') as f:config.write(f)
         try:
-            try:session.start(defer_show=True)
+            try:start_playtest_session(session)
             except (OSError,RuntimeError):
                 log=(session.folder/'game.log').read_text(encoding='utf-8',errors='replace')
                 if fast or 'audio device open FAILED' not in log:raise
                 config['Sound']['EnableAudio']='0';self.audio_unavailable=True
                 with (session.folder/'config.ini').open('w') as f:config.write(f)
-                session.start(defer_show=True)
+                start_playtest_session(session)
             session.command('enemy','workshop off');session.command('enemy','capture off')
             if number:
                 session.write({0x86:number,0x70:3})

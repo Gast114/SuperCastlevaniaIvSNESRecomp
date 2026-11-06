@@ -43,6 +43,7 @@ def check():
         s.command('screenshot',folder/f'{tag}.png');s.command('dump',folder/f'{tag}.video.bin')
         video=(folder/f'{tag}.video.bin').read_bytes();image=np.array(Image.open(folder/f'{tag}.png').convert('RGB'))
         status=json.loads(s.command('level_status'));cx,cy=status['camera_x'],status['camera_y']
+        assert cy==0 and s.read(0xa6)==0,(tag,status,s.read(0xa6))
         wx,wy=xx+cx,yy+cy;depth=np.zeros((224,256),dtype=np.uint16)
         expected=np.full((224,256),struct.unpack_from('<H',packet,video_at+0x10000)[0],dtype=np.uint16)
         for layer in (1,0):

@@ -6,6 +6,7 @@ from pathlib import Path
 import queue
 import tempfile
 import threading
+import traceback
 import uuid
 from types import SimpleNamespace
 import tkinter as tk
@@ -27,6 +28,7 @@ class Editor:
         self.root=root;self.project=project or Project();self.room_id=self.project.data['rooms'][0]['id']
         self.original_view=project is None;self.original_room=None;self.original_number=0;self.original_loading=False;self.original_error='';self.original_cache={}
         self.assets={};self.events=queue.Queue();self.workers=[];self.playtest=None;self.closing=False;self.render_pending=False;self.play_pending=False;self.generation=0;self.tick_id=None;self.draw_id=None
+        self.play_serial=0;self.play_dialog=None;self.play_progress=None
         self.brush=[EMPTY];self.brush_collision=[0];self.brush_width=1;self.selection=None;self.selected_object=None;self.start=None;self.drag=None;self.clipboard=None
         self.brush_mask=None;self.hover=None;self.parts={};self.part_photos=[]
         self.sprites=SpriteLibrary(ROOT/'artwork-local/enemy-library');self.object_template=None;self.object_rows={};self.monster_photos=[];self.object_photos=[];self.object_types=set()
@@ -286,10 +288,20 @@ class Editor:
                         self.mode_hint.set('Kartenansicht noch nicht verfügbar. F5 spielt diesen Originalabschnitt.');self.status.set(f'R-{result["number"]:02d}: {self.original_error} · F5 startet den Originalabschnitt; Grafikquellen bleiben verfügbar.')
                     self.schedule()
                 elif value[0]=='play':
+                    if len(value)>2 and value[2]!=self.play_serial:value[1].close();continue
+                    self.dismiss_play_start()
                     if self.studio.visible:self.play_pending=False;value[1].close();continue
                     self.sprites.cache.clear();self.filter_monsters();self.filter_objects();self.schedule()
-                    self.play_pending=False;self.playtest=value[1];self.playtest.show();self.playtest.session.lua.command('resume');self.status.set('Spieltest läuft in einem separaten Fenster'+(' ohne Ton (kein Audiogerät)' if self.playtest.audio_unavailable else '')+'. Mit „Test beenden“ schließen.')
+                    self.play_pending=False;self.playtest=value[1]
+                    try:self.playtest.show();self.playtest.session.lua.command('resume')
+                    except Exception as exc:
+                        file=self.playtest.folder/'startup-error.log';file.write_text(traceback.format_exc(),encoding='utf-8');self.playtest.close();self.playtest=None
+                        error=f'{exc}\n\nFehlerprotokoll: {file}';self.status.set(error);messagebox.showerror('Spieltest',error,parent=self.root);continue
+                    self.status.set('Spieltest läuft in einem separaten Fenster'+(' ohne Ton (kein Audiogerät)' if self.playtest.audio_unavailable else '')+'. Mit „Test beenden“ schließen.')
                     if getattr(self.playtest,'notes',''):self.status.set(self.status.get()+' '+self.playtest.notes)
+                elif value[0]=='play_error':
+                    if value[2]!=self.play_serial:continue
+                    self.dismiss_play_start();self.play_pending=False;self.status.set(value[1]);messagebox.showerror('Spieltest',value[1],parent=self.root)
                 elif value[0]=='studio_workspace':self.studio.ready(value[1])
                 elif value[0]=='studio_error':self.studio.failed(value[1])
         except queue.Empty:pass
@@ -823,6 +835,22 @@ class Editor:
             except Exception as e:messagebox.showerror('Speichern',str(e),parent=self.root)
     def project_directory(self):
         path=self.project.path.parent if self.project.path else ROOT/'artwork-local/level-editor/projects';path.mkdir(parents=True,exist_ok=True);return path
+    def dismiss_play_start(self):
+        if self.play_progress:self.play_progress.stop();self.play_progress=None
+        if self.play_dialog:self.play_dialog.destroy();self.play_dialog=None
+    def cancel_play_start(self):
+        self.play_serial+=1;self.play_pending=False;self.dismiss_play_start();self.status.set('Spieltest abgebrochen.')
+    def show_play_start(self):
+        self.dismiss_play_start();dialog=tk.Toplevel(self.root);self.play_dialog=dialog
+        dialog.title('Spieltest wird vorbereitet');dialog.transient(self.root);dialog.resizable(False,False)
+        panel=ttk.Frame(dialog,padding=24);panel.pack(fill='both',expand=True)
+        ttk.Label(panel,text='Spieltest wird vorbereitet …',font=('Segoe UI',14,'bold')).pack(anchor='w')
+        ttk.Label(panel,text='Der gewählte Abschnitt und seine Grafiken werden geladen.\nDas Spielfenster erscheint automatisch, sobald alles bereit ist.',wraplength=round(440*self.ui)).pack(anchor='w',pady=(12,18))
+        self.play_progress=ttk.Progressbar(panel,mode='indeterminate',length=round(440*self.ui));self.play_progress.pack(fill='x');self.play_progress.start(15)
+        ttk.Button(panel,text='Abbrechen',command=self.cancel_play_start).pack(anchor='e',pady=(18,0))
+        dialog.protocol('WM_DELETE_WINDOW',self.cancel_play_start);dialog.update_idletasks()
+        x=self.root.winfo_rootx()+max(0,(self.root.winfo_width()-dialog.winfo_reqwidth())//2);y=self.root.winfo_rooty()+max(0,(self.root.winfo_height()-dialog.winfo_reqheight())//2)
+        dialog.geometry(f'+{x}+{y}');dialog.lift()
     def test(self):
         if self.studio.visible:
             if self.studio.workshop:self.studio.workshop.spawn()
@@ -832,13 +860,21 @@ class Editor:
         parent=ROOT/'artwork-local/level-editor/tests';parent.mkdir(parents=True,exist_ok=True);folder=Path(tempfile.mkdtemp(prefix='play-',dir=parent));data=copy.deepcopy(self.project.data)
         if not self.original_view:data['start_room']=self.room_id
         self.play_pending=True;scale=round(3*self.ui);self.status.set('Bossbegegnungen werden bei Bedarf einmalig vorbereitet; danach startet der Spieltest …' if not self.original_view and any(a['type']>=128 for r in data['rooms'] for a in r['actors']) else 'Spieltest wird vorbereitet …')
-        if self.original_view:
-            number=self.original_number;self.background(lambda:('play',OriginalPlaytest(number,folder,window_scale=scale)))
-        else:self.background(lambda:('play',Playtest(data,folder,window_scale=scale)))
+        self.play_serial+=1;serial=self.play_serial;self.show_play_start();number=self.original_number if self.original_view else None
+        def prepare():
+            try:
+                game=OriginalPlaytest(number,folder,window_scale=scale) if number is not None else Playtest(data,folder,window_scale=scale)
+                if serial!=self.play_serial:game.close()
+                return 'play',game,serial
+            except Exception as exc:
+                (folder/'startup-error.log').write_text(traceback.format_exc(),encoding='utf-8')
+                return 'play_error',f'{exc}\n\nFehlerprotokoll: {folder / "startup-error.log"}',serial
+        self.background(prepare)
     def stop_test(self):
         if hasattr(self,'studio') and self.studio.visible:self.studio.pause();return
         self.stop_level_test()
     def stop_level_test(self):
+        if self.play_pending:self.cancel_play_start()
         if self.playtest:self.playtest.close();self.playtest=None;self.status.set('Spieltest beendet. Dein Projekt bleibt geöffnet.')
     def close(self):
         if not self.confirm():return
