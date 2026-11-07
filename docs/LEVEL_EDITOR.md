@@ -278,6 +278,10 @@ Der Wechsel zwischen Bossinstanzen erhält die laufende Audioausgabe. Der frühe
 Einbruch auf etwa 30 FPS bei eingeschaltetem Ton wurde behoben; interne
 Bossberechnungen lösen keinen erneuten Audioanlauf oder Speicherstand-Ladeablauf
 mehr aus. Die Rechenkosten zusätzlicher gleichzeitig aktiver Bosse bleiben bestehen.
+Neu ausgelöste Original-Geräusche der freien Bosse werden an die gemeinsame
+Soundwarteschlange übergeben. Dadurch sind ihre Aktionen und Treffer wieder
+hörbar. Bereits aufgezeichnete Soundbefehle aus einer Bossvorlage werden nicht
+erneut abgespielt; Musik-/Treibersteuerbefehle bleiben im privaten Kontext.
 
 Beim ersten Spieltest wird sein eigener
 nativer Körper samt Hilfsteilen, Original-KI, Grafik- und Rasterkontext vorbereitet
@@ -413,6 +417,14 @@ nach der Projektladung neu vorbereitet; die Markerdateien werden nicht veränder
 `--audio-driver dummy` prüft die echte Callback-/Pufferlogik über SDL ohne
 physisches Audiogerät. Dies ist kein Hörtest. Ein ausgeschalteter Ton kann diesen
 Test nicht ersetzen, weil er den früheren Fehler verdeckt hätte.
+
+`tools/test_level_boss_audio.py` prüft zusätzlich echte Kontakttreffer und einen
+Peitschentreffer gegen M-0089. Es prüft die Originalbefehle, ihre Bestätigung
+durch den laufenden SPC und tatsächlich veränderte, nicht stumme DSP-Ausgabedaten
+gegen einen Kontrolllauf. Der Lua-Diagnosebefehl `audio_dump <Datei>` erfasst
+hierzu den echten Ausgabering; die allgemeine Audiotrace enthält auch verworfene
+Samples privater Bossberechnungen und wäre allein kein Nachweis. Die Prüfungen
+benutzen SDLs Dummy-Audiogerät und ersetzen keinen subjektiven Hörtest.
 
 `tools/test_level_studio.py` prüft die gemeinsame Fensterverwaltung, verknüpfte
 Levelwerte, Namen, Variante und Einfügen sowie 1280×900 und mit `--ui4k` die

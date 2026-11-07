@@ -28,9 +28,12 @@
 #include "level_editor.h"
 #include "cpu_state.h"
 #include "snes/ppu.h"
+#include "snes/snes.h"
+#include "snes/dsp.h"
 #include <SDL3/SDL.h>
 
 extern Ppu *g_ppu;
+extern Snes *g_snes;
 extern unsigned char g_ram[0x20000];
 
 static int Cv4LuaSlot(const char *args, int *slot)
@@ -62,6 +65,19 @@ static int Cv4LuaCommand(const char *name, const char *args, char *result, size_
     if(!strcmp(name,"level_project"))return Cv4LevelLoad(args,result,capacity);
     if(!strcmp(name,"level_room")){snprintf(result,capacity,"%u",Cv4LevelRoom());return 1;}
     if(!strcmp(name,"level_status")){Cv4LevelStatus(result,capacity);return 1;}
+    if(!strcmp(name,"audio_dump")) {
+        /* The live DSP ring contains actual output, unlike the trace PCM ring
+         * which also observes samples discarded during private boss updates. */
+        DspOutputRing ring;unsigned char ports[4],registers[128];
+        RtlApuLock();dsp_output_ring_save(g_snes->apu->dsp,&ring);
+        memcpy(ports,g_snes->apu->outPorts,4);memcpy(registers,g_snes->apu->dsp->ram,128);RtlApuUnlock();
+        FILE *file=fopen(args,"wb");if(!file){snprintf(result,capacity,"Cannot write audio dump");return 0;}
+        uint32_t header[4]={0x41345643u,DSP_SAMPLE_RING,ring.write,ring.read};
+        int ok=fwrite(header,sizeof(header),1,file)==1&&fwrite(ports,4,1,file)==1&&
+            fwrite(registers,128,1,file)==1&&fwrite(ring.samples,sizeof(ring.samples),1,file)==1;
+        if(fclose(file))ok=0;
+        snprintf(result,capacity,ok?"Live audio output saved":"Cannot write audio dump");return ok;
+    }
     if(!strcmp(name,"enemy_resources"))return Cv4EnemyResources(g_ppu,g_ram,args,result,capacity);
     if(!strcmp(name,"enemy_surface")) {
         int ok=Cv4WorkshopCaptureSave(args);

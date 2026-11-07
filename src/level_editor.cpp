@@ -35,6 +35,8 @@ std::array<unsigned char,0x1400> previousSpriteState{};bool havePreviousSpriteSt
 std::vector<Boss> bosses;int encounter=-1,dx=0,dy=0;unsigned encounterAge=0,deadAge=0;bool encounterVideo=false;
 struct FreeBoss {unsigned actor=0,hp=0,age=0,deathAge=0,drawn=0,bodyRenders=0,bodyCacheHits=0;int dx=0,dy=0,bodyX=0,bodyY=0;bool dead=false,error=false;std::vector<unsigned char> ram,video,bodySource;std::array<unsigned short,12> bodyMatrix{};std::vector<uint32_t> body;};
 std::vector<FreeBoss> freeBosses;int freeEvaluating=-1;
+std::vector<unsigned char> bossSounds;
+unsigned bossSoundRequests=0,bossSoundForwarded=0,bossSoundLast=0;
 // A boss context switch is NOT a savestate load. The generic rollback loader
 // also re-primes audio delivery and stops mod audio; doing that every field
 // halved real-time FPS with sound enabled. Keep guest/execution isolation, but
@@ -80,6 +82,26 @@ bool damageHookInstalled=false;
 unsigned sampledLines=0,failedLines=0,requestedFlags=0,failedFlags=0;bool faultRecorded=false;
 unsigned word(unsigned at){return g_ram[at]|unsigned(g_ram[at+1])<<8;}
 void put(unsigned at,unsigned value){g_ram[at]=value;g_ram[at+1]=value>>8;}
+void collectBossSounds(unsigned read){
+ // Read only accepted appends to the native byte ring. This works for both
+ // interpreted and compiled $00:85E3; opcode hooks cannot see compiled code.
+ while(read!=g_ram[0x56]){
+  unsigned command=g_ram[0x100+read];read=(read+1)&255;
+  if(command<0xf0){bossSounds.push_back((unsigned char)command);++bossSoundRequests;}
+ }
+}
+void forwardBossSounds(){
+ // Mirror $00:85ED..8603's byte ring and same-field duplicate suppression.
+ // Flush once after ALL contexts restore, otherwise a later one erases SFX.
+ for(unsigned char command:bossSounds){
+  if(command==g_ram[0x5c])continue;
+  unsigned char next=g_ram[0x56]+1;g_ram[0x100+g_ram[0x56]]=command;
+  g_ram[0x56]=next;g_ram[0x5c]=command;
+  if(next==g_ram[0x54])++g_ram[0x54];
+  ++bossSoundForwarded;bossSoundLast=command;
+ }
+ bossSounds.clear();
+}
 int verticalCameraLimit(const Room&r){return r.h<=32?0:int(r.h*8)-224;}
 unsigned bossFloor(const Room&r,const Actor&a){
  unsigned layer=a.flags&0x8000?0:1,column=std::min(r.w-1,a.x/8);
@@ -102,6 +124,7 @@ void actorValuesAfterAi(CpuState*,uint32_t){
 template<class T> unsigned cell(const Room&r,const std::vector<T>&map,int x,int y,unsigned outside){return x>=0&&y>=0&&x<int(r.w)&&y<int(r.h)?map[y*r.w+x]:outside;}
 void enter(unsigned index,unsigned x,unsigned y,unsigned plane){
  freeBosses.clear();
+ bossSounds.clear();bossSoundRequests=bossSoundForwarded=bossSoundLast=0;
  havePreviousSpriteState=false;
  if(encounter>=0){put(0xef0,suspendedBossEffect);std::copy(suspendedPersistence.begin(),suspendedPersistence.end(),g_ram+0x1500);std::copy(suspendedRaster.begin(),suspendedRaster.end(),g_ram+0x100);unsigned cursor=0;for(auto span:{std::pair<unsigned,unsigned>{0x1200,0x80},{0x13c0,0x30},{0x1e00,0x200}}){memcpy(g_ram+span.first,suspendedExtras.data()+cursor,span.second);cursor+=span.second;}}
  current=index;auto&r=rooms[current];install=true;cooldown=30;encounter=-1;dx=dy=0;
@@ -212,7 +235,7 @@ extern "C" void Cv4LevelStatus(char*result,size_t capacity){
  unsigned slots=0;for(unsigned at=0x580;at<0xec0;at+=64)if(word(at+16))++slots;
  snprintf(result,capacity,"{\"active\":%s,\"room\":%u,\"camera_x\":%d,\"camera_y\":%d,\"placements\":%zu,\"resource_contexts\":%zu,\"active_native_slots\":%u,\"native_slot_limit\":37,\"boss_encounter\":%d,\"sampled_lines\":%u,\"failed_lines\":%u,\"requested_render_flags\":%u,\"failed_render_flags\":%u}",active?"true":"false",current,cx,cy,active?rooms[current].actors.size():0,resources.size(),slots,encounter,sampledLines,failedLines,requestedFlags,failedFlags);
  AudioTraceStats audio{};audio_trace_get_stats(&audio);
- std::ostringstream extra;extra<<",\"audio_underflows\":"<<audio.output_underflows<<",\"audio_priming\":"<<audio.output_priming<<",\"audio_consumed\":"<<audio.consumed<<",\"free_bosses\":"<<freeBosses.size()<<",\"free_actors\":[";bool comma=false;
+ std::ostringstream extra;extra<<",\"audio_underflows\":"<<audio.output_underflows<<",\"audio_priming\":"<<audio.output_priming<<",\"audio_consumed\":"<<audio.consumed<<",\"boss_sound_requests\":"<<bossSoundRequests<<",\"boss_sound_forwarded\":"<<bossSoundForwarded<<",\"boss_sound_last\":"<<bossSoundLast<<",\"free_bosses\":"<<freeBosses.size()<<",\"free_actors\":[";bool comma=false;
  for(const auto&f:freeBosses){if(comma)extra<<',';comma=true;const auto&a=rooms[current].actors[f.actor];const auto&b=bosses[a.boss];auto fw=[&](unsigned at){return unsigned(f.ram[at])|unsigned(f.ram[at+1])<<8;};extra<<"{\"type\":"<<a.type<<",\"hp\":"<<f.hp<<",\"state\":"<<fw(b.slot+18)<<",\"body_pixels\":"<<std::count_if(f.body.begin(),f.body.end(),[](unsigned c){return c>>24;})<<",\"body_renders\":"<<f.bodyRenders<<",\"body_cache_hits\":"<<f.bodyCacheHits<<",\"timer\":"<<fw(b.slot+0x22)<<",\"drawn\":"<<f.drawn<<",\"age\":"<<f.age<<",\"x\":"<<int((int16_t)(fw(b.slot+10)-f.dx))<<",\"y\":"<<int((int16_t)(fw(b.slot+14)-f.dy))<<",\"dead\":"<<f.dead<<",\"error\":"<<f.error<<"}";}
  extra<<"]}";auto text=extra.str();size_t length=strlen(result);if(length&&length+text.size()<capacity)memcpy(result+length-1,text.c_str(),text.size()+1);
 }
@@ -224,7 +247,7 @@ unsigned dataWord(const std::vector<unsigned char>&v,unsigned at){return v[at]|u
 unsigned nativeRgba(unsigned c){auto e=[](unsigned n){return (n<<3)|(n>>2);};return 0xff000000u|e(c&31)<<16|e((c>>5)&31)<<8|e((c>>10)&31);}
 // Retail boss handlers use scene-wide flags and shared child slots. Give each
 // free placement its own native context, then restore the real scene before
-// rendering it. Only genuine player damage/hurt results cross that boundary.
+// rendering it. Only genuine combat results and new SFX cross that boundary.
 void tickFreeBosses(){
  auto&r=rooms[current];if(encounter>=0)return;
  for(unsigned i=0;i<r.actors.size();++i){auto&a=r.actors[i];
@@ -239,12 +262,17 @@ void tickFreeBosses(){
  }
  if(std::none_of(freeBosses.begin(),freeBosses.end(),[&](const FreeBoss&f){return !f.dead&&!f.error&&std::abs(int(r.actors[f.actor].x)-cx-128)<=512;}))return;
  if(!bossFrameState.capture())return;
+ bossSounds.clear();
+ std::array<unsigned char,12> soundState;std::copy_n(g_ram+0x52,soundState.size(),soundState.begin());
+ std::array<unsigned char,256> soundQueue;std::copy_n(g_ram+0x100,soundQueue.size(),soundQueue.begin());
  std::array<unsigned char,0x380> player;std::copy_n(g_ram+0x200,player.size(),player.begin());unsigned hp=word(0x13f4),invulnerability=word(0xbc),frame=word(0x78),weapon=word(0x8e),whip=word(0x92);
  std::array<unsigned char,64> latestHurt{};bool damaged=false;
  for(unsigned index=0;index<freeBosses.size();++index){auto&f=freeBosses[index];auto&a=r.actors[f.actor];const auto&b=bosses[a.boss];
   if(f.dead||f.error||std::abs(int(a.x)-cx-128)>512)continue;
   bossFrameState.enter();
   memcpy(g_ram,f.ram.data(),f.ram.size());memcpy(g_ram+0x200,player.data(),player.size());
+  // Do not inherit pending sound commands from the recorded boss template.
+  std::copy(soundState.begin(),soundState.end(),g_ram+0x52);std::copy(soundQueue.begin(),soundQueue.end(),g_ram+0x100);
   for(unsigned base=0x200;base<=0x540;base+=64){put(base+10,word(base+10)+f.dx);put(base+14,word(base+14)+f.dy);}
   put(0x13f4,hp);put(0xbc,invulnerability);put(0x78,frame);put(0x8e,weapon);put(0x92,whip);put(0x70,5);put(0x86,0);put(0x94,streamEnd);put(0x96,streamEnd);
   int localCamera=std::max(0,int(b.x)-128);
@@ -288,6 +316,7 @@ void tickFreeBosses(){
    }else ++f.bodyCacheHits;
    f.bodyX=localCamera-f.dx;f.bodyY=-f.dy;
   }
+  if(ok)collectBossSounds(soundState[4]);
   active=true;freeEvaluating=-1;f.error=!ok;++f.age;f.hp=std::max(0,int((int16_t)word(b.slot+6)));
   if(!f.hp||word(b.slot+16)!=b.body)++f.deathAge;else f.deathAge=0;f.dead=f.deathAge>180;
   if(!f.error){f.ram.assign(g_ram,g_ram+0x20000);memcpy(f.video.data(),g_ppu->vram,0x10000);if(shadow>=0x2000&&shadow+512<=0x20000)memcpy(f.video.data()+0x10000,g_ram+shadow,512);}
@@ -299,6 +328,7 @@ void tickFreeBosses(){
   put(0x13f4,hp);put(0xbc,invulnerability);
   if(damaged){for(unsigned at:{0x80u,0x13c0u,0x13c8u,0x1fa2u})put(at,0);for(unsigned at:{0x546u,0x552u,0x558u,0x55au,0x55cu,0x55eu})put(at,latestHurt[at-0x540]|unsigned(latestHurt[at-0x540+1])<<8);}
  }
+ forwardBossSounds();
 }
 struct SpritePart {int x,y,size,slot=-1;unsigned attr;};
 bool emittedActor(Ppu*p,const unsigned char*ram,unsigned base,const std::array<bool,128>&claimed,std::vector<SpritePart>&parts,unsigned&type,unsigned&variant,unsigned&add){
@@ -391,7 +421,7 @@ extern "C" void Cv4LevelSprites(Ppu*p){
  }
  if(!virtualSprites.empty()){p->hostSprites=virtualSprites.data();p->hostSpriteCount=virtualSprites.size();}
 }
-extern "C" void Cv4LevelReset(void){active=false;install=false;mixed=false;freeBosses.clear();freeEvaluating=-1;rooms.clear();atlas.clear();bosses.clear();resources.clear();spriteRom.clear();virtualSprites.clear();Cv4EnemySetPixelSource(nullptr);encounter=-1;dx=dy=0;}
+extern "C" void Cv4LevelReset(void){active=false;install=false;mixed=false;freeBosses.clear();freeEvaluating=-1;bossSounds.clear();bossSoundRequests=bossSoundForwarded=bossSoundLast=0;rooms.clear();atlas.clear();bosses.clear();resources.clear();spriteRom.clear();virtualSprites.clear();Cv4EnemySetPixelSource(nullptr);encounter=-1;dx=dy=0;}
 extern "C" void Cv4LevelBeforeFrame(void){
  if(!active||word(0x32)!=4)return;
  auto*r=&rooms[current];unsigned x=word(0x54a)-dx,y=word(0x54e)-dy;
