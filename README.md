@@ -1,28 +1,83 @@
-# Super Castlevania IV Recomp
+# Super Castlevania IV Enhanced
 
-A native recompilation of **Super Castlevania IV** (USA), built on
-[snesrecomp](https://github.com/RetroPortingToolKit/snesrecomp).
+An unofficial enhanced version of **Super Castlevania IV** (USA), with native
+desktop play, widescreen, optional HD artwork, save states, rewind, and tools
+for editing levels, monsters and character graphics.
 
-This repository pins a project-specific framework branch in
-[`RasmusKarlsson/snesrecomp-sciv`](https://github.com/RasmusKarlsson/snesrecomp-sciv)
-for the native widescreen and Dear ImGui host integration that has not yet
-been upstreamed.
+The original game logic remains the foundation. The project uses a native
+recompilation built on [snesrecomp](https://github.com/RetroPortingToolKit/snesrecomp),
+combining generated C with the framework's correctness interpreter. The level
+and monster tools share a separate desktop application called **Castlevania Studio**.
 
-The original 65816 program runs through a hybrid of generated native C and
-the framework's correctness interpreter, with native desktop video, audio,
-input, saves, save states, rewind and optional 16:9 rendering.
+The repository and executable retain the technical name
+`SuperCastlevaniaIvSNESRecomp`. The project-specific framework dependencies are
+pinned in [Gast114/snesrecomp-sciv](https://github.com/Gast114/snesrecomp-sciv)
+and [Gast114/recomp-ui](https://github.com/Gast114/recomp-ui).
 
 > **You must legally own a copy of the game.** No ROM data is distributed with
 > this project, in the repository or in any release. The recompiled C is
 > generated locally from your own copy and is never committed.
 
-## Status
+## Current status — 8 November 2026
 
-Playable from a clean boot. Reset/NMI scheduling, including SCIV's nested NMI
-semaphore, is supported and the generated native execution path is enabled by
-default. The 16:9 path renders real 342x224 PPU scene data while retaining the
-authored 256-pixel HUD safe area. Full-game widescreen validation—especially
-Mode 7 rooms, bosses and scripted camera boundaries—is ongoing.
+**Playable development version, with Windows as the actively used desktop
+environment.** The game boots from the original USA ROM. The editor supports
+building and playing custom rooms. A complete HD conversion and a packaged
+public release are still in progress.
+
+`main` is the primary branch for the current usable project. Work in progress
+can use separate branches; completed changes should reach `main`. The existing
+`dev` branch is retained for continuity.
+
+| Component | Available now | Current limits |
+|---|---|---|
+| Desktop game | Native video, audio, keyboard/controller input, fullscreen and settings | Full-campaign validation is ongoing; other desktop platforms are not claimed as validated |
+| Widescreen | Optional 16:9 scene rendering at 342×224 with the original HUD safe area | Mode7 rooms, bosses and scripted camera boundaries need continued full-game checking |
+| Saves and convenience | Save slots with browser, rewind, pause and fast-forward | Run-ahead is unsupported and falls back to normal execution |
+| New Game+ | The original harder second quest, selectable from the title menu | Uses the original quest rules |
+| HD graphics | Switchable artwork packs, separate layer controls and 2×/4×/6×/10× rendering | Artwork coverage is partial; missing replacements use original graphics; artwork packs stay local |
+| Character workshop | Collect/edit complete poses, live PNG reload, anchors and movement/damage settings | Complete pose coverage across the game is unverified; Simon's HD artwork experiments are paused |
+| Level editor | Catalog of 68 original sections, supported map imports, custom rooms, mixed graphics, terrain, collision, objects, exits and F5 playtests | Full vertical/Mode7 map import, arbitrary original scene scripts and finished campaign/mod export remain open |
+| Monster workshop | Native previews, editable PNGs, Normal/NG+ comparisons and placement-linked values; integrated with the level editor | Action and pose assignments are incomplete; a general AI behavior editor is not implemented |
+| Boss placement | Independent free boss instances and prepared classic encounters; original attacks and sound effects | Native movement constraints remain; classic encounters allow one active encounter; additional instances cost processing time |
+
+The latest code changes fix free-boss sound effects, preserve audio while
+switching boss contexts, and improve editor selection and playtest startup.
+These are targeted fixes, not a claim that every original room, boss and custom
+combination has been fully tested.
+
+### What this public repository contains
+
+The repository contains source code, editor tools, HD import/build recipes and
+documentation. **There is currently no published GitHub Release or ready-to-play
+download.** Build the game locally with your own ROM using the instructions below.
+The release workflow is manually triggered; the presence of that workflow does
+not mean a release build has been run or validated.
+
+ROMs, generated game code, local builds, saves, collected graphics and local
+artwork packs are excluded from Git. The locally installed Stage 01 HD work
+therefore does not arrive with a clone of this repository.
+
+Additional work exists outside the committed source: a WebAssembly browser
+version with touch controls has been deployed on a private home-network server,
+and local landscape-AI tools are experimental. **Their source and setup are not
+yet published in this repository.** The landscape tools have not reached the
+intended artwork quality. The browser version has not had complete campaign or
+physical controller/touch-device validation.
+
+### Tools and documentation
+
+| Task | Entry point | Guide |
+|---|---|---|
+| Edit levels and place monsters/bosses | `Level_Editor_starten.cmd` | [Level editor](docs/LEVEL_EDITOR.md) |
+| Preview monsters and edit their graphics | `Gegner_Werkstatt_starten.cmd` | [Monster workshop](docs/ENEMY_WORKSHOP.md) |
+| Import replacement artwork | `HD_Import_starten.cmd` | [HD import](docs/HD_IMPORT.md) |
+| Understand gameplay and convenience features | In-game Escape menu | [Gameplay tools](docs/GAMEPLAY_TOOLS.md) |
+| Find everyday instructions in German | `MERKHILFE.md` | [User notes](MERKHILFE.md) |
+
+Some detailed guides record earlier experiments and settings. This overview
+describes the current scope; artwork examples in older guides do not imply
+that a complete replacement pack is distributed.
 
 ## Desktop features and shortcuts
 
@@ -250,22 +305,16 @@ The game commands behind `shot`, `save`, `load` and `reset` live in
 | `scripts/` | `package_release.sh` — player-facing zip |
 | `framework_pins.txt` | Exact framework commits this project was scaffolded against |
 
-## Porting from here
+## Development
 
-The scaffold stops where the game-specific work starts. In rough order:
+The game already boots and runs; this is beyond the initial port scaffold.
+Current work focuses on gameplay correctness, HD artwork integration and
+the level/monster tools. See the status table above for remaining limitations.
 
-1. **Make it boot.** `src/game_rtl.c` holds the frame driver. The generic
-   LLE-first shape is there; a real title usually needs a frame boundary and
-   NMI delivery that understand its own main loop. This is the bulk of the
-   work.
-2. **Name things.** Add entries to `recomp/symbols.toml` as you identify
-   routines, then re-run `tools/regen.sh`. Set `emit = true` to promote one
-   into ahead-of-time codegen; leave it false to keep it interpreted.
-3. **Resolve dispatch misses.** After every run, deal with unresolved
-   indirect targets before anything else — they are the reason a port
-   diverges, and they are cheap to fix early.
-4. **Never synthesise a result** to get past uncovered code, and never edit
-   `src/gen/` by hand. Fix the config or the framework and regenerate.
+Game-specific execution code lives in `src/game_rtl.c`; analysis inputs and
+symbols live under `recomp/`. Never edit generated `src/gen/` files by hand.
+Fix the analysis/configuration or framework and regenerate from your own ROM.
+Generated game code and ROM-derived artwork must stay out of commits and releases.
 
 ## Multiplayer
 
