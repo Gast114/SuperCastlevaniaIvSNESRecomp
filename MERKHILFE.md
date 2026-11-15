@@ -1250,3 +1250,21 @@ Spielinstallation, Spielstaende und alle aktuellen Importdateien sind unveraende
 - PASS test_level_boss_audio.py boss-audio-51h7ijmp: echter Kontakttreffer HP16->9 mit Befehl$95/SPC-Bestätigung$95, PCM-Unterschied gegen berührungsfreien Kontrolllauf RMS3904; tatsächlicher Peitschentreffer/HP-Verlust mit Originaleffekt$76, SPC-Ack$76 und nicht stummer DSP-Ausgabe. SDL dummy mit aktivierter Audio-/Callbacklogik, kein subjektiver Hörtest. Öffnungs-/Schutzphasen müssen keine Trefferreaktion erzeugen; Test benutzt echte aktive Kampfphase.
 - PASS free-bosses-a_p1w54o (14Bossgruppen, echter Kampf/Tod/Mischgruppen/HP/Boden/Mode7) und klassische Enden boss-end-vls8f_5s. Echtzeit Nutzerfall boss-realtime-wntw_a37:59,74FPS fortlaufend/59,77Laufen+Peitsche,0Underflows/Priming im Messfenster. Gesamter Stress-Test verfehlt weiterhin Grenzwert55 bei3Bossen inkl.Mode7 in Bewegung:54,08FPS (Stand60,25); diesen Test NICHT als vollständig bestanden darstellen. Eine geprüfte zusätzliche Sprite-Cache-Optimierung half nicht messbar und wurde vollständig zurückgenommen. Keine Grenzwerte abgesenkt.
 - Nur build-lua neu gebaut; keine Nutzerbilder/HD-Pakete/Saves/Marker/normalen EXEs geändert, keine Bilder angesehen. Laufenden F5-Spieltest schließen und neu starten, damit der neue C++-Code geladen wird.
+
+## A06–A08: 4x- und 8x-HD-Prompts
+
+Prompts im Projekt: `assets/hd/prompts/a06_a07_a08_4x_en.txt` und
+`assets/hd/prompts/a06_a07_a08_8x_en.txt`. Nutzerwunsch: mehr authentische
+Materialdetails, gezielt an plausiblen Kanten, Fugen, Abplatzern und Feuchtespuren;
+keine flaechendeckende Koernung. Dunkle gotische Wirkung, Originalfarben je Material
+beibehalten, kein graubrauner Filter und keine Cartoon-/Spielzeugsteine.
+Paket und Dateipruefung: `Assets (ausgeschnitten)\Stage 01\A06-A08-Workflow-v1-Dunkel-Authentisch`.
+Alle 69 PNGs liessen sich lesen. Jedes vorhandene 4x/8x-Paar hat exakt doppelte
+Abmessungen; sampled 8x-Pixel stimmen vollstaendig mit 4x ueberein. A06: 18 Paare.
+A07: 11 Paare, `BG-01-02` nur 4x, sechs Pferd-PNGs nur 8x. A08: zwei Paare.
+A06.psd 8192x896 RGB, fuenf Layer, keine Warnungen. A07.psd 6144x896 RGB, sechs
+Layer, keine Warnungen; Hauptlayer reicht laut PhotoCraft bis y=919 (23px ausserhalb
+der Leinwand). A08 besitzt hier keine PSD, nur A08-07/08 in beiden Aufloesungen.
+RGB-PNGs sind opaque; insbesondere Pferde nicht automatisch anhand schwarzer Pixel
+freistellen. Die Prompts vermerken diese Abweichungen und erfinden keine fehlenden
+Skalenvarianten. Pixel-/Dateipruefung ersetzt keine visuelle Stilabnahme.

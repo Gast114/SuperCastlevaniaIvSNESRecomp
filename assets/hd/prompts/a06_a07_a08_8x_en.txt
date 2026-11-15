@@ -1,0 +1,73 @@
+Create the complete HD artwork set for Super Castlevania IV from the attached A06, A07 and A08 source PNGs. Work through A06, then A07, then A08. Continue without intermediate approval. Keep each separate source as its own separately named output file; do not combine images into a collage, atlas or contact sheet.
+
+THE ORIGINAL SOURCES ARE AUTHORITATIVE
+Use each original image for its own exact shape, framing, materials, local colours, lighting cues and transparency. There is no external HD style master. Do not use rejected generated results as style references. Preserve each file's canvas dimensions and all object/architectural coordinates. Do not crop, stretch, centre, mirror, rearrange, add canvas, or enlarge the already scaled sources again. A 4x input remains at its exact 4x pixel dimensions; an 8x input remains at its exact 8x pixel dimensions.
+
+DARK, AUTHENTIC CASTLEVANIA DETAIL
+Aim for serious, sombre gothic castle game art: old, heavy, believable and atmospheric, with material colours guided by each source. Retain source-red/brown stone as visibly red-brown; keep greys, wood, fog, vegetation and other materials in their own source colour families. Create darkness through local shadow depth, recessed joints, selective directional lighting and believable weathering. Do not wash the art into grey-brown monochrome, apply a global cold/desaturation filter, or push it to bright candy orange. Keep details legible at game scale.
+
+Add more authentic detail than the sparse source pixels can show, but put detail where the material and structure justify it: uneven hand-worked stone faces, subtle mineral variation, worn corners, a few structurally plausible chips or cracks, aged mortar, damp streaks only below or near plausible water paths, soot in sheltered recesses, restrained moss in joints and ledges. Vary the stones naturally instead of stamping the same texture on every face. Allow areas of calmer stone so the architecture remains readable.
+
+Avoid toy-like rounded cushion stones, inflated identical bevels, cartoon outlines, glossy/plastic surfaces, bright uniform edge highlights, and flat clean masonry. Also avoid all-over grain, glitter, metallic flecks, random speckles, noisy sharpening and repeated procedural crack patterns. More detail means specific, restrained material storytelling, not noise everywhere. Keep vegetation at the amount and placement supported by the source; do not invent ivy curtains or decorative clutter.
+
+PRESERVE OBJECT AND LAYER IDENTITY
+Do not merge separately supplied backgrounds, foregrounds, fog layers, moving platforms, stairs, stones, wood pieces or poses. Redesign each input as the corresponding single asset. Preserve every pose and the direction/function of moving pieces. For fog and soft effects, retain the original soft edges and alpha falloff; do not turn them into hard opaque shapes. Do not invent animation frames or missing pieces.
+
+THE REPEATED SQUARE GAMEPLAY BLOCKS
+If a REMOVE_BLOCKS_REFERENCE image is attached, remove only the exact repeated blue-grey/green framed square gameplay tiles shown in it, including partial instances. Reconstruct believable opaque local background behind their former footprints. Do not leave holes, tile outlines, tile shadows or traces of the grid. Do not remove ordinary stone masonry, ledges, stairs, or the separate named A06 stone assets unless they are unmistakably the exact identified tile type. If no matching tile is present in an input, preserve that input's contents.
+
+ALPHA / RGB
+Keep true source alpha unchanged outside the explicitly removed tile footprints. Within those footprints reconstructed background is opaque. RGB-only source PNGs have no alpha channel: treat them as fully opaque and do not infer transparency from black, white or any other colour. Only when a file is explicitly labelled as an original colour-key source, exact #800000 (RGB 128, 0, 0) is transparent. Never key out dark shadows or similar reds. Deliver PNG files; RGBA is acceptable if fully opaque RGB inputs receive alpha 255.
+
+WORK AND REVIEW
+Use the inventory in this package to identify the expected input names and exact dimensions. Work by stage and preserve the given filenames in outputs, adding _HD immediately before the scale suffix. Review each output against its own source for dimensions, crop, geometry, pose, material colour and transparency. Correct errors before moving to the next asset. A resized wrong composition is still wrong. Do not claim pixel-exact geometry or a check that was not actually performed. If output limits prevent finishing every file, deliver a precise list of completed and remaining files instead of silently omitting any. Report actual file counts, checks and unresolved issues.
+
+Do not add widescreen margins, text, labels, borders or watermarks.
+
+THIS RUN: 8X ONLY
+Use only PNGs with suffix _8x.png from folders A06, A07 and A08. Output one corresponding PNG for every supplied input in this scale. Preserve the exact width and height shown in the inventory. Do not use an input from the other scale as a substitute.
+
+Expected output naming: keep the complete original stem and insert _HD before _8x. For example, A06-01_8x.png becomes A06-01_HD_8x.png.
+
+A06 (15 files):
+- A06-01_8x.png — 2176 × 1792 px (RGBA)
+- A06-02_8x.png — 1920 × 1792 px (RGBA)
+- A06-03_8x.png — 1792 × 1792 px (RGBA)
+- A06-04_8x.png — 2048 × 1792 px (RGBA)
+- A06-05_8x.png — 1920 × 1792 px (RGBA)
+- A06-06_8x.png — 2176 × 1792 px (RGBA)
+- A06-BG-01-01_8x.png — 1792 × 896 px (RGB)
+- A06-BG-01-02_8x.png — 1536 × 896 px (RGB)
+- A06-BG-01-03_8x.png — 1992 × 896 px (RGB)
+- A06-BG-02-01_8x.png — 2048 × 618 px (RGB)
+- A06-BG-Nebel-01_8x.png — 360 × 96 px (RGBA)
+- A06-BG-Nebel-02_8x.png — 192 × 40 px (RGBA)
+- A06-Stein-links_8x.png — 128 × 128 px (RGB)
+- A06-Stein-rechts_8x.png — 128 × 128 px (RGBA)
+- A06-Stein-zwei-zusammen_8x.png — 256 × 128 px (RGBA)
+
+A07 (17 files):
+- A07-01_8x.png — 2304 × 1792 px (RGBA)
+- A07-02_8x.png — 2048 × 1790 px (RGBA)
+- A07-03_8x.png — 2048 × 1792 px (RGBA)
+- A07-04_8x.png — 1664 × 1792 px (RGBA)
+- A07-05_8x.png — 1920 × 1792 px (RGBA)
+- A07-06_8x.png — 2304 × 1792 px (RGBA)
+- A07-BG-01-01_8x.png — 2120 × 256 px (RGB)
+- A07-BG-01-03_8x.png — 1896 × 256 px (RGB)
+- A07-BG-01-Pferd-01-Pose-01_8x.png — 120 × 112 px (RGB)
+- A07-BG-01-Pferd-01-Pose-02_8x.png — 120 × 112 px (RGB)
+- A07-BG-01-Pferd-01_8x.png — 120 × 112 px (RGB)
+- A07-BG-01-Pferd-02-Pose-01_8x.png — 136 × 112 px (RGB)
+- A07-BG-01-Pferd-02-Pose-02_8x.png — 136 × 112 px (RGB)
+- A07-BG-01-Pferd-02_8x.png — 136 × 112 px (RGB)
+- A07-BG-02-01_8x.png — 1920 × 408 px (RGB)
+- A07-BG-02-02_8x.png — 1408 × 408 px (RGB)
+- A07-BG-02-03_8x.png — 1288 × 408 px (RGB)
+
+A08 (2 files):
+- A08-07_8x.png — 2304 × 1792 px (RGB)
+- A08-08_8x.png — 2048 × 1792 px (RGBA)
+
+SCALE COVERAGE NOTE
+A07-BG-01-02 exists only as a 4x PNG and has no 8x source. Do not fabricate an 8x version or upscale the 4x file. The six A07 horse files are 8x-only sources and belong in this run.
