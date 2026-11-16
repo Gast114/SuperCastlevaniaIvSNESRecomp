@@ -1265,6 +1265,4 @@ A07: 11 Paare, `BG-01-02` nur 4x, sechs Pferd-PNGs nur 8x. A08: zwei Paare.
 A06.psd 8192x896 RGB, fuenf Layer, keine Warnungen. A07.psd 6144x896 RGB, sechs
 Layer, keine Warnungen; Hauptlayer reicht laut PhotoCraft bis y=919 (23px ausserhalb
 der Leinwand). A08 besitzt hier keine PSD, nur A08-07/08 in beiden Aufloesungen.
-RGB-PNGs sind opaque; insbesondere Pferde nicht automatisch anhand schwarzer Pixel
-freistellen. Die Prompts vermerken diese Abweichungen und erfinden keine fehlenden
-Skalenvarianten. Pixel-/Dateipruefung ersetzt keine visuelle Stilabnahme.
+RGB-PNGs haben normalerweise keine Transparenz. Nutzer hat fuer genau die sechs A07-Pferde-PNGs ausdruecklich festgelegt, dass nur der vierfach zusammenhaengende, exakt schwarze Bildrandbereich (#000000) transparent wird. Isolierte schwarze Pferdedetails und nahe Schwarztoene bleiben erhalten. Diese Ausnahme gilt fuer keine andere Datei. Pixel-/Dateipruefung ersetzt keine visuelle Stilabnahme.
