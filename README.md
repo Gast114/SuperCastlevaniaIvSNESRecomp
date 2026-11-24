@@ -33,6 +33,12 @@ pinned as Git submodules (`snesrecomp` and `recomp-ui`).
 ### Level-Warp — All 67 Playable Sections (`R-00` – `R-66`) with In-Game Thumbnails
 ![Level-Warp 67 Sections Overview](docs/screenshots/level_warp_overview.jpg)
 
+### Monster-Werkstatt — Dark-Gothic Live Original vs. HD Studio & Bestiary
+![Monster-Werkstatt Dark-Gothic UI](docs/screenshots/monster_workshop_ui.jpg)
+
+### Castlevania Studio — Visual Level Editor with F5 Native Playtests
+![Castlevania Studio Level Editor](docs/screenshots/level_editor_ui.jpg)
+
 ---
 
 ## Current status — 24 November 2026
