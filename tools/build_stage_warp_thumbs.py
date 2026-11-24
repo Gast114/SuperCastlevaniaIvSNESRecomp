@@ -27,22 +27,7 @@ STAGE_NAMES = {
     11: "Stage 11 · Bergfried & Dracula",
 }
 
-BOSS_ROOMS = {
-    7:  "Boss: Rowdain",
-    12: "Boss: Medusa",
-    18: "Boss: Orphic Vipers",
-    23: "Boss: Puwexyl",
-    27: "Boss: Koranot",
-    36: "Boss: Dancing Specters",
-    43: "Boss: Sir Grakul",
-    48: "Boss: Frankenstein",
-    53: "Boss: Zapf Bat",
-    58: "Boss: Akmodan II",
-    64: "Boss: Slogra",
-    65: "Boss: Gaibon",
-    66: "Boss: Death",
-    67: "Final Boss: Dracula",
-}
+BOSS_ROOMS = {7: "Boss: Rowdain", 9: "Boss: Medusa", 17: "Boss: Orphic Vipers", 20: "Boss: Puwexyl", 23: "Boss: Koranot", 34: "Boss: Dancing Specters", 41: "Boss: Sir Grakul", 45: "Boss: Frankenstein", 53: "Boss: Zapf Bat", 59: "Boss: Akmodan II", 63: "Boss: Slogra", 64: "Boss: Gaibon", 65: "Boss: Death", 67: "Boss: Dracula"}
 
 # Known Super Castlevania IV USA room (block 0..67) -> (stage 1..11, section string)
 # Verified against the native SNES HUD STAGE X-Y display!
@@ -123,3 +108,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# NOTE: labels/boss rooms are finalised by tools/fix_warp_labels.py (HUD-decoded BLOCK X-Y + ROM boss table).

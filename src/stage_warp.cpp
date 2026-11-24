@@ -68,52 +68,27 @@ static std::filesystem::path FindThumbDir() {
 }
 
 static void PopulateFallbackRooms() {
-  static const char *kStageNames[12] = {
-    "",
-    "Stage 1 · Burgtor & Stallungen",
-    "Stage 2 · Wald & Sumpf",
-    "Stage 3 · Höhlen & Wasserfall",
-    "Stage 4 · Drehturm & Gewölbe",
-    "Stage 5 · Burghof & Brücke",
-    "Stage 6 · Großer Ballsaal",
-    "Stage 7 · Bibliothek",
-    "Stage 8 · Kerker & Folterkammer",
-    "Stage 9 · Schatzkammer",
-    "Stage 10 · Uhrturm",
-    "Stage 11 · Bergfried & Dracula",
-  };
-  struct Range { int st, lo, hi; };
-  static const Range kRanges[] = {
-    {1,0,7},{2,8,12},{3,13,18},{4,19,27},{5,28,29},
-    {6,30,36},{7,37,43},{8,44,48},{9,49,58},{10,59,62},{11,63,67}
-  };
-  static const std::map<int, const char *> kBosses = {
-    {7,"Boss: Rowdain"},{12,"Boss: Medusa"},{18,"Boss: Orphic Vipers"},
-    {23,"Boss: Puwexyl"},{27,"Boss: Koranot"},{36,"Boss: Dancing Specters"},
-    {43,"Boss: Sir Grakul"},{48,"Boss: Frankenstein"},{53,"Boss: Zapf Bat"},
-    {58,"Boss: Akmodan II"},{64,"Boss: Slogra"},{65,"Boss: Gaibon"},
-    {66,"Boss: Death"},{67,"Final Boss: Dracula"},
-  };
+  // HUD-decoded BLOCK X-Y per room and ROM-verified boss rooms.
+  static const int kBlock[68][2] = {{1,1},{1,1},{1,2},{1,2},{1,2},{1,3},{1,3},{1,3},{2,1},{2,2},{2,3},{2,3},{3,1},{3,2},{3,3},{3,3},{3,3},{3,3},{4,1},{4,1},{4,1},{4,2},{4,3},{4,4},{5,1},{5,2},{6,1},{6,1},{6,2},{6,2},{6,2},{6,3},{6,3},{6,3},{6,3},{7,1},{7,1},{7,1},{7,2},{7,2},{7,2},{7,2},{8,1},{8,1},{8,2},{8,2},{9,1},{9,1},{9,1},{9,2},{9,2},{9,2},{9,2},{9,2},{9,2},{10,1},{10,1},{10,1},{10,1},{10,2},{11,1},{11,1},{11,2},{11,3},{11,3},{11,3},{11,4},{11,4}};
+  static const std::map<int, const char *> kBosses = {{7,"Rowdain"},{9,"Medusa"},{17,"Orphic Vipers"},{20,"Puwexyl"},{23,"Koranot"},{34,"Dancing Specters"},{41,"Sir Grakul"},{45,"Frankenstein"},{53,"Zapf Bat"},{59,"Akmodan II"},{63,"Slogra"},{64,"Gaibon"},{65,"Death"},{67,"Dracula"}};
   g_rooms.clear();
-  for (const auto &rg : kRanges) {
-    for (int r = rg.lo; r <= rg.hi; ++r) {
-      WarpRoom wr;
-      wr.room = r;
-      wr.stage = rg.st;
-      wr.section = (r - rg.lo) + 1;
-      wr.stage_name = kStageNames[rg.st];
-      auto it = kBosses.find(r);
-      wr.boss = (it != kBosses.end());
-      char buf[64];
-      if (rg.st >= 10) std::snprintf(buf, sizeof(buf), "%X-%d", rg.st, wr.section);
-      else std::snprintf(buf, sizeof(buf), "%d-%d", rg.st, wr.section);
-      wr.label = buf;
-      if (wr.boss) { wr.label += " · "; wr.label += it->second; }
-      char img[32];
-      std::snprintf(img, sizeof(img), "room_%02d.png", r);
-      wr.image = img;
-      g_rooms.push_back(std::move(wr));
-    }
+  for (int r = 0; r < 68; ++r) {
+    WarpRoom wr;
+    wr.room = r;
+    wr.stage = kBlock[r][0];
+    wr.section = kBlock[r][1];
+    char buf[96];
+    std::snprintf(buf, sizeof(buf), "Block %X", wr.stage);
+    wr.stage_name = buf;
+    auto it = kBosses.find(r);
+    wr.boss = (it != kBosses.end());
+    std::snprintf(buf, sizeof(buf), "%X-%d", wr.stage, wr.section);
+    wr.label = buf;
+    if (wr.boss) { wr.label += r == 67 ? " · Final Boss: " : " · Boss: "; wr.label += it->second; }
+    char img[32];
+    std::snprintf(img, sizeof(img), "room_%02d.png", r);
+    wr.image = img;
+    g_rooms.push_back(std::move(wr));
   }
 }
 

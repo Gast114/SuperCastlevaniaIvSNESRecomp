@@ -4,7 +4,7 @@
     {
       "room": 0,
       "stage": 1,
-      "stage_name": "Stage 1 · Burgtor & Stallungen",
+      "stage_name": "Block 1",
       "section": 1,
       "label": "1-1",
       "boss": false,
@@ -13,7 +13,7 @@
     {
       "room": 1,
       "stage": 1,
-      "stage_name": "Stage 1 · Burgtor & Stallungen",
+      "stage_name": "Block 1",
       "section": 1,
       "label": "1-1",
       "boss": false,
@@ -22,7 +22,7 @@
     {
       "room": 2,
       "stage": 1,
-      "stage_name": "Stage 1 · Burgtor & Stallungen",
+      "stage_name": "Block 1",
       "section": 2,
       "label": "1-2",
       "boss": false,
@@ -31,7 +31,7 @@
     {
       "room": 3,
       "stage": 1,
-      "stage_name": "Stage 1 · Burgtor & Stallungen",
+      "stage_name": "Block 1",
       "section": 2,
       "label": "1-2",
       "boss": false,
@@ -40,7 +40,7 @@
     {
       "room": 4,
       "stage": 1,
-      "stage_name": "Stage 1 · Burgtor & Stallungen",
+      "stage_name": "Block 1",
       "section": 2,
       "label": "1-2",
       "boss": false,
@@ -49,7 +49,7 @@
     {
       "room": 5,
       "stage": 1,
-      "stage_name": "Stage 1 · Burgtor & Stallungen",
+      "stage_name": "Block 1",
       "section": 3,
       "label": "1-3",
       "boss": false,
@@ -58,7 +58,7 @@
     {
       "room": 6,
       "stage": 1,
-      "stage_name": "Stage 1 · Burgtor & Stallungen",
+      "stage_name": "Block 1",
       "section": 3,
       "label": "1-3",
       "boss": false,
@@ -67,7 +67,7 @@
     {
       "room": 7,
       "stage": 1,
-      "stage_name": "Stage 1 · Burgtor & Stallungen",
+      "stage_name": "Block 1",
       "section": 3,
       "label": "1-3 · Boss: Rowdain",
       "boss": true,
@@ -76,7 +76,7 @@
     {
       "room": 8,
       "stage": 2,
-      "stage_name": "Stage 2 · Wald & Sumpf",
+      "stage_name": "Block 2",
       "section": 1,
       "label": "2-1",
       "boss": false,
@@ -85,16 +85,16 @@
     {
       "room": 9,
       "stage": 2,
-      "stage_name": "Stage 2 · Wald & Sumpf",
+      "stage_name": "Block 2",
       "section": 2,
-      "label": "2-2",
-      "boss": false,
+      "label": "2-2 · Boss: Medusa",
+      "boss": true,
       "image": "room_09.png"
     },
     {
       "room": 10,
       "stage": 2,
-      "stage_name": "Stage 2 · Wald & Sumpf",
+      "stage_name": "Block 2",
       "section": 3,
       "label": "2-3",
       "boss": false,
@@ -103,16 +103,16 @@
     {
       "room": 11,
       "stage": 2,
-      "stage_name": "Stage 2 · Wald & Sumpf",
+      "stage_name": "Block 2",
       "section": 3,
-      "label": "2-3 · Boss: Medusa",
-      "boss": true,
+      "label": "2-3",
+      "boss": false,
       "image": "room_11.png"
     },
     {
       "room": 12,
       "stage": 3,
-      "stage_name": "Stage 3 · Höhlen & Wasserfall",
+      "stage_name": "Block 3",
       "section": 1,
       "label": "3-1",
       "boss": false,
@@ -121,7 +121,7 @@
     {
       "room": 13,
       "stage": 3,
-      "stage_name": "Stage 3 · Höhlen & Wasserfall",
+      "stage_name": "Block 3",
       "section": 2,
       "label": "3-2",
       "boss": false,
@@ -130,7 +130,7 @@
     {
       "room": 14,
       "stage": 3,
-      "stage_name": "Stage 3 · Höhlen & Wasserfall",
+      "stage_name": "Block 3",
       "section": 3,
       "label": "3-3",
       "boss": false,
@@ -139,7 +139,7 @@
     {
       "room": 15,
       "stage": 3,
-      "stage_name": "Stage 3 · Höhlen & Wasserfall",
+      "stage_name": "Block 3",
       "section": 3,
       "label": "3-3",
       "boss": false,
@@ -148,7 +148,7 @@
     {
       "room": 16,
       "stage": 3,
-      "stage_name": "Stage 3 · Höhlen & Wasserfall",
+      "stage_name": "Block 3",
       "section": 3,
       "label": "3-3",
       "boss": false,
@@ -157,7 +157,7 @@
     {
       "room": 17,
       "stage": 3,
-      "stage_name": "Stage 3 · Höhlen & Wasserfall",
+      "stage_name": "Block 3",
       "section": 3,
       "label": "3-3 · Boss: Orphic Vipers",
       "boss": true,
@@ -166,7 +166,7 @@
     {
       "room": 18,
       "stage": 4,
-      "stage_name": "Stage 4 · Drehturm & Gewölbe",
+      "stage_name": "Block 4",
       "section": 1,
       "label": "4-1",
       "boss": false,
@@ -175,7 +175,7 @@
     {
       "room": 19,
       "stage": 4,
-      "stage_name": "Stage 4 · Drehturm & Gewölbe",
+      "stage_name": "Block 4",
       "section": 1,
       "label": "4-1",
       "boss": false,
@@ -184,16 +184,16 @@
     {
       "room": 20,
       "stage": 4,
-      "stage_name": "Stage 4 · Drehturm & Gewölbe",
+      "stage_name": "Block 4",
       "section": 1,
-      "label": "4-1",
-      "boss": false,
+      "label": "4-1 · Boss: Puwexyl",
+      "boss": true,
       "image": "room_20.png"
     },
     {
       "room": 21,
       "stage": 4,
-      "stage_name": "Stage 4 · Drehturm & Gewölbe",
+      "stage_name": "Block 4",
       "section": 2,
       "label": "4-2",
       "boss": false,
@@ -202,25 +202,25 @@
     {
       "room": 22,
       "stage": 4,
-      "stage_name": "Stage 4 · Drehturm & Gewölbe",
+      "stage_name": "Block 4",
       "section": 3,
-      "label": "4-3 · Boss: Puwexyl",
-      "boss": true,
+      "label": "4-3",
+      "boss": false,
       "image": "room_22.png"
     },
     {
       "room": 23,
       "stage": 4,
-      "stage_name": "Stage 4 · Drehturm & Gewölbe",
+      "stage_name": "Block 4",
       "section": 4,
-      "label": "4-4",
-      "boss": false,
+      "label": "4-4 · Boss: Koranot",
+      "boss": true,
       "image": "room_23.png"
     },
     {
       "room": 24,
       "stage": 5,
-      "stage_name": "Stage 5 · Burghof & Brücke",
+      "stage_name": "Block 5",
       "section": 1,
       "label": "5-1",
       "boss": false,
@@ -229,7 +229,7 @@
     {
       "room": 25,
       "stage": 5,
-      "stage_name": "Stage 5 · Burghof & Brücke",
+      "stage_name": "Block 5",
       "section": 2,
       "label": "5-2",
       "boss": false,
@@ -238,16 +238,16 @@
     {
       "room": 26,
       "stage": 6,
-      "stage_name": "Stage 6 · Großer Ballsaal",
+      "stage_name": "Block 6",
       "section": 1,
-      "label": "6-1 · Boss: Koranot",
-      "boss": true,
+      "label": "6-1",
+      "boss": false,
       "image": "room_26.png"
     },
     {
       "room": 27,
       "stage": 6,
-      "stage_name": "Stage 6 · Großer Ballsaal",
+      "stage_name": "Block 6",
       "section": 1,
       "label": "6-1",
       "boss": false,
@@ -256,7 +256,7 @@
     {
       "room": 28,
       "stage": 6,
-      "stage_name": "Stage 6 · Großer Ballsaal",
+      "stage_name": "Block 6",
       "section": 2,
       "label": "6-2",
       "boss": false,
@@ -265,7 +265,7 @@
     {
       "room": 29,
       "stage": 6,
-      "stage_name": "Stage 6 · Großer Ballsaal",
+      "stage_name": "Block 6",
       "section": 2,
       "label": "6-2",
       "boss": false,
@@ -274,7 +274,7 @@
     {
       "room": 30,
       "stage": 6,
-      "stage_name": "Stage 6 · Großer Ballsaal",
+      "stage_name": "Block 6",
       "section": 2,
       "label": "6-2",
       "boss": false,
@@ -283,7 +283,7 @@
     {
       "room": 31,
       "stage": 6,
-      "stage_name": "Stage 6 · Großer Ballsaal",
+      "stage_name": "Block 6",
       "section": 3,
       "label": "6-3",
       "boss": false,
@@ -292,7 +292,7 @@
     {
       "room": 32,
       "stage": 6,
-      "stage_name": "Stage 6 · Großer Ballsaal",
+      "stage_name": "Block 6",
       "section": 3,
       "label": "6-3",
       "boss": false,
@@ -301,7 +301,7 @@
     {
       "room": 33,
       "stage": 6,
-      "stage_name": "Stage 6 · Großer Ballsaal",
+      "stage_name": "Block 6",
       "section": 3,
       "label": "6-3",
       "boss": false,
@@ -310,25 +310,25 @@
     {
       "room": 34,
       "stage": 6,
-      "stage_name": "Stage 6 · Großer Ballsaal",
+      "stage_name": "Block 6",
       "section": 3,
-      "label": "6-3",
-      "boss": false,
+      "label": "6-3 · Boss: Dancing Specters",
+      "boss": true,
       "image": "room_34.png"
     },
     {
       "room": 35,
       "stage": 7,
-      "stage_name": "Stage 7 · Bibliothek",
+      "stage_name": "Block 7",
       "section": 1,
-      "label": "7-1 · Boss: Dancing Specters",
-      "boss": true,
+      "label": "7-1",
+      "boss": false,
       "image": "room_35.png"
     },
     {
       "room": 36,
       "stage": 7,
-      "stage_name": "Stage 7 · Bibliothek",
+      "stage_name": "Block 7",
       "section": 1,
       "label": "7-1",
       "boss": false,
@@ -337,7 +337,7 @@
     {
       "room": 37,
       "stage": 7,
-      "stage_name": "Stage 7 · Bibliothek",
+      "stage_name": "Block 7",
       "section": 1,
       "label": "7-1",
       "boss": false,
@@ -346,7 +346,7 @@
     {
       "room": 38,
       "stage": 7,
-      "stage_name": "Stage 7 · Bibliothek",
+      "stage_name": "Block 7",
       "section": 2,
       "label": "7-2",
       "boss": false,
@@ -355,7 +355,7 @@
     {
       "room": 39,
       "stage": 7,
-      "stage_name": "Stage 7 · Bibliothek",
+      "stage_name": "Block 7",
       "section": 2,
       "label": "7-2",
       "boss": false,
@@ -364,7 +364,7 @@
     {
       "room": 40,
       "stage": 7,
-      "stage_name": "Stage 7 · Bibliothek",
+      "stage_name": "Block 7",
       "section": 2,
       "label": "7-2",
       "boss": false,
@@ -373,7 +373,7 @@
     {
       "room": 41,
       "stage": 7,
-      "stage_name": "Stage 7 · Bibliothek",
+      "stage_name": "Block 7",
       "section": 2,
       "label": "7-2 · Boss: Sir Grakul",
       "boss": true,
@@ -382,7 +382,7 @@
     {
       "room": 42,
       "stage": 8,
-      "stage_name": "Stage 8 · Kerker & Folterkammer",
+      "stage_name": "Block 8",
       "section": 1,
       "label": "8-1",
       "boss": false,
@@ -391,7 +391,7 @@
     {
       "room": 43,
       "stage": 8,
-      "stage_name": "Stage 8 · Kerker & Folterkammer",
+      "stage_name": "Block 8",
       "section": 1,
       "label": "8-1",
       "boss": false,
@@ -400,7 +400,7 @@
     {
       "room": 44,
       "stage": 8,
-      "stage_name": "Stage 8 · Kerker & Folterkammer",
+      "stage_name": "Block 8",
       "section": 2,
       "label": "8-2",
       "boss": false,
@@ -409,25 +409,25 @@
     {
       "room": 45,
       "stage": 8,
-      "stage_name": "Stage 8 · Kerker & Folterkammer",
+      "stage_name": "Block 8",
       "section": 2,
-      "label": "8-2",
-      "boss": false,
+      "label": "8-2 · Boss: Frankenstein",
+      "boss": true,
       "image": "room_45.png"
     },
     {
       "room": 46,
       "stage": 9,
-      "stage_name": "Stage 9 · Schatzkammer",
+      "stage_name": "Block 9",
       "section": 1,
-      "label": "9-1 · Boss: Frankenstein",
-      "boss": true,
+      "label": "9-1",
+      "boss": false,
       "image": "room_46.png"
     },
     {
       "room": 47,
       "stage": 9,
-      "stage_name": "Stage 9 · Schatzkammer",
+      "stage_name": "Block 9",
       "section": 1,
       "label": "9-1",
       "boss": false,
@@ -436,7 +436,7 @@
     {
       "room": 48,
       "stage": 9,
-      "stage_name": "Stage 9 · Schatzkammer",
+      "stage_name": "Block 9",
       "section": 1,
       "label": "9-1",
       "boss": false,
@@ -445,7 +445,7 @@
     {
       "room": 49,
       "stage": 9,
-      "stage_name": "Stage 9 · Schatzkammer",
+      "stage_name": "Block 9",
       "section": 2,
       "label": "9-2",
       "boss": false,
@@ -454,7 +454,7 @@
     {
       "room": 50,
       "stage": 9,
-      "stage_name": "Stage 9 · Schatzkammer",
+      "stage_name": "Block 9",
       "section": 2,
       "label": "9-2",
       "boss": false,
@@ -463,7 +463,7 @@
     {
       "room": 51,
       "stage": 9,
-      "stage_name": "Stage 9 · Schatzkammer",
+      "stage_name": "Block 9",
       "section": 2,
       "label": "9-2",
       "boss": false,
@@ -472,7 +472,7 @@
     {
       "room": 52,
       "stage": 9,
-      "stage_name": "Stage 9 · Schatzkammer",
+      "stage_name": "Block 9",
       "section": 2,
       "label": "9-2",
       "boss": false,
@@ -481,7 +481,7 @@
     {
       "room": 53,
       "stage": 9,
-      "stage_name": "Stage 9 · Schatzkammer",
+      "stage_name": "Block 9",
       "section": 2,
       "label": "9-2 · Boss: Zapf Bat",
       "boss": true,
@@ -490,7 +490,7 @@
     {
       "room": 54,
       "stage": 9,
-      "stage_name": "Stage 9 · Schatzkammer",
+      "stage_name": "Block 9",
       "section": 2,
       "label": "9-2",
       "boss": false,
@@ -499,7 +499,7 @@
     {
       "room": 55,
       "stage": 10,
-      "stage_name": "Stage 10 · Uhrturm",
+      "stage_name": "Block A",
       "section": 1,
       "label": "A-1",
       "boss": false,
@@ -508,7 +508,7 @@
     {
       "room": 56,
       "stage": 10,
-      "stage_name": "Stage 10 · Uhrturm",
+      "stage_name": "Block A",
       "section": 1,
       "label": "A-1",
       "boss": false,
@@ -517,16 +517,16 @@
     {
       "room": 57,
       "stage": 10,
-      "stage_name": "Stage 10 · Uhrturm",
+      "stage_name": "Block A",
       "section": 1,
-      "label": "A-1 · Boss: Akmodan II",
-      "boss": true,
+      "label": "A-1",
+      "boss": false,
       "image": "room_57.png"
     },
     {
       "room": 58,
       "stage": 10,
-      "stage_name": "Stage 10 · Uhrturm",
+      "stage_name": "Block A",
       "section": 1,
       "label": "A-1",
       "boss": false,
@@ -535,16 +535,16 @@
     {
       "room": 59,
       "stage": 10,
-      "stage_name": "Stage 10 · Uhrturm",
+      "stage_name": "Block A",
       "section": 2,
-      "label": "A-2",
-      "boss": false,
+      "label": "A-2 · Boss: Akmodan II",
+      "boss": true,
       "image": "room_59.png"
     },
     {
       "room": 60,
       "stage": 11,
-      "stage_name": "Stage 11 · Bergfried & Dracula",
+      "stage_name": "Block B",
       "section": 1,
       "label": "B-1",
       "boss": false,
@@ -553,7 +553,7 @@
     {
       "room": 61,
       "stage": 11,
-      "stage_name": "Stage 11 · Bergfried & Dracula",
+      "stage_name": "Block B",
       "section": 1,
       "label": "B-1",
       "boss": false,
@@ -562,7 +562,7 @@
     {
       "room": 62,
       "stage": 11,
-      "stage_name": "Stage 11 · Bergfried & Dracula",
+      "stage_name": "Block B",
       "section": 2,
       "label": "B-2",
       "boss": false,
@@ -571,43 +571,43 @@
     {
       "room": 63,
       "stage": 11,
-      "stage_name": "Stage 11 · Bergfried & Dracula",
+      "stage_name": "Block B",
       "section": 3,
-      "label": "B-3",
-      "boss": false,
+      "label": "B-3 · Boss: Slogra",
+      "boss": true,
       "image": "room_63.png"
     },
     {
       "room": 64,
       "stage": 11,
-      "stage_name": "Stage 11 · Bergfried & Dracula",
+      "stage_name": "Block B",
       "section": 3,
-      "label": "B-3 · Boss: Slogra",
+      "label": "B-3 · Boss: Gaibon",
       "boss": true,
       "image": "room_64.png"
     },
     {
       "room": 65,
       "stage": 11,
-      "stage_name": "Stage 11 · Bergfried & Dracula",
+      "stage_name": "Block B",
       "section": 3,
-      "label": "B-3 · Boss: Gaibon",
+      "label": "B-3 · Boss: Death",
       "boss": true,
       "image": "room_65.png"
     },
     {
       "room": 66,
       "stage": 11,
-      "stage_name": "Stage 11 · Bergfried & Dracula",
+      "stage_name": "Block B",
       "section": 4,
-      "label": "B-4 · Boss: Death",
-      "boss": true,
+      "label": "B-4",
+      "boss": false,
       "image": "room_66.png"
     },
     {
       "room": 67,
       "stage": 11,
-      "stage_name": "Stage 11 · Bergfried & Dracula",
+      "stage_name": "Block B",
       "section": 4,
       "label": "B-4 · Final Boss: Dracula",
       "boss": true,

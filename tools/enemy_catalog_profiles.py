@@ -27,7 +27,7 @@ _BOSS_NAMES={
     0x81:'Koranot / Mode7-Boss (Boss 81 · Stage 04)',
     0x83:'Medusa (Boss 83 · Stage 02)',
     0x84:'Puweyxil (Boss 84 · Stage 04)',
-    0x85:'Dracula (Boss 85 · Final)',
+    0x85:'Dancing Specters (Boss 85 · Block 6)',
     0x86:'Zapf Bat (Boss 86 · Stage 09)',
     0x87:'Frankenstein (Boss 87 · Stage 08)',
     0x88:'Gaibon (Boss 88 · Stage 11)',
