@@ -1,4 +1,4 @@
-"""Rebuild warp_thumbs/rooms.json (+ the C++ fallback table) from the HUD-decoded
+﻿"""Rebuild warp_thumbs/rooms.json (+ the C++ fallback table) from the HUD-decoded
 BLOCK X-Y numbers and the ROM-verified boss rooms.
 
 Boss rooms come from the original boss table (tools/enemy_catalog_profiles.py
@@ -15,16 +15,16 @@ THUMBS = ROOT / "warp_thumbs"
 
 BOSS = {7: "Rowdain", 9: "Medusa", 17: "Orphic Vipers", 20: "Puwexyl", 23: "Koranot",
         34: "Dancing Specters", 41: "Sir Grakul", 45: "Frankenstein", 53: "Zapf Bat",
-        59: "Akmodan II", 63: "Slogra", 64: "Gaibon", 65: "Death", 67: "Dracula"}
+        59: "Akmodan II", 63: "Slogra", 64: "Gaibon", 65: "Death", 66: "Dracula"}
 
 src = json.loads((THUMBS / "rooms.json").read_text(encoding="utf-8"))["rooms"]
 blk = {r["room"]: (r["stage"], r["section"]) for r in src}
 
 rooms = []
-for r in range(68):
+for r in range(67):  # R-67 is an unused/corrupt room (garbled graphics) and is not offered
     st, sec = blk[r]
     label = f"{st:X}-{sec}"
-    if r == 67:
+    if r == 66:
         label += " · Final Boss: Dracula"
     elif r in BOSS:
         label += f" · Boss: {BOSS[r]}"
@@ -38,7 +38,7 @@ for d in ("warp_thumbs", "build-play/game/warp_thumbs", "build/warp_thumbs", "bu
         p.write_text(payload, encoding="utf-8")
 
 # C++ fallback (used only when rooms.json is missing)
-table = ",".join(f"{{{blk[r][0]},{blk[r][1]}}}" for r in range(68))
+table = ",".join(f"{{{blk[r][0]},{blk[r][1]}}}" for r in range(67))
 bosses = ",".join(f'{{{r},"{n}"}}' for r, n in sorted(BOSS.items()))
 cpp = ROOT / "src" / "stage_warp.cpp"
 text = cpp.read_text(encoding="utf-8")
@@ -49,7 +49,7 @@ fallback = f'''static void PopulateFallbackRooms() {{
   static const int kBlock[68][2] = {{{table}}};
   static const std::map<int, const char *> kBosses = {{{bosses}}};
   g_rooms.clear();
-  for (int r = 0; r < 68; ++r) {{
+  for (int r = 0; r < 67; ++r) {{
     WarpRoom wr;
     wr.room = r;
     wr.stage = kBlock[r][0];
@@ -61,7 +61,7 @@ fallback = f'''static void PopulateFallbackRooms() {{
     wr.boss = (it != kBosses.end());
     std::snprintf(buf, sizeof(buf), "%X-%d", wr.stage, wr.section);
     wr.label = buf;
-    if (wr.boss) {{ wr.label += r == 67 ? " · Final Boss: " : " · Boss: "; wr.label += it->second; }}
+    if (wr.boss) {{ wr.label += r == 66 ? " · Final Boss: " : " · Boss: "; wr.label += it->second; }}
     char img[32];
     std::snprintf(img, sizeof(img), "room_%02d.png", r);
     wr.image = img;
@@ -79,5 +79,6 @@ s = re.sub(r"BOSS_ROOMS = \{.*?\n\}\n", "BOSS_ROOMS = {" + ", ".join(f'{r}: "Bos
 s += "\n# NOTE: labels/boss rooms are finalised by tools/fix_warp_labels.py (HUD-decoded BLOCK X-Y + ROM boss table).\n"
 sh.write_text(s, encoding="utf-8")
 
-for r in (7, 9, 17, 20, 23, 34, 41, 45, 53, 59, 63, 64, 65, 66, 67):
+for r in (7, 9, 17, 20, 23, 34, 41, 45, 53, 59, 63, 64, 65, 66):
     print(r, rooms[r]["label"])
+

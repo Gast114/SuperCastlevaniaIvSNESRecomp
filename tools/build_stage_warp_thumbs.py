@@ -110,3 +110,5 @@ if __name__ == "__main__":
     main()
 
 # NOTE: labels/boss rooms are finalised by tools/fix_warp_labels.py (HUD-decoded BLOCK X-Y + ROM boss table).
+
+# NOTE: labels/boss rooms are finalised by tools/fix_warp_labels.py (HUD-decoded BLOCK X-Y + ROM boss table).

@@ -600,18 +600,9 @@
       "stage": 11,
       "stage_name": "Block B",
       "section": 4,
-      "label": "B-4",
-      "boss": false,
-      "image": "room_66.png"
-    },
-    {
-      "room": 67,
-      "stage": 11,
-      "stage_name": "Block B",
-      "section": 4,
       "label": "B-4 · Final Boss: Dracula",
       "boss": true,
-      "image": "room_67.png"
+      "image": "room_66.png"
     }
   ]
 }

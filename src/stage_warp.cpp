@@ -69,10 +69,10 @@ static std::filesystem::path FindThumbDir() {
 
 static void PopulateFallbackRooms() {
   // HUD-decoded BLOCK X-Y per room and ROM-verified boss rooms.
-  static const int kBlock[68][2] = {{1,1},{1,1},{1,2},{1,2},{1,2},{1,3},{1,3},{1,3},{2,1},{2,2},{2,3},{2,3},{3,1},{3,2},{3,3},{3,3},{3,3},{3,3},{4,1},{4,1},{4,1},{4,2},{4,3},{4,4},{5,1},{5,2},{6,1},{6,1},{6,2},{6,2},{6,2},{6,3},{6,3},{6,3},{6,3},{7,1},{7,1},{7,1},{7,2},{7,2},{7,2},{7,2},{8,1},{8,1},{8,2},{8,2},{9,1},{9,1},{9,1},{9,2},{9,2},{9,2},{9,2},{9,2},{9,2},{10,1},{10,1},{10,1},{10,1},{10,2},{11,1},{11,1},{11,2},{11,3},{11,3},{11,3},{11,4},{11,4}};
-  static const std::map<int, const char *> kBosses = {{7,"Rowdain"},{9,"Medusa"},{17,"Orphic Vipers"},{20,"Puwexyl"},{23,"Koranot"},{34,"Dancing Specters"},{41,"Sir Grakul"},{45,"Frankenstein"},{53,"Zapf Bat"},{59,"Akmodan II"},{63,"Slogra"},{64,"Gaibon"},{65,"Death"},{67,"Dracula"}};
+  static const int kBlock[68][2] = {{1,1},{1,1},{1,2},{1,2},{1,2},{1,3},{1,3},{1,3},{2,1},{2,2},{2,3},{2,3},{3,1},{3,2},{3,3},{3,3},{3,3},{3,3},{4,1},{4,1},{4,1},{4,2},{4,3},{4,4},{5,1},{5,2},{6,1},{6,1},{6,2},{6,2},{6,2},{6,3},{6,3},{6,3},{6,3},{7,1},{7,1},{7,1},{7,2},{7,2},{7,2},{7,2},{8,1},{8,1},{8,2},{8,2},{9,1},{9,1},{9,1},{9,2},{9,2},{9,2},{9,2},{9,2},{9,2},{10,1},{10,1},{10,1},{10,1},{10,2},{11,1},{11,1},{11,2},{11,3},{11,3},{11,3},{11,4}};
+  static const std::map<int, const char *> kBosses = {{7,"Rowdain"},{9,"Medusa"},{17,"Orphic Vipers"},{20,"Puwexyl"},{23,"Koranot"},{34,"Dancing Specters"},{41,"Sir Grakul"},{45,"Frankenstein"},{53,"Zapf Bat"},{59,"Akmodan II"},{63,"Slogra"},{64,"Gaibon"},{65,"Death"},{66,"Dracula"}};
   g_rooms.clear();
-  for (int r = 0; r < 68; ++r) {
+  for (int r = 0; r < 67; ++r) {
     WarpRoom wr;
     wr.room = r;
     wr.stage = kBlock[r][0];
@@ -84,7 +84,7 @@ static void PopulateFallbackRooms() {
     wr.boss = (it != kBosses.end());
     std::snprintf(buf, sizeof(buf), "%X-%d", wr.stage, wr.section);
     wr.label = buf;
-    if (wr.boss) { wr.label += r == 67 ? " · Final Boss: " : " · Boss: "; wr.label += it->second; }
+    if (wr.boss) { wr.label += r == 66 ? " · Final Boss: " : " · Boss: "; wr.label += it->second; }
     char img[32];
     std::snprintf(img, sizeof(img), "room_%02d.png", r);
     wr.image = img;
