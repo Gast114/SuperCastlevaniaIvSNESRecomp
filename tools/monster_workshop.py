@@ -16,6 +16,7 @@ from enemy_workshop_assets import Workspace
 from enemy_workshop_library import DEFAULT_LIBRARY, profile_key
 from enemy_workshop_native import ROOT
 from monster_model import GROUPS, actions, ai_notes, code, combat_stats, definitions, frame_groups, visible_frames
+from i18n import tr, available_languages, current_language_name, set_language
 
 
 # ── Dark-Gothic Castlevania Studio Palette ───────────────────────────────────
@@ -228,17 +229,23 @@ class MonsterWorkshop:
             header=ttk.Frame(root,style='Header.TFrame',padding=(18,10))
             header.pack(fill='x')
             title_col=ttk.Frame(header,style='Header.TFrame');title_col.pack(side='left')
-            ttk.Label(title_col,text='MONSTER-WERKSTATT',style='Title.TLabel').pack(anchor='w')
-            ttk.Label(title_col,text='Super Castlevania IV · Live-Original vs. HD-Redesign & Bestiary',style='Subtitle.TLabel').pack(anchor='w')
+            self._lbl_title=ttk.Label(title_col,text=tr('ws.title'),style='Title.TLabel');self._lbl_title.pack(anchor='w')
+            self._lbl_sub=ttk.Label(title_col,text=tr('ws.subtitle'),style='Subtitle.TLabel');self._lbl_sub.pack(anchor='w')
             hdr_right=ttk.Frame(header,style='Header.TFrame');hdr_right.pack(side='right')
             self.hd_badge_lbl=ttk.Label(hdr_right,textvariable=self.hd_badge,style='BadgeSD.TLabel')
             self.hd_badge_lbl.pack(side='left',padx=(0,14))
-            ttk.Label(hdr_right,text='Zoom:',style='Subtitle.TLabel').pack(side='left',padx=(0,4))
+            ttk.Label(hdr_right,text=tr('ws.zoom'),style='Subtitle.TLabel').pack(side='left',padx=(0,4))
             zoom_box=ttk.Combobox(hdr_right,textvariable=self.zoom_label,values=list(ZOOM_OPTIONS),state='readonly',width=12)
-            zoom_box.pack(side='left',padx=(0,12))
-            ttk.Label(hdr_right,text='Bühne:',style='Subtitle.TLabel').pack(side='left',padx=(0,4))
+            zoom_box.pack(side='left',padx=(0,10))
+            ttk.Label(hdr_right,text=tr('ws.stage'),style='Subtitle.TLabel').pack(side='left',padx=(0,4))
             bg_box=ttk.Combobox(hdr_right,textvariable=self.backdrop_label,values=list(BACKDROP_OPTIONS),state='readonly',width=11)
-            bg_box.pack(side='left')
+            bg_box.pack(side='left',padx=(0,10))
+            self._lang_choices=available_languages()
+            self.lang_var=tk.StringVar(root,value=current_language_name())
+            ttk.Label(hdr_right,text=tr('nav.language')+':',style='Subtitle.TLabel').pack(side='left',padx=(0,4))
+            lang_box=ttk.Combobox(hdr_right,textvariable=self.lang_var,values=[n for _,n in self._lang_choices],state='readonly',width=11)
+            lang_box.pack(side='left')
+            lang_box.bind('<<ComboboxSelected>>',self._change_language)
             tk.Frame(root,bg=GOLD_DIM,height=1).pack(fill='x')
         else:
             self.hd_badge_lbl=None
@@ -415,6 +422,16 @@ class MonsterWorkshop:
                 counts[at]=counts.get(at,0)+1
         return counts
 
+    def _change_language(self,*_):
+        chosen=self.lang_var.get()
+        for code_l,name_l in getattr(self,'_lang_choices',[]):
+            if name_l==chosen:
+                set_language(code_l)
+                if hasattr(self,'_lbl_title'):self._lbl_title.configure(text=tr('ws.title'))
+                if hasattr(self,'_lbl_sub'):self._lbl_sub.configure(text=tr('ws.subtitle'))
+                self.update_details()
+                break
+
     def _set_notes_text(self,text):
         self.notes.set(text)
         self.notes_text.configure(state='normal')
@@ -540,10 +557,10 @@ class MonsterWorkshop:
         self.monster_title.set(f'{custom_name}  ({c})' if custom_name else c)
         hd_n=self.hd_counts.get(self.entry['type'],0)
         if hd_n>0:
-            self.hd_badge.set(f'✦ HD AKTIV ({hd_n} Posen)')
+            self.hd_badge.set(tr('ws.hd_active',hd_n))
             if self.hd_badge_lbl:self.hd_badge_lbl.configure(style='BadgeHD.TLabel')
         else:
-            self.hd_badge.set('Original 1× (noch kein HD)')
+            self.hd_badge.set(tr('ws.sd_only'))
             if self.hd_badge_lbl:self.hd_badge_lbl.configure(style='BadgeSD.TLabel')
 
         live=self.snapshot.get('live_stats',{});stats=combat_stats(self.rom,self.entry,live)

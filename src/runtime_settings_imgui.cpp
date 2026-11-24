@@ -1,4 +1,5 @@
 #include "runtime_settings_imgui.h"
+#include "i18n.h"
 #include "stage_warp.h"
 #include "character_pack.h"
 #include "enemy_pack.h"
@@ -71,6 +72,12 @@ static void UpdateUiScale() {
   ImGui::GetStyle().ScaleAllSizes(s_scale);
 }
 
+static void SaveUiSettings() {
+  std::ofstream file("ui_settings.json");
+  file << "{\"menu_scale\":" << s_scale_percent
+       << ",\"language\":\"" << Cv4I18nCurrentCode() << "\"}\n";
+}
+
 static float DrawNavigation(RecompRuntimeUi *ui) {
   static unsigned test_frame;
   const char *pick=std::getenv("SNESRECOMP_UI_SCALE_PICK");
@@ -80,7 +87,11 @@ static float DrawNavigation(RecompRuntimeUi *ui) {
   ImGui::GetBackgroundDrawList()->AddRectFilled({0,0},disp,IM_COL32(6,8,13,185));
 
   const float available=disp.x-S(24);
-  const char *names[]={"Einstellungen","Charakter","HD-Grafik","Level-Warp","Tasten","Leistung","Weiterspielen"};
+  const char *names[]={
+    Cv4Tr("nav.settings"), Cv4Tr("nav.character"), Cv4Tr("nav.hd"),
+    Cv4Tr("nav.warp"), Cv4Tr("nav.shortcuts"), Cv4Tr("nav.performance"),
+    Cv4Tr("nav.resume")
+  };
   const ImGuiStyle &style=ImGui::GetStyle();
   const float row=S(38), gap=style.ItemSpacing.x, padding=S(12);
   float used=0;int rows=1;
@@ -120,15 +131,15 @@ static float DrawNavigation(RecompRuntimeUi *ui) {
     fits= fits && ImGui::GetItemRectMax().x<=disp.x-S(12);
     used+=(used?gap:0)+w;
   }
-  const char *sizes[]={"Automatic","100%","125%","150%","175%","200%","250%"};
+  const char *sizes[]={Cv4Tr("nav.auto"),"100%","125%","150%","175%","200%","250%"};
   const int values[]={0,100,125,150,175,200,250};
   int selected=0;for(int i=1;i<7;++i)if(values[i]==s_scale_percent)selected=i;
-  ImGui::SetNextItemWidth(S(148));
-  if(ImGui::BeginCombo("Menügröße",sizes[selected])) {
+  ImGui::SetNextItemWidth(S(142));
+  if(ImGui::BeginCombo(Cv4Tr("nav.menu_size"),sizes[selected])) {
     for(int i=0;i<7;++i) {
       if(ImGui::Selectable(sizes[i],selected==i)) {
         s_scale_percent=values[i];
-        std::ofstream file("ui_settings.json");file<<"{\"menu_scale\":"<<s_scale_percent<<"}\n";
+        SaveUiSettings();
       }
       if(pick && values[i]==std::atoi(pick) && (test_frame==6||test_frame==7)) {
         const ImVec2 pos=ImGui::GetItemRectMin();
@@ -143,7 +154,20 @@ static float DrawNavigation(RecompRuntimeUi *ui) {
     ImGui::GetIO().AddMousePosEvent(pos.x+S(12),pos.y+S(8));
     ImGui::GetIO().AddMouseButtonEvent(0,test_frame==2);
   }
-  if(available>S(520)){ImGui::SameLine();ImGui::TextColored({0.62f,0.67f,0.76f,1.0f},"%.0f%%   |   ESC: Zurück ins Spiel",s_scale*100);}
+  ImGui::SameLine(0.0f, S(16));
+  ImGui::SetNextItemWidth(S(136));
+  const int cur_lang=Cv4I18nCurrentIndex();
+  if(ImGui::BeginCombo(Cv4Tr("nav.language"),Cv4I18nName(cur_lang))) {
+    const int n_lang=Cv4I18nCount();
+    for(int i=0;i<n_lang;++i) {
+      if(ImGui::Selectable(Cv4I18nName(i),i==cur_lang)) {
+        Cv4I18nSetLanguage(Cv4I18nCode(i));
+        SaveUiSettings();
+      }
+    }
+    ImGui::EndCombo();
+  }
+  if(available>S(680)){ImGui::SameLine(0.0f,S(14));ImGui::TextColored({0.62f,0.67f,0.76f,1.0f},"%.0f%%   |   %s",s_scale*100,Cv4Tr("nav.esc_back"));}
   if(std::getenv("SNESRECOMP_PERFORMANCE_UI_SELFTEST")) {
     static bool reported;if(!reported){reported=true;std::fprintf(stderr,"performance navigation fits=%d\n",fits);}
   }
@@ -320,12 +344,13 @@ static void ApplyStyle() {
 /* Original/HD controls and export tools (docs/HD_PIPELINE.md). */
 static void HdPanel() {
   Cv4RuntimeUiPanel(850,1100);
-  if (!ImGui::Begin("HD graphics",nullptr,kPanelFlags)) {
+  std::string hd_title = std::string(Cv4Tr("hd.window_title")) + "###HdGraphics";
+  if (!ImGui::Begin(hd_title.c_str(),nullptr,kPanelFlags)) {
     ImGui::End();
     return;
   }
   bool hd = Cv4HdEnabled() != 0;
-  if (ImGui::Checkbox("HD graphics enabled", &hd)) Cv4HdEnable(hd);
+  if (ImGui::Checkbox(Cv4Tr("hd.enabled"), &hd)) Cv4HdEnable(hd);
   /* Exercise the real clickable widget in the opt-in UI regression. */
   if (std::getenv("SNESRECOMP_HD_UI_SELFTEST")) {
     static unsigned frame;
@@ -429,14 +454,22 @@ extern "C" bool Cv4RuntimeSettingsImGuiInit(void *window, void *gl_context) {
     s_fonts.push_back(font);
   }
   s_scale_percent=0;
+  std::string saved_lang="de";
   try {
     std::ifstream file("ui_settings.json");
     if(file) {
       std::string data((std::istreambuf_iterator<char>(file)),{});
-      int n=character_json::Reader(data).read().at("menu_scale").number();
-      if(n==100||n==125||n==150||n==175||n==200||n==250)s_scale_percent=n;
+      auto obj=character_json::Reader(data).read();
+      if(obj.object.count("menu_scale")) {
+        int n=obj.at("menu_scale").number();
+        if(n==100||n==125||n==150||n==175||n==200||n==250)s_scale_percent=n;
+      }
+      if(obj.object.count("language") && obj.at("language").kind=='s') {
+        saved_lang=obj.at("language").string();
+      }
     }
   }catch(...) { s_scale_percent=0; }
+  Cv4I18nInit(saved_lang.c_str());
   if(const char *test=std::getenv("SNESRECOMP_UI_SCALE_SELFTEST")) {
     int w=0,h=0;if(std::sscanf(test,"%dx%d",&w,&h)==2&&w>=800&&h>=600)SDL_SetWindowSize(s_window,w,h);
   }
@@ -564,13 +597,14 @@ extern "C" void Cv4RuntimeSettingsImGuiRender(void *ui_ptr, int width,
   viewport->WorkPos.y=nav_bottom;viewport->WorkSize.y=std::max(S(120),ImGui::GetIO().DisplaySize.y-nav_bottom);
   if (s_tab == kPerformance) {
     Cv4RuntimeUiPanel(1000,1100);
-    if(ImGui::Begin("Performance",nullptr,kPanelFlags)) {
+    std::string perf_title = std::string(Cv4Tr("perf.window_title")) + "###Performance";
+    if(ImGui::Begin(perf_title.c_str(),nullptr,kPanelFlags)) {
       int timing=Cv4CpuTimingMode();
       const char *labels[]={"Original SNES","FastROM","FastROM + CPU boost"};
       const char *test=std::getenv("SNESRECOMP_PERFORMANCE_UI_SELFTEST");
       static unsigned frame;
       if(test && ++frame==1)std::fprintf(stderr,"performance initial=%d\n",timing);
-      bool open=ImGui::BeginCombo("SNES slowdown reduction",labels[timing]);
+      bool open=ImGui::BeginCombo(Cv4Tr("perf.timing"),labels[timing]);
       ImVec2 combo=ImGui::GetItemRectMin();
       if(open) {
         for(int i=0;i<3;++i) {

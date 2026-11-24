@@ -140,6 +140,7 @@ recomp_target_launcher_ui(SuperCastlevaniaIvSNESRecomp CONSOLE snes
 target_sources(SuperCastlevaniaIvSNESRecomp PRIVATE
     ${SNESRECOMP_ROOT}/host/snesrecomp_codegen_host.c
     src/runtime_settings_imgui.cpp
+    src/i18n.cpp
     src/stage_warp.cpp
       src/character_pack.cpp
       src/enemy_pack.cpp

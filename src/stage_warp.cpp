@@ -1,4 +1,5 @@
 #include "stage_warp.h"
+#include "i18n.h"
 #include "runtime_settings_imgui.h"
 #include "character_json.h"
 #include "recomp_runtime_ui.h"
@@ -178,7 +179,8 @@ extern "C" void Cv4StageWarpDraw(void *ui_ptr) {
   Cv4RuntimeUiPanel(1280, 960);
   const ImGuiWindowFlags flags =
       ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
-  if (!ImGui::Begin("Level-Warp · Alle Abschnitte", nullptr, flags)) {
+  std::string win_title = std::string(Cv4Tr("warp.window_title")) + "###LevelWarp";
+  if (!ImGui::Begin(win_title.c_str(), nullptr, flags)) {
     ImGui::End();
     return;
   }
@@ -188,20 +190,20 @@ extern "C" void Cv4StageWarpDraw(void *ui_ptr) {
 
   // ── Top Filter & Controls Bar ────────────────────────────────────────────
   if (in_game && cur_room >= 0 && cur_room < static_cast<int>(g_rooms.size())) {
-    ImGui::TextColored({0.83f, 0.69f, 0.35f, 1.0f}, "Aktuell: R-%02d  (%s)",
+    ImGui::TextColored({0.83f, 0.69f, 0.35f, 1.0f}, Cv4Tr("warp.current"),
                        cur_room, g_rooms[cur_room].label.c_str());
   } else {
-    ImGui::TextDisabled("Wähle ein Level und klicke auf einen Abschnitt zum sofortigen Teleportieren.");
+    ImGui::TextDisabled("%s", Cv4Tr("warp.hint"));
   }
 
   ImGui::SetNextItemWidth(S(240));
-  ImGui::InputTextWithHint("##warp_search", "Suchen (z. B. Medusa, 4-1, Boss)...", g_search, sizeof(g_search));
+  ImGui::InputTextWithHint("##warp_search", Cv4Tr("warp.search_hint"), g_search, sizeof(g_search));
   ImGui::SameLine();
-  ImGui::Checkbox("Nur Bosse", &g_only_bosses);
+  ImGui::Checkbox(Cv4Tr("warp.only_bosses"), &g_only_bosses);
   ImGui::SameLine();
-  if (ImGui::Button("Alle aufklappen")) g_expand_cmd = +1;
+  if (ImGui::Button(Cv4Tr("warp.expand_all"))) g_expand_cmd = +1;
   ImGui::SameLine();
-  if (ImGui::Button("Alle zuklappen")) g_expand_cmd = -1;
+  if (ImGui::Button(Cv4Tr("warp.collapse_all"))) g_expand_cmd = -1;
   ImGui::Separator();
 
   // ── Scrollable Stage Accordion List ──────────────────────────────────────
@@ -242,7 +244,8 @@ extern "C" void Cv4StageWarpDraw(void *ui_ptr) {
       }
 
       char hdr[128];
-      std::snprintf(hdr, sizeof(hdr), "%s  (%zu Abschnitte)##stage_%d",
+      std::string sec_fmt = std::string(Cv4Tr("warp.sections_fmt")) + "##stage_%d";
+      std::snprintf(hdr, sizeof(hdr), sec_fmt.c_str(),
                     stage_title.c_str(), stage_rooms.size(), st);
       ImGui::PushStyleColor(ImGuiCol_Header, {0.16f, 0.19f, 0.27f, 1.0f});
       ImGui::PushStyleColor(ImGuiCol_HeaderHovered, {0.24f, 0.20f, 0.28f, 1.0f});
@@ -289,9 +292,9 @@ extern "C" void Cv4StageWarpDraw(void *ui_ptr) {
               ImGui::Text("%s  (R-%02d)", wr.label.c_str(), wr.room);
             }
 
-            char btn[48];
+            char btn[64];
             std::snprintf(btn, sizeof(btn), "%s##go_%02d",
-                          is_cur ? "Neu starten" : "Teleportieren", wr.room);
+                          is_cur ? Cv4Tr("warp.restart") : Cv4Tr("warp.teleport"), wr.room);
             if (ImGui::Button(btn, {-1.0f, S(26)})) {
               WarpToRoom(wr.room, ui_ptr);
             }
