@@ -11,8 +11,7 @@ and monster tools share a separate desktop application called **Castlevania Stud
 
 The repository and executable retain the technical name
 `SuperCastlevaniaIvSNESRecomp`. The project-specific framework dependencies are
-pinned in [Gast114/snesrecomp-sciv](https://github.com/Gast114/snesrecomp-sciv)
-and [Gast114/recomp-ui](https://github.com/Gast114/recomp-ui).
+pinned as Git submodules (`snesrecomp` and `recomp-ui`).
 
 > **You must legally own a copy of the game.** No ROM data is distributed with
 > this project, in the repository or in any release. The recompiled C is
