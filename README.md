@@ -18,12 +18,32 @@ and [Gast114/recomp-ui](https://github.com/Gast114/recomp-ui).
 > this project, in the repository or in any release. The recompiled C is
 > generated locally from your own copy and is never committed.
 
-## Current status — 8 November 2026
+## Screenshots & Showcase
+
+> Optional local HD artwork packs are shown below to illustrate the HD replacement pipeline. Artwork packs are git-ignored and stay local; a fresh clone runs with the original SNES graphics from your own ROM.
+
+### Live In-Game HD Showcase (Simon Belmont, Whips, Subweapons & Stage 01)
+![Live In-Game HD Showcase](docs/screenshots/ingame_hd_showcase.jpg)
+
+### 8× HD Boss Remaster in Action (Rowdain — Phase 1 & Phase 2)
+![Rowdain 8x HD Boss Showcase](docs/screenshots/boss_rowdain_hd_showcase.jpg)
+
+### 2K Oil-Painted HD Enemies Live In-Game
+![HD Enemies Live In-Game](docs/screenshots/higgsfield_enemies_ingame.jpg)
+
+### Level-Warp — All 67 Playable Sections (`R-00` – `R-66`) with In-Game Thumbnails
+![Level-Warp 67 Sections Overview](docs/screenshots/level_warp_overview.jpg)
+
+---
+
+## Current status — 24 November 2026
 
 **Playable development version, with Windows as the actively used desktop
-environment.** The game boots from the original USA ROM. The editor supports
-building and playing custom rooms. A complete HD conversion and a packaged
-public release are still in progress.
+environment.** The game boots from the original USA ROM. It includes a
+modernized Dark-Gothic Escape menu with a 67-section **Level-Warp** teleporter,
+a redesigned **Monster Workshop** with large zoomable HD previews and
+Castlevania Wiki bestiary entries, 16:9 widescreen HD sprite support, and a
+complete local HD import/sync toolchain.
 
 `main` is the primary branch for the current usable project. Work in progress
 can use separate branches; completed changes should reach `main`. The existing
@@ -31,20 +51,25 @@ can use separate branches; completed changes should reach `main`. The existing
 
 | Component | Available now | Current limits |
 |---|---|---|
-| Desktop game | Native video, audio, keyboard/controller input, fullscreen and settings | Full-campaign validation is ongoing; other desktop platforms are not claimed as validated |
-| Widescreen | Optional 16:9 scene rendering at 342×224 with the original HUD safe area | Mode7 rooms, bosses and scripted camera boundaries need continued full-game checking |
+| Desktop game | Native video, audio, keyboard/controller input, fullscreen and modernized Dark-Gothic Escape menu | Full-campaign validation is ongoing; other desktop platforms are not claimed as validated |
+| Level-Warp | **Escape → Level-Warp**: all 67 playable sections (`R-00`–`R-66`, Block 1 to Dracula) grouped in collapsible stages with real in-game screenshots, search and Boss filter | Preview thumbnails show the room start rather than the boss arena itself |
+| Widescreen | Optional 16:9 scene rendering at 342×224 with original HUD safe area and widened HD sprite bounds (`-160..416`) so enemies outside 4:3 stay HD | Mode7 rooms, bosses and scripted camera boundaries need continued full-game checking |
 | Saves and convenience | Save slots with browser, rewind, pause and fast-forward | Run-ahead is unsupported and falls back to normal execution |
 | New Game+ | The original harder second quest, selectable from the title menu | Uses the original quest rules |
-| HD graphics | Switchable artwork packs, separate layer controls and 2×/4×/6×/10× rendering | Artwork coverage is partial; missing replacements use original graphics; artwork packs stay local |
-| Character workshop | Collect/edit complete poses, live PNG reload, anchors and movement/damage settings | Complete pose coverage across the game is unverified; Simon's HD artwork experiments are paused |
-| Level editor | Catalog of 68 original sections, supported map imports, custom rooms, mixed graphics, terrain, collision, objects, exits and F5 playtests | Full vertical/Mode7 map import, arbitrary original scene scripts and finished campaign/mod export remain open |
-| Monster workshop | Native previews, editable PNGs, Normal/NG+ comparisons and placement-linked values; integrated with the level editor | Action and pose assignments are incomplete; a general AI behavior editor is not implemented |
+| HD graphics | Switchable artwork packs, separate layer controls, 2×/4×/8×/10× rendering, whip windup HD support, and automated sprite/boss sheet import (`tools/hd/`) | Artwork coverage is partial and in active progress; missing replacements fall back to original graphics; artwork packs stay local |
+| Character workshop | Collect/edit complete poses, live PNG reload, anchors and movement/damage settings | Complete pose coverage across the game is unverified |
+| Level editor | Catalog of original sections, supported map imports, custom rooms, mixed graphics, terrain, collision, objects, exits and F5 playtests | Full vertical/Mode7 map import, arbitrary original scene scripts and finished campaign/mod export remain open |
+| Monster workshop | Redesigned Dark-Gothic Studio UI, large `1×–4.5×` zoomable live Original-vs-HD previews, search & `✦ Nur HD` filter, 93 named monsters/bosses, Castlevania Wiki bestiary notes, Normal/NG+ stats | Action and pose assignments are incomplete; a general AI behavior editor is not implemented |
 | Boss placement | Independent free boss instances and prepared classic encounters; original attacks and sound effects | Native movement constraints remain; classic encounters allow one active encounter; additional instances cost processing time |
 
-The latest code changes fix free-boss sound effects, preserve audio while
-switching boss contexts, and improve editor selection and playtest startup.
-These are targeted fixes, not a claim that every original room, boss and custom
-combination has been fully tested.
+Recent updates add the **Level-Warp** Escape menu tab with 67 HUD-verified
+section screenshots (`src/stage_warp.cpp`, `warp_thumbs/`), modernize the
+Escape overlay in a Dark-Gothic obsidian/gold/crimson theme
+(`src/runtime_settings_imgui.cpp`), fix 16:9 widescreen HD sprite fallback and
+whip windup frames (`src/enemy_pack.cpp`), redesign the Monster Workshop UI
+(`tools/monster_workshop.py`, `tools/enemy_workshop.py`, `tools/monster_model.py`),
+and add the automated 8× HD sprite/boss import and workshop sync pipeline
+(`tools/hd/`).
 
 ### What this public repository contains
 
