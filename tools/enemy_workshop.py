@@ -19,40 +19,81 @@ from enemy_workshop_library import DEFAULT_LIBRARY,profile_key
 DEFAULT_WORKSPACE=ROOT.parent/'Assets (ausgeschnitten)'/'Gegner'/'Werkstatt'
 
 
-def pose_preview(workspace,identifier,custom,size):
-    """Still PNG inspection; native movement remains a separate view mode."""
-    image=Image.new('RGBA',size,'#19212c')
+def _checkerboard(size, tile=16, c1='#1b2230', c2='#242d3e'):
+    image=Image.new('RGBA',size,c1)
+    draw=ImageDraw.Draw(image)
+    w,h=size
+    for y in range(0,h,tile):
+        for x in range(0,w,tile):
+            if ((x//tile)+(y//tile))&1:
+                draw.rectangle((x,y,x+tile-1,y+tile-1),fill=c2)
+    return image
+
+
+def pose_preview(workspace,identifier,custom,size,backdrop='dark'):
+    """Still PNG inspection; crops generously around visible artwork when custom HD is active."""
+    image=_checkerboard(size) if backdrop=='checker' else Image.new('RGBA',size,'#0b0e14' if backdrop=='gothic' else '#19212c')
     source=workspace.image(identifier,custom)
     if source is not None:
         frame=workspace.frames[identifier];dw,dh=frame['display_size']
-        zoom=.9*min(size[0]/dw,size[1]/dh)
-        picture=source.resize((max(1,round(dw*zoom)),max(1,round(dh*zoom))),
-                              Image.Resampling.LANCZOS if custom and workspace.edited(identifier) else Image.Resampling.NEAREST)
+        is_hd=bool(custom and workspace.edited(identifier))
+        bbox=source.getbbox()
+        if bbox:
+            cropped=source.crop(bbox)
+            cw,ch=cropped.size
+            zoom=.86*min(size[0]/max(1,cw),size[1]/max(1,ch))
+            picture=cropped.resize((max(1,round(cw*zoom)),max(1,round(ch*zoom))),
+                                   Image.Resampling.LANCZOS if is_hd else Image.Resampling.NEAREST)
+        else:
+            zoom=.9*min(size[0]/dw,size[1]/dh)
+            picture=source.resize((max(1,round(dw*zoom)),max(1,round(dh*zoom))),
+                                  Image.Resampling.LANCZOS if is_hd else Image.Resampling.NEAREST)
         image.alpha_composite(picture,((size[0]-picture.width)//2,(size[1]-picture.height)//2))
     return image.convert('RGB')
 
 
-def preview(snapshot,workspace,custom,size,follow=True,background='#19212c'):
-    """Render two views of the same native field; custom PNGs keep their canvas."""
+def preview(snapshot,workspace,custom,size,follow=True,background='#19212c',zoom_scale=1.0,backdrop='dark'):
+    """Render two views of the same native field; custom PNGs keep their canvas.
+    zoom_scale > 1.0 magnifies and centers around the main actor for large HD inspection."""
     width,height=size
-    image=Image.new('RGBA',size,background)
+    if backdrop=='checker':
+        image=_checkerboard(size)
+    else:
+        bg='#0b0e14' if backdrop=='gothic' else background
+        image=Image.new('RGBA',size,bg)
     draw=ImageDraw.Draw(image)
-    zoom=min(width/256,height/224)
+    base_zoom=min(width/256,height/224)
+    zoom=base_zoom*max(1.0,float(zoom_scale))
     actors=snapshot.get('actors',[])
     main=next((a for a in actors if a['slot']==snapshot.get('target',0x580)),None)
     arena=snapshot.get('arena')
-    origin=(128-main['x'],128-main['y']) if follow and main and not arena else (0,0)
+    if zoom_scale>1.01 and main:
+        # Center camera on the active monster in zoomed studio view
+        origin=(width/(2*zoom)-main['x'],height*0.56/zoom-main['y'])
+    elif follow and main and not arena:
+        origin=(128-main['x'],128-main['y'])
+    else:
+        origin=((width/zoom-256)/2,(height/zoom-224)/2) if backdrop=='gothic' else (0,0)
     if arena:
-        floor=round(arena['floor']*zoom)
-        draw.rectangle((0,floor,width,height),fill='#303b49')
-        draw.line((0,floor,width,floor),fill='#92a5ba',width=max(1,round(zoom)))
-        x=round(arena['target_x']*zoom);y=round(arena['target_y']*zoom)
-        draw.rectangle((x-6*zoom,y-12*zoom,x+6*zoom,y+12*zoom),outline='#7089a3',width=max(1,round(zoom)))
-        draw.text((8,8),'KI-Ziel',fill='#aab9c9')
+        floor=round((arena['floor']+origin[1])*zoom)
+        if backdrop=='gothic':
+            if floor<height:
+                draw.rectangle((0,max(0,floor),width,height),fill='#181d28')
+            if 0<=floor<height:
+                draw.line((0,floor,width,floor),fill='#c9a24b',width=max(2,round(base_zoom)))
+                draw.line((0,floor+max(2,round(base_zoom)),width,floor+max(2,round(base_zoom))),fill='#4a3d20',width=1)
+        else:
+            if floor<height:
+                draw.rectangle((0,max(0,floor),width,height),fill='#303b49')
+            if 0<=floor<height:
+                draw.line((0,floor,width,floor),fill='#92a5ba',width=max(1,round(base_zoom)))
+        x=round((arena['target_x']+origin[0])*zoom);y=round((arena['target_y']+origin[1])*zoom)
+        draw.rectangle((x-6*zoom,y-12*zoom,x+6*zoom,y+12*zoom),outline='#7c5b2a' if backdrop=='gothic' else '#7089a3',width=max(1,round(base_zoom)))
+        draw.text((10,8),'KI-Ziel',fill='#8b98ad' if backdrop=='gothic' else '#aab9c9')
     if snapshot.get('boss_surface'):
         with Image.open(io.BytesIO(base64.b64decode(snapshot['boss_surface']))) as loaded:
             surface=loaded.convert('RGBA').resize((max(1,round(256*zoom)),max(1,round(224*zoom))),Image.Resampling.NEAREST)
-        image.alpha_composite(surface,(0,0))
+        image.alpha_composite(surface,(round(origin[0]*zoom),round(origin[1]*zoom)))
     def paste(identifier,actor,edited=False):
         source=workspace.image(identifier,edited)
         if source is None:return

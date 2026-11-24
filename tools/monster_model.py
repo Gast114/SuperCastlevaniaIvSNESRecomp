@@ -1,5 +1,17 @@
 """Monster codes, verified action ownership and original combat parameters."""
+import json
+from pathlib import Path
 from monster_balance import original_stats
+
+_LORE_CACHE=None
+
+def _bestiary_lore(actor_type):
+    global _LORE_CACHE
+    if _LORE_CACHE is None:
+        path=Path(__file__).resolve().with_name('bestiary_lore_by_actor.json')
+        try:_LORE_CACHE=json.loads(path.read_text(encoding='utf-8')) if path.is_file() else {}
+        except (OSError,ValueError):_LORE_CACHE={}
+    return _LORE_CACHE.get(str(actor_type))
 
 SKELETONS={0x11,0x12,0x31,0x56,0x69}
 WALK={0x11:{0x8af4,0x8b05},0x12:{0x8af4,0x8b05},0x31:{0x93be,0x93d7},
@@ -39,17 +51,21 @@ def actions(entry):
 
 def ai_notes(entry):
     t=entry['type']
+    lore=_bestiary_lore(t)
+    prefix=''
+    if lore and lore.get('description'):
+        prefix=f"Bestiary (Castlevania Wiki): {lore['description']}\n\n"
     if t in SKELETONS:
         text='Die Original-KI wählt Bewegung und Blickrichtung relativ zum Spielerziel. Timer und Bodenkollisionen steuern Richtungswechsel.'
         if t in (0x12,0x31,0x56):text+=' Diese Variante startet mit zwei möglichen Ausweichsprüngen.'
         if t==0x12:text+=' Der Angriff besteht aus Ausholen, Abwurf und Ausklang; dabei erzeugt die KI ein echtes Geschoss (Typ 0002).'
         if t in (0x11,0x69):text+=' Diese Variante verursacht Kontaktschaden und hat keine eigene Wurfaktion.'
-        return text
+        return prefix+text
     if entry.get('boss'):
         text='Originale Boss-KI im neutralen Testraum, mit fester Kamera und geschütztem Spielerziel. Körper, Geschosse und Hilfsteile bleiben zusammen. Manche Routinen haben feste Bewegungsgrenzen. Die einzelnen Angriffs- und Todeszustände sind noch nicht vollständig zugeordnet.'
         if t==0x81:text+=' Der Mode7-Körper wird nativ in beiden Ansichten gezeigt; seine HD-Textur kann noch nicht ersetzt werden. OBJ-Teile sind bearbeitbar.'
-        return text
-    return 'Die Original-KI läuft in der Testszene. Die genaue Bedeutung ihrer Zustände und getrennte Sprung-/Angriffsauslöser sind für diesen Code noch nicht geprüft. „Natürlich“ zeigt den echten Ablauf.'
+        return prefix+text
+    return prefix+'Die Original-KI läuft in der Testszene. Die genaue Bedeutung ihrer Zustände und getrennte Sprung-/Angriffsauslöser sind für diesen Code noch nicht geprüft. „Natürlich“ zeigt den echten Ablauf.'
 
 
 def combat_stats(rom,entry,live=None):

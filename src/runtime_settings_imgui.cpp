@@ -1,4 +1,5 @@
 #include "runtime_settings_imgui.h"
+#include "stage_warp.h"
 #include "character_pack.h"
 #include "enemy_pack.h"
 #include "debug_marker.h"
@@ -31,7 +32,7 @@ void launcher_ini_kv_write(const char *, const char *, const char *, const char 
 
 static bool s_initialized;
 static RecompRuntimeUi *s_runtime_ui;
-enum { kSettings, kCharacters, kHd, kShortcuts, kPerformance };
+enum { kSettings, kCharacters, kHd, kWarp, kShortcuts, kPerformance };
 static int s_tab=kSettings, s_capture=-1;
 static std::string s_bind_message;
 static const ImGuiWindowFlags kPanelFlags=ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse;
@@ -74,44 +75,56 @@ static float DrawNavigation(RecompRuntimeUi *ui) {
   static unsigned test_frame;
   const char *pick=std::getenv("SNESRECOMP_UI_SCALE_PICK");
   if(std::getenv("SNESRECOMP_UI_SCALE_SELFTEST"))++test_frame;
-  const float available=ImGui::GetIO().DisplaySize.x-S(16);
-  const char *names[]={"Game settings","Character workshop","HD graphics","Shortcuts","Performance","Resume"};
+  const ImVec2 disp=ImGui::GetIO().DisplaySize;
+  // Soft obsidian backdrop dim over the paused game
+  ImGui::GetBackgroundDrawList()->AddRectFilled({0,0},disp,IM_COL32(6,8,13,185));
+
+  const float available=disp.x-S(24);
+  const char *names[]={"Einstellungen","Charakter","HD-Grafik","Level-Warp","Tasten","Leistung","Weiterspielen"};
   const ImGuiStyle &style=ImGui::GetStyle();
-  const float row=S(40), gap=style.ItemSpacing.x, padding=S(10);
+  const float row=S(38), gap=style.ItemSpacing.x, padding=S(12);
   float used=0;int rows=1;
   for(const char *name:names) {
-    float w=ImGui::CalcTextSize(name).x+style.FramePadding.x*2+S(12);
+    float w=ImGui::CalcTextSize(name).x+style.FramePadding.x*2+S(16);
     if(used && used+gap+w>available-padding*2){++rows;used=0;}
     used+=(used?gap:0)+w;
   }
-  const float height=padding*2+rows*row+(rows-1)*style.ItemSpacing.y+ImGui::GetFrameHeight()+style.ItemSpacing.y;
-  ImGui::SetNextWindowPos({S(8),S(8)});
+  const float height=padding*2+rows*row+(rows-1)*style.ItemSpacing.y+ImGui::GetFrameHeight()+style.ItemSpacing.y+S(2);
+  ImGui::SetNextWindowPos({S(12),S(10)});
   ImGui::SetNextWindowSize({available,height});
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,{padding,padding});
+  ImGui::PushStyleColor(ImGuiCol_WindowBg,{0.045f,0.055f,0.082f,0.97f});
+  ImGui::PushStyleColor(ImGuiCol_Border,{0.56f,0.45f,0.22f,0.75f});
   ImGui::Begin("Settings tools",nullptr,ImGuiWindowFlags_NoDecoration|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoMove);
   used=0;bool fits=true;
-  for(int i=0;i<6;++i) {
-    float w=ImGui::CalcTextSize(names[i]).x+style.FramePadding.x*2+S(12);
+  for(int i=0;i<7;++i) {
+    float w=ImGui::CalcTextSize(names[i]).x+style.FramePadding.x*2+S(16);
     if(used && used+gap+w>available-padding*2)used=0;
     else if(used)ImGui::SameLine();
-    const bool active=i==s_tab;
+    const bool active=(i==s_tab);
+    const bool is_resume=(i==6);
     if(active) {
-      ImGui::PushStyleColor(ImGuiCol_Button,style.Colors[ImGuiCol_HeaderActive]);
-      ImGui::PushStyleColor(ImGuiCol_Text,{.025f,.07f,.10f,1});
+      ImGui::PushStyleColor(ImGuiCol_Button,{0.83f,0.68f,0.34f,1.0f});
+      ImGui::PushStyleColor(ImGuiCol_ButtonHovered,{0.90f,0.75f,0.42f,1.0f});
+      ImGui::PushStyleColor(ImGuiCol_Text,{0.06f,0.07f,0.10f,1.0f});
+    } else if(is_resume) {
+      ImGui::PushStyleColor(ImGuiCol_Button,{0.58f,0.14f,0.21f,1.0f});
+      ImGui::PushStyleColor(ImGuiCol_ButtonHovered,{0.72f,0.19f,0.27f,1.0f});
+      ImGui::PushStyleColor(ImGuiCol_Text,{0.98f,0.96f,0.95f,1.0f});
     }
     if(ImGui::Button(names[i],{w,row})) {
       s_capture=-1;
-      if(i==5)recomp_runtime_ui_close(ui);else s_tab=i;
+      if(is_resume)recomp_runtime_ui_close(ui);else s_tab=i;
     }
-    if(active)ImGui::PopStyleColor(2);
-    fits= fits && ImGui::GetItemRectMax().x<=ImGui::GetIO().DisplaySize.x-S(8);
+    if(active || is_resume)ImGui::PopStyleColor(3);
+    fits= fits && ImGui::GetItemRectMax().x<=disp.x-S(12);
     used+=(used?gap:0)+w;
   }
   const char *sizes[]={"Automatic","100%","125%","150%","175%","200%","250%"};
   const int values[]={0,100,125,150,175,200,250};
   int selected=0;for(int i=1;i<7;++i)if(values[i]==s_scale_percent)selected=i;
-  ImGui::SetNextItemWidth(S(150));
-  if(ImGui::BeginCombo("Menu size",sizes[selected])) {
+  ImGui::SetNextItemWidth(S(148));
+  if(ImGui::BeginCombo("Menügröße",sizes[selected])) {
     for(int i=0;i<7;++i) {
       if(ImGui::Selectable(sizes[i],selected==i)) {
         s_scale_percent=values[i];
@@ -130,18 +143,18 @@ static float DrawNavigation(RecompRuntimeUi *ui) {
     ImGui::GetIO().AddMousePosEvent(pos.x+S(12),pos.y+S(8));
     ImGui::GetIO().AddMouseButtonEvent(0,test_frame==2);
   }
-  if(available>S(520)){ImGui::SameLine();ImGui::TextDisabled("%.0f%%  |  Escape: back",s_scale*100);}
+  if(available>S(520)){ImGui::SameLine();ImGui::TextColored({0.62f,0.67f,0.76f,1.0f},"%.0f%%   |   ESC: Zurück ins Spiel",s_scale*100);}
   if(std::getenv("SNESRECOMP_PERFORMANCE_UI_SELFTEST")) {
     static bool reported;if(!reported){reported=true;std::fprintf(stderr,"performance navigation fits=%d\n",fits);}
   }
   if(std::getenv("SNESRECOMP_UI_SCALE_SELFTEST")) {
     if(test_frame==12) {
-      std::fprintf(stderr,"menu layout display=%.0fx%.0f scale=%.2f font=%.1f nav_bottom=%.1f fits=%d\n",ImGui::GetIO().DisplaySize.x,ImGui::GetIO().DisplaySize.y,s_scale,ImGui::GetFontSize(),S(8)+height,fits);
+      std::fprintf(stderr,"menu layout display=%.0fx%.0f scale=%.2f font=%.1f nav_bottom=%.1f fits=%d\n",disp.x,disp.y,s_scale,ImGui::GetFontSize(),S(10)+height,fits);
       OpenGLRenderer_RequestScreenshot();
     }
   }
-  ImGui::End();ImGui::PopStyleVar();
-  return S(8)+height;
+  ImGui::End();ImGui::PopStyleColor(2);ImGui::PopStyleVar();
+  return S(14)+height;
 }
 
 static bool StoreBinding(int command, SDL_Keycode key, SDL_Keymod mod) {
@@ -255,22 +268,53 @@ static void ShortcutPanel() {
 static void ApplyStyle() {
   ImGuiStyle &style = ImGui::GetStyle();
   ImGui::StyleColorsDark(&style);
-  style.WindowRounding = 10.0f;
+  style.WindowRounding = 12.0f;
   style.ChildRounding = 8.0f;
-  style.FrameRounding = 6.0f;
+  style.FrameRounding = 7.0f;
+  style.PopupRounding = 8.0f;
+  style.ScrollbarRounding = 8.0f;
   style.GrabRounding = 6.0f;
-  style.WindowPadding = ImVec2(20.0f, 18.0f);
+  style.TabRounding = 6.0f;
+  style.WindowBorderSize = 1.0f;
+  style.ChildBorderSize = 1.0f;
+  style.FrameBorderSize = 1.0f;
+  style.WindowPadding = ImVec2(22.0f, 18.0f);
+  style.FramePadding = ImVec2(10.0f, 6.0f);
   style.ItemSpacing = ImVec2(10.0f, 10.0f);
-  style.Colors[ImGuiCol_WindowBg] = ImVec4(0.035f, 0.045f, 0.085f, 0.98f);
-  style.Colors[ImGuiCol_ChildBg] = ImVec4(0.055f, 0.070f, 0.120f, 0.96f);
-  style.Colors[ImGuiCol_Button] = ImVec4(0.34f, 0.16f, 0.68f, 1.0f);
-  style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.48f, 0.24f, 0.88f, 1.0f);
-  style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.25f, 0.75f, 0.72f, 1.0f);
-  style.Colors[ImGuiCol_CheckMark] = ImVec4(0.35f, 0.95f, 0.78f, 1.0f);
-  style.Colors[ImGuiCol_TabSelected] = ImVec4(0.34f, 0.16f, 0.68f, 1.0f);
-  style.Colors[ImGuiCol_Header] = ImVec4(0.26f, 0.13f, 0.52f, 1.0f);
-  style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.48f, 0.24f, 0.88f, 1.0f);
-  style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.25f, 0.75f, 0.72f, 1.0f);
+  style.ScrollbarSize = 13.0f;
+
+  // Modern Dark-Gothic Castlevania Studio Palette (Obsidian, Slate, Antique Gold, Crimson)
+  auto &c = style.Colors;
+  c[ImGuiCol_Text]                 = ImVec4(0.93f, 0.95f, 0.97f, 1.00f);
+  c[ImGuiCol_TextDisabled]         = ImVec4(0.55f, 0.61f, 0.70f, 1.00f);
+  c[ImGuiCol_WindowBg]             = ImVec4(0.055f, 0.068f, 0.098f, 0.96f);
+  c[ImGuiCol_ChildBg]              = ImVec4(0.078f, 0.096f, 0.138f, 0.95f);
+  c[ImGuiCol_PopupBg]              = ImVec4(0.068f, 0.084f, 0.122f, 0.98f);
+  c[ImGuiCol_Border]               = ImVec4(0.20f, 0.25f, 0.34f, 0.85f);
+  c[ImGuiCol_BorderShadow]         = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+  c[ImGuiCol_FrameBg]              = ImVec4(0.095f, 0.118f, 0.168f, 1.00f);
+  c[ImGuiCol_FrameBgHovered]       = ImVec4(0.145f, 0.180f, 0.250f, 1.00f);
+  c[ImGuiCol_FrameBgActive]        = ImVec4(0.190f, 0.225f, 0.310f, 1.00f);
+  c[ImGuiCol_TitleBg]              = ImVec4(0.045f, 0.055f, 0.082f, 1.00f);
+  c[ImGuiCol_TitleBgActive]        = ImVec4(0.075f, 0.090f, 0.130f, 1.00f);
+  c[ImGuiCol_ScrollbarBg]          = ImVec4(0.050f, 0.062f, 0.090f, 0.80f);
+  c[ImGuiCol_ScrollbarGrab]        = ImVec4(0.24f, 0.29f, 0.39f, 1.00f);
+  c[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.56f, 0.46f, 0.23f, 1.00f);
+  c[ImGuiCol_ScrollbarGrabActive]  = ImVec4(0.83f, 0.68f, 0.34f, 1.00f);
+  c[ImGuiCol_CheckMark]            = ImVec4(0.85f, 0.70f, 0.36f, 1.00f);
+  c[ImGuiCol_SliderGrab]           = ImVec4(0.83f, 0.68f, 0.34f, 1.00f);
+  c[ImGuiCol_SliderGrabActive]     = ImVec4(0.94f, 0.79f, 0.45f, 1.00f);
+  c[ImGuiCol_Button]               = ImVec4(0.125f, 0.155f, 0.220f, 1.00f);
+  c[ImGuiCol_ButtonHovered]        = ImVec4(0.195f, 0.235f, 0.325f, 1.00f);
+  c[ImGuiCol_ButtonActive]         = ImVec4(0.83f, 0.68f, 0.34f, 1.00f);
+  c[ImGuiCol_Header]               = ImVec4(0.145f, 0.175f, 0.245f, 1.00f);
+  c[ImGuiCol_HeaderHovered]        = ImVec4(0.240f, 0.215f, 0.260f, 1.00f);
+  c[ImGuiCol_HeaderActive]         = ImVec4(0.83f, 0.68f, 0.34f, 1.00f);
+  c[ImGuiCol_Separator]            = ImVec4(0.45f, 0.37f, 0.19f, 0.55f);
+  c[ImGuiCol_SeparatorHovered]     = ImVec4(0.83f, 0.68f, 0.34f, 0.85f);
+  c[ImGuiCol_Tab]                  = ImVec4(0.095f, 0.118f, 0.168f, 1.00f);
+  c[ImGuiCol_TabHovered]           = ImVec4(0.220f, 0.200f, 0.250f, 1.00f);
+  c[ImGuiCol_TabSelected]          = ImVec4(0.56f, 0.45f, 0.22f, 1.00f);
 }
 
 /* Original/HD controls and export tools (docs/HD_PIPELINE.md). */
@@ -293,7 +337,7 @@ static void HdPanel() {
   }
   ImGui::TextWrapped("Switch back to original graphics at any time. Changes apply when you resume.");
   int resolution=Cv4HdScale();
-  const int resolutions[]={2,4,6,10};
+  const int resolutions[]={2,4,8};
   const std::string resolutionLabel=std::to_string(resolution)+"x";
   if(ImGui::BeginCombo("HD render resolution",resolutionLabel.c_str())) {
     for(int value:resolutions) {
@@ -408,6 +452,7 @@ extern "C" bool Cv4RuntimeSettingsImGuiInit(void *window, void *gl_context) {
 
 extern "C" void Cv4RuntimeSettingsImGuiShutdown(void) {
   if (!s_initialized) return;
+  Cv4StageWarpShutdown();
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplSDL3_Shutdown();
   ImGui::DestroyContext();
@@ -555,6 +600,7 @@ extern "C" void Cv4RuntimeSettingsImGuiRender(void *ui_ptr, int width,
   }
   else if (s_tab == kCharacters) Cv4CharacterEditor();
   else if (s_tab == kHd) HdPanel();
+  else if (s_tab == kWarp) Cv4StageWarpDraw(ui_ptr);
   else if (s_tab == kShortcuts) ShortcutPanel();
   else recomp_runtime_ui_render_imgui(static_cast<RecompRuntimeUi *>(ui_ptr));
   viewport->WorkPos=oldPos;viewport->WorkSize=oldSize;

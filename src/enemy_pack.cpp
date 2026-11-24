@@ -87,7 +87,7 @@ Pack load(const std::string&name){
   const auto &d=v.at("display_size").items(),&an=v.at("anchor").items();if(d.size()!=2||an.size()!=2)throw std::runtime_error("Enemy display_size and anchor need two numbers");a.dw=d[0].number();a.dh=d[1].number();a.ax=an[0].number();a.ay=an[1].number();
   if(a.dw<1||a.dh<1||a.dw>MaxCell||a.dh>MaxCell||a.ax<0||a.ay<0||a.ax>a.dw||a.ay>a.dh)throw std::runtime_error("Enemy display or anchor outside 256px cell");
   int n;auto png=base/a.image;if(!stbi_info(png.string().c_str(),&a.w,&a.h,&n)||a.w<1||a.h<1||a.w>4096||a.h>4096)throw std::runtime_error("Enemy PNG dimensions invalid");
-  pixelBudget+=size_t(a.w)*a.h;if(pixelBudget>64*1024*1024)throw std::runtime_error("Enemy pack exceeds pixel budget");
+  pixelBudget+=size_t(a.w)*a.h;if(pixelBudget>512ull*1024*1024)throw std::runtime_error("Enemy pack exceeds pixel budget");
   unsigned char *bytes=stbi_load(png.string().c_str(),&a.w,&a.h,&n,4);if(!bytes)throw std::runtime_error("Cannot read enemy PNG");
   a.pixels.resize(size_t(a.w)*a.h);for(size_t i=0;i<a.pixels.size();++i)a.pixels[i]=uint32_t(bytes[i*4+3])<<24|uint32_t(bytes[i*4])<<16|uint32_t(bytes[i*4+1])<<8|bytes[i*4+2];stbi_image_free(bytes);
   for(unsigned flip=0;flip<4;++flip){auto &proxy=a.proxies[flip];proxy.resize(a.dw*a.dh);for(int y=0;y<a.dh;++y)for(int x=0;x<a.dw;++x){
@@ -108,7 +108,8 @@ void initialize(){
  if(!selection.empty()){active=load(selection);status="Loaded enemy pack "+selection;}
 }
 bool readActor(Ppu*p,const uint8_t*r,unsigned base,const std::set<int>&claimed,Capture&c,std::vector<Part>&parts,int&xbase,int&ybase,unsigned&flip,int shiftX=0,int shiftY=0){
- c.type=word(r,base+0x10);c.pose=word(r,base);if(!rom||c.pose<0x8000||!c.type||c.type==0x0e)return false;
+ if(base<0x580){c.type=0x0e;c.pose=word(r,base);if(!rom||c.pose<0x8019||c.pose>0x80be)return false;}
+ else{c.type=word(r,base+0x10);c.pose=word(r,base);if(!rom||c.pose<0x8000||!c.type||c.type==0x0e)return false;}
  unsigned a=0x20000+(c.pose&0x7fff);if(a>=romSize)return false;unsigned count=rom[a];if(!count||count>32||a+1+count*4>romSize)return false;
  xbase=(int16_t)(word(r,base+0xa)-word(r,0x1c))+shiftX;ybase=(int16_t)((word(r,base+0xe)-word(r,0x1e))&word(r,0x13de))+shiftY;flip=word(r,base+4);
  unsigned add=word(r,base+0x26),priority=word(r,base+2);std::set<int> used=claimed;parts.clear();
@@ -123,7 +124,7 @@ bool readActor(Ppu*p,const uint8_t*r,unsigned base,const std::set<int>&claimed,C
    // Visible missing components remain a failed match; game replacement stays strict.
    if(!workshop || (x+size>0&&x<256&&y+size>0&&y<224))return false;
    found=128;
-  } else if(x<-64||x>320)return false;
+  } else if(x<-160||x>416)return false;
   parts.push_back({found,x,y,size,tile,i});if(found<128)used.insert(found);
  }
  if(std::none_of(parts.begin(),parts.end(),[](const Part&p){return p.slot<128;}))return false;
@@ -137,7 +138,7 @@ bool readActor(Ppu*p,const uint8_t*r,unsigned base,const std::set<int>&claimed,C
  bool clipped=std::any_of(parts.begin(),parts.end(),[](const Part&p){return p.slot==128;});
  std::sort(parts.begin(),parts.end(),[clipped](const Part&a,const Part&b){return clipped?a.index>b.index:a.slot>b.slot;});
  for(const auto&a:parts)for(int y=0;y<a.size;++y)for(int x=0;x<a.size;++x){int dx=a.x+x-xbase,dy=a.y+y-ybase;if(flip&0x4000)dx=-dx-1;if(flip&0x8000)dy=-dy-1;dx+=c.anchor;dy+=c.anchor;if(dx<0||dy<0||dx>=c.size||dy>=c.size)return false;
-  unsigned v,color;if(!virtualPixel(c.type,word(r,base+20),add,a.attr,a.size,x,y,&v,&color)){v=texel(p,a,x,y);color=rgba(p->cgram[128+((a.attr>>9)&7)*16+v]);}if(v){indices[dy*c.size+dx]=(uint8_t)v;c.pixels[dy*c.size+dx]=color;if(a.x+x>=0&&a.x+x<256&&a.y+y>=0&&a.y+y<224)visible=true;}}
+  unsigned v,color;if(!virtualPixel(c.type,word(r,base+20),add,a.attr,a.size,x,y,&v,&color)){v=texel(p,a,x,y);color=rgba(p->cgram[128+((a.attr>>9)&7)*16+v]);}if(v){indices[dy*c.size+dx]=(uint8_t)v;c.pixels[dy*c.size+dx]=color;if(a.x+x>=-160&&a.x+x<416&&a.y+y>=0&&a.y+y<224)visible=true;}}
  if(!visible)return false;uint64_t h=14695981039346656037ull;for(auto v:indices){h^=v;h*=1099511628211ull;}c.id=key(c.type,c.pose,h);return true;
 }
 bool readBossOam(Ppu*p,const uint8_t*r,unsigned base,const std::set<int>&claimed,Capture&c,std::vector<Part>&parts,int&x,int&y,unsigned&flip) {
@@ -175,11 +176,11 @@ extern "C" void Cv4EnemyBegin(Ppu*p,const uint8_t*r){
   bool visible=r[0x32]==4&&!PPU_forcedBlank(p);std::set<int> claimed;
   std::ostringstream observed;observed<<"{\"tick\":"<<ticks<<",\"actors\":[";bool comma=false;
   if(p->hostObjPixels)for(int s=0;s<128;++s)if(p->hostObjMask[s>>3]&(1u<<(s&7)))claimed.insert(s);
-  if(visible)for(unsigned base=0x580;base<0xec0&&frameCount<MaxActors;base+=0x40){Capture c;std::vector<Part> parts;int x,y;unsigned flip;
+  if(visible)for(unsigned base=0x200;base<0xec0&&frameCount<MaxActors;base=(base==0x400?0x580:base+0x40)){Capture c;std::vector<Part> parts;int x,y;unsigned flip;
    bool matched=readActor(p,r,base,claimed,c,parts,x,y,flip);if(!matched&&havePrevious){c={};matched=readActor(p,previous.data(),base,claimed,c,parts,x,y,flip);}
    if(!matched){c={};matched=readBossOam(p,r,base,claimed,c,parts,x,y,flip);}if(!matched)continue;
    for(const auto&a:parts)claimed.insert(a.slot);
-   if(capture&&(workshop||captureTypes.count(c.type)||c.type==2)&&captured.size()<MaxFrames&&captured.insert(c.id).second)writer.submit(c);
+   if(capture&&c.type!=0x0e&&(workshop||captureTypes.count(c.type)||c.type==2)&&captured.size()<MaxFrames&&captured.insert(c.id).second)writer.submit(c);
    if(workshop) {
     if(comma)observed<<',';comma=true;
     observed<<"{\"slot\":"<<base<<",\"type\":"<<c.type<<",\"pose\":"<<c.pose<<",\"id\":"<<character_json::quote(c.id)<<",\"x\":"<<x<<",\"y\":"<<y<<",\"size\":"<<c.size<<",\"anchor\":"<<c.anchor<<",\"flip\":"<<((flip>>14)&3)<<",\"parts\":[";
@@ -196,7 +197,7 @@ extern "C" void Cv4EnemyBegin(Ppu*p,const uint8_t*r){
     }observed<<"]}";
    }
    auto it=active.frames.find(c.id);bool whole=it!=active.frames.end();
-   for(const auto &part:parts)if((part.attr&0x3800)!=(parts[0].attr&0x3800))whole=false;
+   for(const auto &part:parts)if((part.attr&0x3000)!=(parts[0].attr&0x3000))whole=false;
    if(!Cv4HdEnabled()||!(Cv4HdLayerMask()&16)||!(p->renderFlags&kPpuRenderFlags_NewRenderer))continue;
    // Whole-pose artwork takes precedence. Otherwise individual native OAM
    // components may be replaced without consuming their untouched neighbours.

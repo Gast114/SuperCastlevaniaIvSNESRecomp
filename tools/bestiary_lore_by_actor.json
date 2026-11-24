@@ -1,0 +1,342 @@
+{
+  "129": {
+    "name": "Koranot / Mode7-Boss (Boss 81 · Stage 04)",
+    "stage": "Stage 4",
+    "description": "Koranot (Stone Guardian) (Stage 4): Riesiger belebter Sandstein-Golem aus Mauerblöcken; springt und teilt sich in kleinere Golems."
+  },
+  "130": {
+    "name": "Orphic Vipers",
+    "stage": "Stage 3",
+    "description": "Orphic Vipers (Stage 3): Zweiköpfiges Wasser-/Knochendrachen-Paar in der unterirdischen Wasserhöhle; speit Feuer und Wasserkugeln."
+  },
+  "131": {
+    "name": "Medusa (Boss 83 · Stage 02)",
+    "stage": "Stage 2",
+    "description": "Medusa (Gorgon Queen) (Stage 2): Gorgonenkönigin mit Schlangenhaar und smaragdgrünem Schlangenschwanz; greift mit Versteinerungsringen an."
+  },
+  "132": {
+    "name": "Puweyxil (Boss 84 · Stage 04)",
+    "stage": "Stage 4",
+    "description": "Puweyxil (Death Breath Head) (Stage 4): Riesiger schwebender brennender Schädel in Stage 4; greift mit langer Zunge und Giftatem an."
+  },
+  "133": {
+    "name": "Dracula (Boss 85 · Final)",
+    "stage": "Stage 11 (Final)",
+    "description": "Count Dracula (Stage 11 (Final)): Graf Dracula im dunklen indigo-schwarzen Umhang mit blutrotem Innenfutter, hohem Kragen und bleichem Adelsgesicht."
+  },
+  "134": {
+    "name": "Zapf Bat (Boss 86 · Stage 09)",
+    "stage": "Stage 9",
+    "description": "Zapf Bat (Treasure Bat) (Stage 9): Riesige goldene Schatz-Vampirfledermaus aus funkelnden Gold- und Edelstein-Mosaikplättchen."
+  },
+  "135": {
+    "name": "Frankenstein (Boss 87 · Stage 08)",
+    "stage": "Stage 8",
+    "description": "Frankenstein's Monster (The Creature) (Stage 8): Das Monster im zerrissenen olivbraunen Mantel mit blaugrauer vernähter Haut; wirft Alchemie-Flaschen und Blitze."
+  },
+  "136": {
+    "name": "Gaibon (Boss 88 · Stage 11)",
+    "stage": "Stage 11",
+    "description": "Gaibon (Stage 11): Muskulöser königsblauer Gargoyle-Dämon mit Fledermausflügeln und leuchtend magentafarbenen Augen."
+  },
+  "137": {
+    "name": "Slogra (Boss 89 · Stage 11)",
+    "stage": "Stage 11",
+    "description": "Slogra (Stage 11): Schnabel-Skelettdämon mit langem Speer (Phase 1) und blanken Klauen (Phase 2) in Draculas Turm."
+  },
+  "138": {
+    "name": "Sir Grakul (Boss 8A · Stage 07)",
+    "stage": "Stage 7",
+    "description": "Sir Grakul (Stage 7): Schwer gepanzerter Bronze-/Eisenritter mit rotem Helmbusch, Rundschild und gewaltiger Hellebarde."
+  },
+  "139": {
+    "name": "Death / Sensenmann (Boss 8B · Stage 11)",
+    "stage": "Stage 11",
+    "description": "Death (The Grim Reaper) (Stage 11): Der Sensenmann in zerrissener mitternachtsblauer Kapuzenrobe mit goldenem Amulett, großer Silbersense und fliegenden Sicheln."
+  },
+  "140": {
+    "name": "Akmodan II (Boss 8C · Stage 09)",
+    "stage": "Stage 9",
+    "description": "Akmodan II (Mummy Lord) (Stage 9): Uralter verfluchter ägyptischer Mumienfürst in verwitterten ockerbraunen Leinenbinden."
+  },
+  "82": {
+    "name": "Axt-Ritter (Axe Armor)",
+    "description": "Axe Armor / Knight (bronze-and-iron medieval knight with horned helmet and pale bronze-ivory tower shield)"
+  },
+  "84": {
+    "name": "Banshee / Todesfee",
+    "description": "Banshee / Wraith (spectral golden-yellow robed female ghost raising glowing emerald-green skeletal hands)"
+  },
+  "78": {
+    "name": "Fledermaus – Hängend (Batton 2)",
+    "description": "Bat / Batton (dark slate-grey gothic vampire bat with crimson-red inner wings)"
+  },
+  "2": {
+    "name": "Knochen und Bruchstücke",
+    "description": "Bat / Batton (dark slate-grey gothic vampire bat with crimson-red inner wings)"
+  },
+  "12": {
+    "name": "Fledermaus (Batton)",
+    "description": "Bat / Batton (dark slate-grey gothic vampire bat with crimson-red inner wings)"
+  },
+  "1": {
+    "name": "Bat",
+    "description": "Bat / Batton (dark slate-grey gothic vampire bat with crimson-red inner wings)"
+  },
+  "3": {
+    "name": "Schwung-Fledermaus (Peitschenring)",
+    "description": "Bat / Batton (dark slate-grey gothic vampire bat with crimson-red inner wings)"
+  },
+  "10": {
+    "name": "Schwarzer Panther (Black Panther)",
+    "description": "Black Panther / Dead Mate (sleek muscular charcoal-black and dark slate-blue prowling panther)"
+  },
+  "13": {
+    "name": "Schwarzer Panther – Variante (Black Panther)",
+    "description": "Black Panther / Leopard variant that leaps aggressively toward Simon."
+  },
+  "107": {
+    "name": "Bluthund (Hellhound)",
+    "description": "Hellhound / Zombie Dog (ferocious fiery orange-red demonic hound leaping and running)"
+  },
+  "108": {
+    "name": "Blut-Plasma-Tropfen",
+    "description": "Crimson Droplet (glowing dark crimson-red liquid droplet blob)"
+  },
+  "93": {
+    "name": "Knochendrache – Kopf (Bone Dragon)",
+    "description": "Bone Dragon / White Dragon (segmented pale ivory-bone skeletal dragon neck & horned skull)"
+  },
+  "94": {
+    "name": "Knochendrache – Hals (Bone Dragon)",
+    "description": "Bone Dragon / White Dragon (segmented pale ivory-bone skeletal dragon neck & horned skull)"
+  },
+  "7": {
+    "name": "Medusa-Kopf (Medusa Head)",
+    "description": "Bone Dragon / White Dragon (segmented pale ivory-bone skeletal dragon neck & horned skull)"
+  },
+  "11": {
+    "name": "Knochensäule (Pillar of Bones)",
+    "description": "Pillar of Bones (stacked double horse-skull bone pillar in aged ivory bone)"
+  },
+  "116": {
+    "name": "Feuer-Tausendfüßer (Centipede / Larva)",
+    "description": "Larva / Fiery Centipede segment (glowing crimson-orange armored multi-legged fiery bug segment)"
+  },
+  "106": {
+    "name": "Kronleuchter-Energieorb",
+    "description": "Chandelier Energy Orb (glowing violet-purple electrical energy orbs)"
+  },
+  "44": {
+    "name": "Kriechender Ghul (Crawling Ghoul)",
+    "description": "Ground Zombie / Crawling Ghoul (tattered rotting brown-ochre legless undead ghoul crawling low)"
+  },
+  "110": {
+    "name": "Kriechende Hand (Crawling Hand)",
+    "description": "Crawling Hand (severed pale-greenish rotting undead skeletal hand scuttling on its fingers)"
+  },
+  "75": {
+    "name": "Blutmotte (Crimson Moth)",
+    "description": "Crimson Moth (fiery crimson-red and dark-iron winged gothic moth, 3 wing-flap poses)"
+  },
+  "16": {
+    "name": "Krähe / Rabe (Crow)",
+    "description": "Crow / Raven (dark blue-black gothic raven with bright orange beak and talons)"
+  },
+  "126": {
+    "name": "Kopfloser Ritter (Dullahan)",
+    "description": "Headless Hunter / Dullahan (deep royal-purple armored headless knight wielding silver lance/sword)"
+  },
+  "22": {
+    "name": "Stachelplatte (Spike Crusher)",
+    "description": "Dungeon Spike Traps (violet-iron ceiling spike crusher plate, mossy ceiling spikes, forged-steel vertical spear shaft)"
+  },
+  "74": {
+    "name": "Kleine Stachelplatte",
+    "description": "Dungeon Spike Traps (violet-iron ceiling spike crusher plate, mossy ceiling spikes, forged-steel vertical spear shaft)"
+  },
+  "96": {
+    "name": "Langer spitzer Speerschaft",
+    "description": "Dungeon Spike Traps (violet-iron ceiling spike crusher plate, mossy ceiling spikes, forged-steel vertical spear shaft)"
+  },
+  "8": {
+    "name": "Geist / Poltergeist (Ectoplasm)",
+    "description": "Poltergeist / Ghost (pale ghostly ivory-white haunted floating skeletal phantom & glowing spectral spawn orbs)"
+  },
+  "79": {
+    "name": "Eis-/Wassergeschoss (Merman)",
+    "description": "Enemy Projectiles (glowing pale-violet ice beam, lavender magic orbs, bronze-ivory shield/arm)"
+  },
+  "80": {
+    "name": "Kleiner Partikeleffekt",
+    "description": "Enemy Projectiles (glowing pale-violet ice beam, lavender magic orbs, bronze-ivory shield/arm)"
+  },
+  "83": {
+    "name": "Axtgeschoss (Axe Armor)",
+    "description": "Enemy Projectiles (glowing pale-violet ice beam, lavender magic orbs, bronze-ivory shield/arm)"
+  },
+  "15": {
+    "name": "Fliegendes Zauberbuch (Magic Book)",
+    "description": "Magic Book (burgundy-red leather-bound antique gothic spellbooks flapping open like wings)"
+  },
+  "124": {
+    "name": "Zahnrad und Kreissäge",
+    "description": "Magic Book (burgundy-red leather-bound antique gothic spellbooks flapping open like wings)"
+  },
+  "48": {
+    "name": "Sumpf-Frosch (Korochen)",
+    "description": "Frog / Korochen (emerald-green spotted swamp frog crouching and mid-leap)"
+  },
+  "118": {
+    "name": "Tanzendes Geisterpaar (Ghost Couple)",
+    "description": "Dancing Spectres / Ballroom Ghost Couple (19th-century Victorian gentleman in grey suit & lady in crimson gown)"
+  },
+  "91": {
+    "name": "Ballsaal-Geisterherr (Ghost Man)",
+    "description": "Ballroom Ghost Man (19th-century Victorian spectral gentleman in pale grey tailcoat)"
+  },
+  "90": {
+    "name": "Ballsaal-Geisterdame (Ghost Woman)",
+    "description": "Ballroom Ghost Woman (19th-century Victorian spectral noblewoman in flowing crimson-orange gown)"
+  },
+  "17": {
+    "name": "Skelett (Skeleton / Red / Gold)",
+    "description": "Gold Skeleton (gleaming burnished-gold metallic skeletal warrior)"
+  },
+  "105": {
+    "name": "Rotes Skelett (Blood Skeleton)",
+    "description": "Blood Skeleton (crimson-red undead skeleton that collapses when struck and reassembles itself endlessly)."
+  },
+  "18": {
+    "name": "Knochenwerfer-Skelett (Bone Chukker)",
+    "description": "Gold Skeleton (gleaming burnished-gold metallic skeletal warrior)"
+  },
+  "86": {
+    "name": "Peitschen-Skelett (Whip Skeleton)",
+    "description": "Gold Whip Skeleton (gleaming burnished-gold metallic skeletal warrior cracking a golden whip)"
+  },
+  "102": {
+    "name": "Boden-Hände Stage 02 (Hands)",
+    "description": "Stage 02 Ground Hands (creepy disembodied muddy undead hands rising out of the earth)"
+  },
+  "88": {
+    "name": "Harpyie (Harpy)",
+    "description": "Harpy (winged gothic harpy with warm brown feathered eagle wings, pale torso, and clawed talons)"
+  },
+  "60": {
+    "name": "Sumpfranken / Laubmonster (Swamp Vines)",
+    "description": "Swamp Vines / Leaf Monster (Stage 2 forest & swamp creature made of tangled dark-green leaves and thorny vines)."
+  },
+  "111": {
+    "name": "Fliegender Pferdekopf (Mr. Hed)",
+    "description": "Mr. Hed / Flying Horse Head (floating ghostly burnt-orange severed horse head with fiery mane)"
+  },
+  "113": {
+    "name": "Fliegender Pferdekopf – Variante (Mr. Hed)",
+    "description": "Mr. Hed / Flying Horse Head (floating ghostly burnt-orange severed horse head with fiery mane)"
+  },
+  "62": {
+    "name": "Fledermaus-Dämon (Man-Bat / Ogideran)",
+    "description": "Man-Bat / Ogideran Gargoyle (dark emerald-green muscular winged gargoyle demon)"
+  },
+  "81": {
+    "name": "Fischmensch – Sprung (Merman)",
+    "description": "Merman (orange-copper scaly fish-man with violet-purple webbed fins spitting pale-blue water/ice jets)"
+  },
+  "76": {
+    "name": "Fischmensch (Merman)",
+    "description": "Merman (orange-copper scaly fish-man with violet-purple webbed fins spitting pale-blue water/ice jets)"
+  },
+  "66": {
+    "name": "Lange Platte",
+    "description": "Poltergeist Chair (antique dark mahogany-brown carved gothic wooden dining chair)"
+  },
+  "115": {
+    "name": "Säulen-Ghul / Mud Man (Kiggaa)",
+    "description": "Mud Man / Kiggaa Pillar Ghoul (mossy dark-green armored undead ghoul emerging hand-first with weathered iron-studded club)"
+  },
+  "114": {
+    "name": "Fliegendes Auge (Peeping Eye)",
+    "description": "Peeping Eye (giant floating bloodshot eyeball that patrols corridors and observes Simon)."
+  },
+  "6": {
+    "name": "Holzplattform",
+    "description": "Peeping Eye (floating fiery orange-amber bloodshot demonic eyeball)"
+  },
+  "52": {
+    "name": "Feuergestalt",
+    "description": "Brick Doll / Rock Golem (muscular warm sandstone-ochre carved stone giant golem in large, medium, and small sizes)"
+  },
+  "120": {
+    "name": "Feuergestalt – weitere Bauart",
+    "description": "Brick Doll / Rock Golem (muscular warm sandstone-ochre carved stone giant golem in large, medium, and small sizes)"
+  },
+  "121": {
+    "name": "Kleine Flammengestalt",
+    "description": "Brick Doll / Rock Golem (muscular warm sandstone-ochre carved stone giant golem in large, medium, and small sizes)"
+  },
+  "49": {
+    "name": "Skelett-Ritter (Skeleton Soldier)",
+    "description": "Skeleton Soldier / Knight (pale-gold and aged-ivory armored skeleton swordsman with steel broadsword)"
+  },
+  "61": {
+    "name": "Skeleton_Knight",
+    "description": "Skeleton Soldier / Knight (pale-gold and aged-ivory armored skeleton swordsman with steel broadsword)"
+  },
+  "92": {
+    "name": "Wand-Skelett (Wall Skeleton)",
+    "description": "Skeleton Soldier / Knight (pale-gold and aged-ivory armored skeleton swordsman with steel broadsword)"
+  },
+  "89": {
+    "name": "Speer-Ritter (Spear Knight)",
+    "description": "Spear Knight / Guard (pale silver-ivory armored medieval knight from the Library thrusting a long steel-and-bronze spear)"
+  },
+  "67": {
+    "name": "Spinne (Spider)",
+    "description": "Spider (hairy reddish-brown gothic dungeon spider hanging on a vertical silk thread)"
+  },
+  "9": {
+    "name": "Stachelechse (Needle Lizard)",
+    "description": "Needle Lizard (fiery orange-red armored spiky lizard curling into a spiked ball)"
+  },
+  "109": {
+    "name": "Spore / Fuzz Buster (Keseran Pasaran)",
+    "description": "Fuzz Buster / Keseran Pasaran (glowing pale seafoam-cyan spiky floating fungal spore orb)"
+  },
+  "127": {
+    "name": "Steingolem / Statue (Stone Man / Brick Doll)",
+    "description": "Animated Statue / Stone Man (weathered grey-brown mossy carved stone statue warrior)"
+  },
+  "53": {
+    "name": "Swamp_Vines",
+    "description": "Une / Swamp Vines (gnarled dark moss-green thorny swamp vines creeping along the ground)"
+  },
+  "50": {
+    "name": "Deckenschleim (Ceiling Slime)",
+    "description": "Ceiling Slime Tentacles (writhing dark sea-green thorny organic gothic slime crawler)"
+  },
+  "51": {
+    "name": "Vampir-Sarg (Vampire Coffin)",
+    "description": "Vampire Coffin (ornate dark crimson-mahogany gothic wooden vampire coffin with iron trim opening in stages)"
+  },
+  "123": {
+    "name": "Vampir-Sarg – Variante (Vampire Coffin)",
+    "description": "Vampire Coffin (ornate dark crimson-mahogany gothic wooden vampire coffin with iron trim opening in stages)"
+  },
+  "54": {
+    "name": "Wall_Skeleton",
+    "description": "Hanging / Wall Skeleton (weathered ivory-white skeleton chained to a dark dungeon wall)"
+  },
+  "117": {
+    "name": "Geflügelter Wächter (Winged Guard)",
+    "description": "Winged Guard / Gargoyle Knight (weathered olive-green stone gargoyle warrior with crimson-red tower shield)"
+  },
+  "87": {
+    "name": "Gremlin / Imp",
+    "description": "Gremlin / Imp (fiery burnt-orange and dark-brown winged dungeon gremlin)"
+  },
+  "112": {
+    "name": "Schlamm-Effekt / Boden-Tropfen",
+    "description": "Swamp mud/splash effect spawned on the ground."
+  }
+}

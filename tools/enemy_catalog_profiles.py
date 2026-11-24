@@ -22,6 +22,20 @@ _BOSSES=(
     (10,0x8b,0x9584,0x0280,0x0060,65,True),
     (11,0x8c,0x95ae,0x0280,0x0060,59,True),
 )
+_BOSS_NAMES={
+    0x80:'Rowdain (Boss 80 · Stage 01)',
+    0x81:'Koranot / Mode7-Boss (Boss 81 · Stage 04)',
+    0x83:'Medusa (Boss 83 · Stage 02)',
+    0x84:'Puweyxil (Boss 84 · Stage 04)',
+    0x85:'Dracula (Boss 85 · Final)',
+    0x86:'Zapf Bat (Boss 86 · Stage 09)',
+    0x87:'Frankenstein (Boss 87 · Stage 08)',
+    0x88:'Gaibon (Boss 88 · Stage 11)',
+    0x89:'Slogra (Boss 89 · Stage 11)',
+    0x8a:'Sir Grakul (Boss 8A · Stage 07)',
+    0x8b:'Death / Sensenmann (Boss 8B · Stage 11)',
+    0x8c:'Akmodan II (Boss 8C · Stage 09)',
+}
 BOSS_SETUP_REVISION=2
 BOSS_TYPES=frozenset(row[1] for row in _BOSSES)
 
@@ -51,7 +65,7 @@ def boss_profiles(session):
             initializer=0x020000|initializer,
             room=room,x=x,y=y,flags=0x8000,record=record,
             context_provisional=not placed,
-            name=f'Boss {actor:02X} · Originalszene',
+            name=_BOSS_NAMES.get(actor,f'Boss {actor:02X} · Originalszene'),
             coverage_note=('Originaler Bossraum 7 mit nativem Szenencontroller.'
                 if actor==0x80 else 'Mode7-Körper nativ sichtbar; seine HD-Texturzuordnung ist noch offen. OBJ-Teile können bearbeitet werden.'
                 if actor==0x81 else 'Sichtbarer Körper als Actor 09 belegt; weitere Angriffs-/Todeszustände noch unvollständig.'
